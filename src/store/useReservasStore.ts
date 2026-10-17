@@ -22,6 +22,7 @@ export type StatusWhatsApp = "nao_enviado" | "enviado" | "falhou";
 
 export interface Reserva {
   id: string;
+  arenaId?: string;
   quadraId: string;
 
   // Identificação do cliente
@@ -71,6 +72,15 @@ export interface Reserva {
   // Sistema de Vagas Abertas para jogadores
   permiteVagas?: boolean;
   vagasAbertas?: number;
+
+  // Metadados de Pagamento Pix e Lock de Concorrência
+  pixTxid?: string;
+  pixCopiaCola?: string;
+  pixQrCodeUrl?: string;
+  expiraEm?: string;
+  pagoEm?: string;
+  gatewayProvedor?: string;
+  gatewayTransacaoId?: string;
 }
 
 // ─── State & Actions ──────────────────────────────────────────────────────────

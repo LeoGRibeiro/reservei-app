@@ -38,11 +38,25 @@ import {
   saoConsecutivos,
   isHorarioExpirado,
 } from "@/lib/constants";
-import { QUADRAS } from "@/lib/quadras";
+import { QUADRAS_PADRAO } from "@/lib/arena/defaultArena";
+import { useArena } from "@/hooks/useArena";
+import { usePrecoCalculado } from "@/hooks/usePrecoCalculado";
+import { solicitarPixParaReserva } from "@/lib/pagamento/pagamentoService";
+import type { PixCobranca } from "@/lib/pagamento/types";
 
 type Etapa = "formulario" | "pix";
 
-export function PortalCliente() {
+export interface PortalClienteProps {
+  /** Slug da arena para carregar dados multi-tenant (ex: subdomínio) */
+  arenaSlug?: string;
+}
+
+export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
+  // ── Contexto da Arena Multi-Tenant ─────────────────────────────────────
+  const { arena, quadras, precos } = useArena(arenaSlug);
+  const listaQuadras = useMemo(() => {
+    return quadras && quadras.length > 0 ? quadras : QUADRAS_PADRAO;
+  }, [quadras]);
   // ── Estado de seleção ──────────────────────────────────────────────────
   const dias = useMemo(() => gerarDiasDisponiveis(), []);
   const [dataSelecionada, setDataSelecionada] = useState<string>(getHoje());
@@ -67,8 +81,14 @@ export function PortalCliente() {
     whatsapp: string;
   } | null>(null);
 
+  // ── Cobrança Pix Transacional ─────────────────────────────────────────────
+  const [cobrancaPix, setCobrancaPix] = useState<PixCobranca | null>(null);
+  const [carregandoPix, setCarregandoPix] = useState(false);
+
   // ── Service ─────────────────────────────────────────────────────────────
   const {
+    reservas,
+    getReservaById,
     getHorariosOcupados,
     criarReservaEmProcessamento,
     atualizarIdentificacao,
@@ -78,11 +98,23 @@ export function PortalCliente() {
   } = useReservasService();
   const { getAvisosEscolinha } = useContratosService();
 
-  // ── Valores calculados ──────────────────────────────────────────────────
-  const valorTotalBruto = useMemo(
-    () => calcularValorTotal(horariosSelecionados),
-    [horariosSelecionados]
-  );
+  // ── Valores calculados dinamicamente ────────────────────────────────────
+  const quadraAtual = useMemo(() => {
+    return listaQuadras.find((q) => q.id === quadraSelecionada) || null;
+  }, [listaQuadras, quadraSelecionada]);
+
+  const precoDinamico = usePrecoCalculado({
+    quadra: quadraAtual,
+    precos,
+    data: dataSelecionada,
+    horarios: horariosSelecionados,
+    percentualSinal: arena.percentualSinalMinimo,
+  });
+
+  const valorTotalBruto = useMemo(() => {
+    if (precoDinamico.valorTotal > 0) return precoDinamico.valorTotal;
+    return calcularValorTotal(horariosSelecionados);
+  }, [precoDinamico.valorTotal, horariosSelecionados]);
 
   const vouchersAtivosParaReserva = useMemo(() => {
     return progresso.vouchersDisponiveis.filter((v) =>
@@ -101,13 +133,17 @@ export function PortalCliente() {
   const valorTotal = resultadoDesconto ? resultadoDesconto.valorFinal : valorTotalBruto;
   const valorSinal = useMemo(() => {
     if (valorTotal === 0) return 0;
-    return calcularValorSinal(valorTotal);
-  }, [valorTotal]);
+    if (resultadoDesconto) {
+      return Math.round(valorTotal * (arena.percentualSinalMinimo / 100) * 100) / 100;
+    }
+    return precoDinamico.valorSinal > 0
+      ? precoDinamico.valorSinal
+      : calcularValorSinal(valorTotal);
+  }, [valorTotal, resultadoDesconto, arena.percentualSinalMinimo, precoDinamico.valorSinal]);
 
-  const valorPendente = useMemo(
-    () => calcularValorPendente(valorTotal),
-    [valorTotal]
-  );
+  const valorPendente = useMemo(() => {
+    return Math.round((valorTotal - valorSinal) * 100) / 100;
+  }, [valorTotal, valorSinal]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -145,7 +181,7 @@ export function PortalCliente() {
       if (quadraSelecionada !== null && quadraSelecionada !== quadraId) {
         setQuadraSelecionada(quadraId);
         setHorariosSelecionados([horario]);
-        const nomeQuadra = QUADRAS.find((q) => q.id === quadraId)?.numero;
+        const nomeQuadra = listaQuadras.find((q) => q.id === quadraId)?.numero;
         toast.info(`Selecionada Quadra ${nomeQuadra}`);
         return;
       }
@@ -195,21 +231,29 @@ export function PortalCliente() {
     }
 
     const id = criarReservaEmProcessamento({
+      arenaId: arena.id,
       quadraId: quadraSelecionada,
       data: dataSelecionada,
       horarios: horariosSelecionados,
       userId: user?.id,
+      valorTotal: valorTotalBruto,
+      valorSinal,
+      valorPendente,
     });
     setReservaIdAtual(id);
     setIsCarrinhoOpen(false);
     setEtapa("formulario");
   }, [
+    arena.id,
     quadraSelecionada,
     horariosSelecionados,
     dataSelecionada,
     user?.id,
     user?.bloqueado,
     user?.telefone,
+    valorTotalBruto,
+    valorSinal,
+    valorPendente,
     criarReservaEmProcessamento,
   ]);
 
@@ -287,9 +331,41 @@ export function PortalCliente() {
       }
 
       setEtapa("pix");
+      setCarregandoPix(true);
+      const reserva = getReservaById(reservaIdAtual);
+      if (reserva) {
+        void solicitarPixParaReserva({
+          reserva: {
+            ...reserva,
+            nomeCliente: dados.nome,
+            whatsappCliente: dados.whatsapp,
+            valorTotal,
+            valorSinal: tipoPagamento === "integral" ? valorTotal : valorSinal,
+            valorPendente: tipoPagamento === "integral" ? 0 : valorPendente,
+          },
+          arena,
+          tipoPagamento,
+        })
+          .then((resultado) => {
+            if (resultado.sucesso && resultado.cobranca) {
+              setCobrancaPix(resultado.cobranca);
+            } else {
+              toast.error("Erro ao gerar cobrança Pix", {
+                description: resultado.erro || "Tente novamente ou fale com a arena.",
+              });
+            }
+          })
+          .finally(() => {
+            setCarregandoPix(false);
+          });
+      } else {
+        setCarregandoPix(false);
+      }
     },
     [
       reservaIdAtual,
+      getReservaById,
+      arena,
       atualizarIdentificacao,
       atualizarDadosCheckout,
       valorTotal,
@@ -347,6 +423,8 @@ export function PortalCliente() {
       setEtapa(null);
       setReservaIdAtual(null);
       setDadosForm(null);
+      setCobrancaPix(null);
+      setCarregandoPix(false);
       setHorariosSelecionados([]);
       setQuadraSelecionada(null);
 
@@ -378,6 +456,8 @@ export function PortalCliente() {
     setEtapa(null);
     setReservaIdAtual(null);
     setDadosForm(null);
+    setCobrancaPix(null);
+    setCarregandoPix(false);
   }, [reservaIdAtual, liberarLock]);
 
   // ── Render ──────────────────────────────────────────────────────────────
@@ -388,8 +468,8 @@ export function PortalCliente() {
       data={dataSelecionada}
       horariosSelecionados={horariosSelecionados}
       valorTotal={valorTotalBruto}
-      valorSinal={calcularValorSinal(valorTotalBruto)}
-      valorPendente={calcularValorPendente(valorTotalBruto)}
+      valorSinal={valorSinal}
+      valorPendente={valorPendente}
       onContinuar={handleContinuar}
       onLimpar={handleLimpar}
       vouchersSelecionadosIds={vouchersSelecionadosIds}
@@ -415,7 +495,7 @@ export function PortalCliente() {
           {/* Coluna esquerda: seleção */}
           <main className="space-y-6 pb-10 md:pb-6">
             {/* Título compacto da reserva (único h1 da página) */}
-            <CabecalhoReserva />
+            <CabecalhoReserva nomeArena={arena.nome} />
             {/* Alerta de conta bloqueada */}
             {user?.bloqueado && (
               <div className="bg-red-950/40 border border-red-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-red-200 shadow-lg">
@@ -463,7 +543,7 @@ export function PortalCliente() {
             </div>
 
             {/* Quadras sempre expandidas verticalmente */}
-            {QUADRAS.map((quadra) => {
+            {listaQuadras.map((quadra) => {
               const isAtiva = quadraSelecionada === quadra.id;
               const horariosOcupados = getHorariosOcupados(
                 dataSelecionada,
@@ -559,10 +639,13 @@ export function PortalCliente() {
       {/* Modal: Pix */}
       <ModalPix
         open={etapa === "pix"}
+        reservaId={reservaIdAtual}
         tipoPagamento={tipoPagamentoEscolhido}
         valorSinal={valorSinal}
         valorTotal={valorTotal}
         nomeCliente={dadosForm?.nome ?? ""}
+        cobrancaPix={cobrancaPix}
+        carregando={carregandoPix}
         onSimularPagamento={handleSimularPagamento}
         onVoltar={() => setEtapa("formulario")}
         onCancelar={handleCancelarCheckout}

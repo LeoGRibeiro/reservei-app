@@ -20,17 +20,21 @@ import {
   UsersRound,
   Gift,
   Images,
+  Layers,
+  Settings,
 } from "lucide-react";
 
 export type AdminView =
   | "dashboard"
   | "agenda"
+  | "quadras"
   | "usuarios"
   | "institucional"
   | "escolinhas"
   | "grupos"
   | "fidelidade"
-  | "financeiro";
+  | "financeiro"
+  | "configuracoes";
 
 interface NavItem {
   id: AdminView;
@@ -41,12 +45,14 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "agenda", label: "Agenda de Ocupação", icon: CalendarDays },
+  { id: "quadras", label: "Gestão de Quadras", icon: Layers },
   { id: "usuarios", label: "Usuários", icon: Users },
   { id: "institucional", label: "Institucional & LP", icon: Images },
   { id: "escolinhas", label: "Escolinhas", icon: GraduationCap },
   { id: "grupos", label: "Grupos", icon: UsersRound },
   { id: "fidelidade", label: "Fidelidade", icon: Gift },
   { id: "financeiro", label: "Financeiro", icon: DollarSign },
+  { id: "configuracoes", label: "Configurações", icon: Settings },
 ];
 
 interface Props {

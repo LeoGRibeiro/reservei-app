@@ -17,14 +17,16 @@ export const ID_TITULO_RESERVA = `${SECAO_IDS.INICIO}-titulo`;
  *   <CalendarioSelector ... />
  * </section>
  */
-export function CabecalhoReserva() {
+export function CabecalhoReserva({ nomeArena }: { nomeArena?: string } = {}) {
   const secao = getSecaoPorId(SECAO_IDS.INICIO);
   if (!secao) return null;
+
+  const tituloFinal = nomeArena ? `${secao.titulo} · ${nomeArena}` : secao.titulo;
 
   return (
     <div>
       <h1 id={ID_TITULO_RESERVA} className="text-xl md:text-2xl font-black text-white tracking-tight">
-        {secao.titulo}
+        {tituloFinal}
       </h1>
       <p className="text-xs md:text-sm text-slate-400 mt-1">{secao.subtitulo}</p>
     </div>

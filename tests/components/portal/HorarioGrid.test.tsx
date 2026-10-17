@@ -19,7 +19,8 @@ vi.mock("@/hooks/useUserAuth", () => ({
 }));
 
 describe("HorarioGrid - Tag de Vagas Abertas", () => {
-  const dataHoje = "2026-10-15";
+  // Data futura estável para garantir que os slots de horário não expirem durante os testes
+  const dataHoje = "2099-10-15";
 
   beforeEach(() => {
     vi.clearAllMocks();

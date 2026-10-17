@@ -4,6 +4,8 @@ import type { TipoReserva } from "@/lib/recorrencia/types";
 
 export interface ReservaDbRow {
   id: string;
+  arena_id?: string | null;
+  arenaId?: string | null;
   user_id?: string | null;
   userId?: string | null;
   quadra_id?: string;
@@ -51,6 +53,20 @@ export interface ReservaDbRow {
   permiteVagas?: boolean | null;
   vagas_abertas?: number | string | null;
   vagasAbertas?: number | string | null;
+  pix_txid?: string | null;
+  pixTxid?: string | null;
+  pix_copia_cola?: string | null;
+  pixCopiaCola?: string | null;
+  pix_qr_code_url?: string | null;
+  pixQrCodeUrl?: string | null;
+  expira_em?: string | null;
+  expiraEm?: string | null;
+  pago_em?: string | null;
+  pagoEm?: string | null;
+  gateway_provedor?: string | null;
+  gatewayProvedor?: string | null;
+  gateway_transacao_id?: string | null;
+  gatewayTransacaoId?: string | null;
 }
 
 /**
@@ -91,6 +107,7 @@ export function rowToReserva(row: ReservaDbRow): Reserva {
 
   return {
     id: row.id,
+    arenaId: row.arena_id ?? row.arenaId ?? undefined,
     userId,
     quadraId: row.quadra_id ?? row.quadraId ?? "",
     nomeCliente: row.nome_cliente ?? row.nomeCliente ?? "",
@@ -171,6 +188,13 @@ export function rowToReserva(row: ReservaDbRow): Reserva {
       }
       return undefined;
     })(),
+    pixTxid: row.pix_txid ?? row.pixTxid ?? undefined,
+    pixCopiaCola: row.pix_copia_cola ?? row.pixCopiaCola ?? undefined,
+    pixQrCodeUrl: row.pix_qr_code_url ?? row.pixQrCodeUrl ?? undefined,
+    expiraEm: row.expira_em ?? row.expiraEm ?? undefined,
+    pagoEm: row.pago_em ?? row.pagoEm ?? undefined,
+    gatewayProvedor: row.gateway_provedor ?? row.gatewayProvedor ?? undefined,
+    gatewayTransacaoId: row.gateway_transacao_id ?? row.gatewayTransacaoId ?? undefined,
   };
 }
 
@@ -181,6 +205,7 @@ export function reservaToRow(reserva: Partial<Reserva>): Record<string, unknown>
   const row: Record<string, unknown> = {};
 
   if (reserva.id !== undefined) row.id = reserva.id;
+  if (reserva.arenaId !== undefined) row.arena_id = reserva.arenaId ?? null;
   if (reserva.userId !== undefined) {
     row.user_id = reserva.userId ?? null;
     // Fallback: se user_id ainda não existir no schema do banco, salva o id no campo cpf_cliente
@@ -226,6 +251,15 @@ export function reservaToRow(reserva: Partial<Reserva>): Record<string, unknown>
   }
   if (reserva.vagasAbertas !== undefined) {
     row.vagas_abertas = reserva.vagasAbertas;
+  }
+  if (reserva.pixTxid !== undefined) row.pix_txid = reserva.pixTxid;
+  if (reserva.pixCopiaCola !== undefined) row.pix_copia_cola = reserva.pixCopiaCola;
+  if (reserva.pixQrCodeUrl !== undefined) row.pix_qr_code_url = reserva.pixQrCodeUrl;
+  if (reserva.expiraEm !== undefined) row.expira_em = reserva.expiraEm;
+  if (reserva.pagoEm !== undefined) row.pago_em = reserva.pagoEm;
+  if (reserva.gatewayProvedor !== undefined) row.gateway_provedor = reserva.gatewayProvedor;
+  if (reserva.gatewayTransacaoId !== undefined) {
+    row.gateway_transacao_id = reserva.gatewayTransacaoId;
   }
 
   return row;

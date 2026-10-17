@@ -17,6 +17,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './'),
       'react': path.resolve(__dirname, './node_modules/react'),
       '@testing-library/react': path.resolve(__dirname, './node_modules/@testing-library/react'),
+      'next/server': path.resolve(__dirname, './node_modules/next/server.js'),
+      'next': path.resolve(__dirname, './node_modules/next'),
     },
     include: ['../tests/**/*.{test,spec}.{ts,tsx}'],
   },

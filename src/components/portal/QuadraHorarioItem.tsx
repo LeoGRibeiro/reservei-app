@@ -1,12 +1,13 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { type Quadra } from "@/lib/quadras";
+import type { Quadra as QuadraLegada } from "@/lib/quadras";
+import type { Quadra as ArenaQuadra } from "@/lib/arena/types";
 import { HorarioGrid } from "./HorarioGrid";
 import { type AvisoEscolinha } from "@/lib/recorrencia/agenda";
 
 interface Props {
-  quadra: Quadra;
+  quadra: QuadraLegada | ArenaQuadra;
   dataSelecionada: string;
   horariosSelecionados: string[];
   horariosOcupados: string[];
@@ -25,6 +26,10 @@ export function QuadraHorarioItem({
   isAtiva,
   onToggleHorario,
 }: Props) {
+  const nomeExibicao = "nome" in quadra && quadra.nome ? quadra.nome : `Quadra ${quadra.numero}`;
+  const tipoPiso = "tipoPiso" in quadra ? quadra.tipoPiso : undefined;
+  const isCoberta = "coberta" in quadra ? quadra.coberta : undefined;
+
   return (
     <div
       className={cn(
@@ -35,14 +40,24 @@ export function QuadraHorarioItem({
       )}
     >
       {/* ── Header da Quadra ─────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           {isAtiva && (
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
           )}
           <h3 className="font-bold text-white text-base">
-            Quadra {quadra.numero}
+            {nomeExibicao}
           </h3>
+          {tipoPiso && (
+            <span className="text-[10px] bg-slate-800/80 text-slate-300 border border-slate-700/80 px-2 py-0.5 rounded font-medium uppercase tracking-wider">
+              {tipoPiso === "pu_cimentado" ? "Piso PU" : tipoPiso}
+            </span>
+          )}
+          {isCoberta && (
+            <span className="text-[10px] bg-sky-950/40 text-sky-300 border border-sky-800/50 px-2 py-0.5 rounded font-medium">
+              Coberta
+            </span>
+          )}
         </div>
 
         {isAtiva && horariosSelecionados.length > 0 && (

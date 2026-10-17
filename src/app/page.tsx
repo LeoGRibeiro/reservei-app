@@ -1,14 +1,46 @@
-import type { Metadata } from "next";
-import { PortalCliente } from "@/components/portal/PortalCliente";
+/**
+ * @file page.tsx
+ * @description Página raiz da aplicação. Detecta se a requisição originou de um subdomínio
+ * (via cabeçalho 'x-arena-slug' injetado pelo middleware) ou do domínio central padrão.
+ */
 
-export const metadata: Metadata = {
-  title: "Reservei · Agendamento de Quadras",
-  description:
-    "Agende sua quadra esportiva online de forma rápida e segura. Futsal, Vôlei, Basquete, Handebol e mais.",
-};
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { PortalCliente } from "@/components/portal/PortalCliente";
+import { ArenaRepository } from "@/lib/arena/arenaRepository";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
-  return <PortalCliente />;
+/**
+ * Metadados contextuais baseados no subdomínio da requisição.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = await headers();
+  const slugSubdominio = headersList.get("x-arena-slug");
+
+  if (slugSubdominio) {
+    const arena = await ArenaRepository.buscarPorSlug(slugSubdominio);
+    if (arena) {
+      return {
+        title: `${arena.nome} · Agendamento de Quadras Online`,
+        description: `Agende sua quadra esportiva na ${arena.nome} (${arena.cidade} - ${arena.estado}). Horários em tempo real e confirmação rápida.`,
+      };
+    }
+  }
+
+  return {
+    title: "Reservei · Plataforma Multi-Arena de Agendamento Esportivo",
+    description:
+      "Agende sua quadra esportiva online de forma rápida e segura. Beach Tennis, Futsal, Society, Vôlei e mais.",
+  };
+}
+
+/**
+ * Componente da página inicial.
+ */
+export default async function Home() {
+  const headersList = await headers();
+  const slugSubdominio = headersList.get("x-arena-slug") || undefined;
+
+  return <PortalCliente arenaSlug={slugSubdominio} />;
 }

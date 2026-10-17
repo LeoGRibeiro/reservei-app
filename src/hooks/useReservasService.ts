@@ -42,10 +42,12 @@ import type {
   DadosCriacaoReservaManual,
   ResultadoOperacaoAgenda,
 } from "@/lib/adminAgenda/types";
+import { LockService } from "@/lib/pagamento/lockService";
 
 // ─── Tipos de entrada para criação ───────────────────────────────────────────
 
 export interface DadosCriacaoReserva {
+  arenaId?: string;
   quadraId: string;
   data: string;
   horarios: string[];
@@ -55,6 +57,9 @@ export interface DadosCriacaoReserva {
   cpfCliente?: string;
   esporte?: Esporte;
   observacoes?: string;
+  valorTotal?: number;
+  valorSinal?: number;
+  valorPendente?: number;
 }
 
 // ─── Helper de enriquecimento com usuários cadastrados ───────────────────────
@@ -150,17 +155,10 @@ export function useReservasService() {
 
   // ── Queries ────────────────────────────────────────────────────────────────
 
-  /** Reservas ativas para uma data e quadra específicas (exclui canceladas) */
+  /** Reservas ativas para uma data e quadra específicas (considerando status confirmada, pendente e locks ativos) */
   const getHorariosOcupados = useCallback(
     (data: string, quadraId: string): string[] => {
-      return reservas
-        .filter(
-          (r) =>
-            r.data === data &&
-            r.quadraId === quadraId &&
-            r.status !== "cancelada"
-        )
-        .flatMap((r) => r.horarios);
+      return LockService.filtrarHorariosOcupadosComLock(reservas, quadraId, data);
     },
     [reservas]
   );
@@ -176,8 +174,9 @@ export function useReservasService() {
   /** Retorna todos os horários ocupados em qualquer quadra para um dia */
   const getHorariosOcupadosDia = useCallback(
     (data: string): { quadraId: string; horario: string }[] => {
+      const agora = new Date();
       return reservas
-        .filter((r) => r.data === data && r.status !== "cancelada")
+        .filter((r) => r.data === data && LockService.isReservaOcupandoSlot(r, agora))
         .flatMap((r) => r.horarios.map((h) => ({ quadraId: r.quadraId, horario: h })));
     },
     [reservas]
@@ -236,7 +235,9 @@ export function useReservasService() {
   const criarReservaEmProcessamento = useCallback(
     (dados: DadosCriacaoReserva): string => {
       const horarios = [...dados.horarios].sort();
-      const valorTotal = calcularValorTotal(horarios);
+      const valorTotal = dados.valorTotal !== undefined ? dados.valorTotal : calcularValorTotal(horarios);
+      const valorSinal = dados.valorSinal !== undefined ? dados.valorSinal : calcularValorSinal(valorTotal);
+      const valorPendente = dados.valorPendente !== undefined ? dados.valorPendente : calcularValorPendente(valorTotal);
       const id = `rsv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
       // Se userId não foi passado explicitamente mas o cliente tem conta cadastrada com esse telefone
@@ -248,6 +249,7 @@ export function useReservasService() {
 
       const reserva: Reserva = {
         id,
+        arenaId: dados.arenaId,
         userId: finalUserId,
         quadraId: dados.quadraId,
         data: dados.data,
@@ -258,11 +260,12 @@ export function useReservasService() {
         whatsappCliente: dados.whatsappCliente ?? "",
         cpfCliente: dados.cpfCliente ?? "",
         valorTotal,
-        valorSinal: calcularValorSinal(valorTotal),
-        valorPendente: calcularValorPendente(valorTotal),
+        valorSinal,
+        valorPendente,
         status: "em_processamento",
         statusWhatsApp: "nao_enviado",
         criadaEm: new Date().toISOString(),
+        expiraEm: LockService.gerarTimestampExpiracaoLock(10),
         esporte: dados.esporte,
         observacoes: dados.observacoes,
       };
@@ -550,6 +553,7 @@ export function useReservasService() {
   return {
     // Queries
     reservas,
+    getReservaById,
     getHorariosOcupados,
     isHorarioOcupado,
     getHorariosOcupadosDia,

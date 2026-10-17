@@ -454,3 +454,191 @@ BEGIN
   END IF;
 END $$;
 
+-- ==============================================================================
+-- Fase 1: Arquitetura Multi-Tenant, Quadras Dinâmicas e Segurança RLS
+-- Spec: SPEC/2026-10-14-arquitetura-multi-tenant-seguranca.md
+-- ==============================================================================
+
+-- 1. Tabela de Arenas (Tenants)
+CREATE TABLE IF NOT EXISTS public.arenas (
+  id TEXT PRIMARY KEY,
+  slug TEXT UNIQUE NOT NULL,
+  nome TEXT NOT NULL,
+  cnpj_cpf TEXT,
+  telefone TEXT NOT NULL DEFAULT '',
+  whatsapp TEXT NOT NULL DEFAULT '',
+  email TEXT,
+  endereco TEXT,
+  cidade TEXT NOT NULL DEFAULT 'Belém',
+  estado TEXT NOT NULL DEFAULT 'PA',
+  cep TEXT,
+  logo_url TEXT,
+  horario_abertura TEXT NOT NULL DEFAULT '06:00',
+  horario_fechamento TEXT NOT NULL DEFAULT '23:00',
+  intervalo_minutos INTEGER NOT NULL DEFAULT 60,
+  percentual_sinal_minimo NUMERIC(5, 2) NOT NULL DEFAULT 50.00,
+  antecedencia_minima_minutos INTEGER NOT NULL DEFAULT 60,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_arenas_slug ON public.arenas (slug);
+CREATE INDEX IF NOT EXISTS idx_arenas_ativo ON public.arenas (ativo);
+
+-- 2. Tabela de Quadras Heterogêneas e Dinâmicas
+CREATE TABLE IF NOT EXISTS public.quadras (
+  id TEXT PRIMARY KEY,
+  arena_id TEXT NOT NULL REFERENCES public.arenas(id) ON DELETE CASCADE,
+  numero INTEGER NOT NULL,
+  nome TEXT NOT NULL,
+  descricao TEXT,
+  tipo_piso TEXT NOT NULL DEFAULT 'areia',
+  esportes TEXT[] NOT NULL DEFAULT '{}',
+  coberta BOOLEAN NOT NULL DEFAULT FALSE,
+  iluminacao BOOLEAN NOT NULL DEFAULT TRUE,
+  valor_hora_padrao NUMERIC(10, 2) NOT NULL DEFAULT 90.00,
+  ordem INTEGER NOT NULL DEFAULT 0,
+  ativa BOOLEAN NOT NULL DEFAULT TRUE,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_quadras_arena ON public.quadras (arena_id, ativa, ordem);
+
+-- 3. Tabela de Preços Dinâmicos por Faixa e Dia da Semana
+CREATE TABLE IF NOT EXISTS public.quadras_precos (
+  id TEXT PRIMARY KEY,
+  arena_id TEXT NOT NULL REFERENCES public.arenas(id) ON DELETE CASCADE,
+  quadra_id TEXT NOT NULL REFERENCES public.quadras(id) ON DELETE CASCADE,
+  dias_semana INTEGER[] NOT NULL DEFAULT '{0,1,2,3,4,5,6}',
+  hora_inicio TEXT NOT NULL,
+  hora_fim TEXT NOT NULL,
+  valor_hora NUMERIC(10, 2) NOT NULL,
+  descricao TEXT,
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_quadras_precos_quadra ON public.quadras_precos (quadra_id, ativo);
+CREATE INDEX IF NOT EXISTS idx_quadras_precos_arena ON public.quadras_precos (arena_id);
+
+-- 4. Tabela de Vínculo de Usuários com Arenas (RBAC Inicial)
+CREATE TABLE IF NOT EXISTS public.arena_usuarios (
+  id TEXT PRIMARY KEY,
+  arena_id TEXT NOT NULL REFERENCES public.arenas(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'operador' CHECK (role IN ('proprietario', 'gerente', 'operador')),
+  ativo BOOLEAN NOT NULL DEFAULT TRUE,
+  criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE(arena_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_arena_usuarios_lookup ON public.arena_usuarios (user_id, arena_id);
+
+-- 5. Seed da Arena Padrão (Retrocompatibilidade)
+INSERT INTO public.arenas (
+  id, slug, nome, telefone, whatsapp, cidade, estado, horario_abertura, horario_fechamento, ativo
+)
+VALUES (
+  'arena-padrao', 'arena-demo', 'Arena Reservei Demo', '(91) 98123-4567', '(91) 98123-4567', 'Belém', 'PA', '08:00', '22:00', true
+)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.quadras (
+  id, arena_id, numero, nome, descricao, tipo_piso, esportes, coberta, iluminacao, valor_hora_padrao, ordem, ativa
+)
+VALUES 
+  ('q1', 'arena-padrao', 1, 'Quadra 1 - Poliesportiva', 'Quadra coberta com piso PU de alta aderência', 'pu_cimentado', ARRAY['Futsal', 'Vôlei', 'Basquete', 'Handebol'], true, true, 90.00, 1, true),
+  ('q2', 'arena-padrao', 2, 'Quadra 2 - Poliesportiva', 'Quadra coberta com piso PU de alta aderência', 'pu_cimentado', ARRAY['Futsal', 'Vôlei', 'Basquete', 'Handebol'], true, true, 90.00, 2, true),
+  ('q3', 'arena-padrao', 3, 'Quadra 3 - Poliesportiva', 'Quadra coberta com piso PU de alta aderência', 'pu_cimentado', ARRAY['Futsal', 'Vôlei', 'Basquete', 'Handebol'], true, true, 90.00, 3, true)
+ON CONFLICT (id) DO NOTHING;
+
+-- 6. Adição da coluna arena_id nas tabelas existentes e migração de registros órfãos
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS arena_id TEXT;
+UPDATE public.reservas SET arena_id = 'arena-padrao' WHERE arena_id IS NULL;
+CREATE INDEX IF NOT EXISTS idx_reservas_arena_data ON public.reservas (arena_id, data);
+
+ALTER TABLE public.contratos_recorrentes ADD COLUMN IF NOT EXISTS arena_id TEXT;
+UPDATE public.contratos_recorrentes SET arena_id = 'arena-padrao' WHERE arena_id IS NULL;
+CREATE INDEX IF NOT EXISTS idx_contratos_arena ON public.contratos_recorrentes (arena_id, tipo, ativo);
+
+ALTER TABLE public.fidelidade_campanha ADD COLUMN IF NOT EXISTS arena_id TEXT;
+UPDATE public.fidelidade_campanha SET arena_id = 'arena-padrao' WHERE arena_id IS NULL;
+CREATE INDEX IF NOT EXISTS idx_fidelidade_campanha_arena ON public.fidelidade_campanha (arena_id);
+
+ALTER TABLE public.fidelidade_selos ADD COLUMN IF NOT EXISTS arena_id TEXT;
+UPDATE public.fidelidade_selos SET arena_id = 'arena-padrao' WHERE arena_id IS NULL;
+CREATE INDEX IF NOT EXISTS idx_fidelidade_selos_arena ON public.fidelidade_selos (arena_id, usuario_id);
+
+ALTER TABLE public.fidelidade_vouchers ADD COLUMN IF NOT EXISTS arena_id TEXT;
+UPDATE public.fidelidade_vouchers SET arena_id = 'arena-padrao' WHERE arena_id IS NULL;
+CREATE INDEX IF NOT EXISTS idx_fidelidade_vouchers_arena ON public.fidelidade_vouchers (arena_id, usuario_id);
+
+ALTER TABLE public.landing_page_gallery ADD COLUMN IF NOT EXISTS arena_id TEXT;
+UPDATE public.landing_page_gallery SET arena_id = 'arena-padrao' WHERE arena_id IS NULL;
+
+ALTER TABLE public.landing_page_schools ADD COLUMN IF NOT EXISTS arena_id TEXT;
+UPDATE public.landing_page_schools SET arena_id = 'arena-padrao' WHERE arena_id IS NULL;
+
+-- 7. Habilitar RLS nas novas tabelas
+ALTER TABLE public.arenas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quadras ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.quadras_precos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.arena_usuarios ENABLE ROW LEVEL SECURITY;
+
+-- 8. Políticas RLS
+DO $$
+BEGIN
+  -- arenas
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'arenas' AND policyname = 'Permitir leitura pública de arenas ativas') THEN
+    CREATE POLICY "Permitir leitura pública de arenas ativas" ON public.arenas FOR SELECT USING (ativo = true);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'arenas' AND policyname = 'Permitir gestão de arenas para administradores') THEN
+    CREATE POLICY "Permitir gestão de arenas para administradores" ON public.arenas FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+
+  -- quadras
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'quadras' AND policyname = 'Permitir leitura pública de quadras ativas') THEN
+    CREATE POLICY "Permitir leitura pública de quadras ativas" ON public.quadras FOR SELECT USING (ativa = true);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'quadras' AND policyname = 'Permitir gestão de quadras por administradores') THEN
+    CREATE POLICY "Permitir gestão de quadras por administradores" ON public.quadras FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+
+  -- quadras_precos
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'quadras_precos' AND policyname = 'Permitir leitura pública de tarifas') THEN
+    CREATE POLICY "Permitir leitura pública de tarifas" ON public.quadras_precos FOR SELECT USING (ativo = true);
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'quadras_precos' AND policyname = 'Permitir gestão de tarifas por administradores') THEN
+    CREATE POLICY "Permitir gestão de tarifas por administradores" ON public.quadras_precos FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+
+  -- arena_usuarios
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'arena_usuarios' AND policyname = 'Permitir consulta de vínculos de operadores') THEN
+    CREATE POLICY "Permitir consulta de vínculos de operadores" ON public.arena_usuarios FOR ALL USING (true) WITH CHECK (true);
+  END IF;
+END $$;
+
+-- ==============================================================================
+-- Fase 2: Motor de Pagamento Pix Real e Lock Transacional de Concorrência
+-- Spec: SPEC/2026-10-16-pagamento-pix-lock-concorrencia.md
+-- ==============================================================================
+
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS pix_txid TEXT;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS pix_copia_cola TEXT;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS pix_qr_code_url TEXT;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS expira_em TIMESTAMPTZ;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS pago_em TIMESTAMPTZ;
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS gateway_provedor TEXT DEFAULT 'mock';
+ALTER TABLE public.reservas ADD COLUMN IF NOT EXISTS gateway_transacao_id TEXT;
+
+-- Índice para consultas otimizadas de expiração de locks e status transacionais
+CREATE INDEX IF NOT EXISTS idx_reservas_lock_expira ON public.reservas (status, expira_em);
+CREATE INDEX IF NOT EXISTS idx_reservas_pix_txid ON public.reservas (pix_txid);
+
+
+
