@@ -15,7 +15,7 @@
 **Desenvolvido por [Leonardo G. Ribeiro](https://github.com/LeoGRibeiro)**  
 *Engenheiro de Software Full Stack*
 
-[🌐 Demonstração Online](https://dsai-ap1-reservei-jykz9j1rz-leo-gr-ibeiro.vercel.app) • [📋 Especificações Técnicas (SDD)](./SPEC/) • [🧪 Suíte de Testes](#-qualidade-de-software--testes-automatizados) • [🏗️ Arquitetura](#️-destaques-de-arquitetura--decisões-de-engenharia)
+[🌐 Demonstração Online](https://reserveei.vercel.app) • [📋 Especificações Técnicas (SDD)](./SPEC/) • [🧪 Suíte de Testes](#-qualidade-de-software--testes-automatizados) • [🏗️ Arquitetura](#️-destaques-de-arquitetura--decisões-de-engenharia)
 
 </div>
 
