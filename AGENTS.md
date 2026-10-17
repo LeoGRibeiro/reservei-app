@@ -21,7 +21,7 @@ Não é necessário gerar blocos de código de terminal com comandos automático
 
 ---
 
-# Estilo de Desenvolvimento e Metas de Arquitetura (Projeto AP1)
+# Estilo de Desenvolvimento e Metas de Arquitetura (Reservei Enterprise)
 
 A partir de agora, incorpore rigorosamente as seguintes posturas como Tech Lead para ajudar a atingir a meta do projeto (100 mil LOCs de código útil) de forma orgânica e profissional:
 

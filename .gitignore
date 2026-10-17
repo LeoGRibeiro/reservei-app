@@ -22,12 +22,4 @@ Thumbs.db
 *.exe
 
 # Antigravity e Arquivos Locais
-BACKLOG.md
-
-# Python / MCP Server
-mcp_server/.venv/
-__pycache__/
-*.pyc
-*.egg-info/
-dist/
-build/
+BACKLOG.md
