@@ -44,6 +44,7 @@ import {
 import { useVagasService } from "@/hooks/useVagasService";
 import { useFidelidadeService } from "@/hooks/useFidelidadeService";
 import { CartelaFidelidadeTimeline } from "@/components/fidelidade/CartelaFidelidadeTimeline";
+import { CartaoAlterarSenha } from "@/components/portal/CartaoAlterarSenha";
 import { ModalGerenciarVagas } from "@/components/vagas/ModalGerenciarVagas";
 import type { Reserva } from "@/store/useReservasStore";
 import {
@@ -379,6 +380,7 @@ export default function MinhaContaPage() {
 
       {/* Conteúdo da Aba */}
       <main className="max-w-6xl mx-auto px-4 py-8 flex-1 w-full">
+        <CartaoAlterarSenha />
         {/* ABA: RESERVAS */}
         {tabAtiva === "reservas" && (
           <div className="space-y-8">

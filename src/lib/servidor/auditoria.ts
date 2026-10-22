@@ -16,6 +16,7 @@ export type AcaoAuditada =
   | "equipe.alteracao"
   | "equipe.redefinir_senha"
   | "atleta.redefinir_senha"
+  | "superadmin.redefinir_senha_proprietario"
   | "pagamento.confirmacao_manual"
   | "pagamento.recusa_manual"
   | "pagamento.credencial_conectada"
@@ -26,8 +27,8 @@ export type AcaoAuditada =
 export interface EventoAuditoria {
   /** Arena onde a ação aconteceu */
   arenaId: string;
-  /** Usuário que executou a ação */
-  autorId: string;
+  /** Usuário que executou a ação (null = Super Admin da plataforma) */
+  autorId: string | null;
   /** Ação executada */
   acao: AcaoAuditada;
   /** Identificador do alvo (usuário, reserva, etc.) */

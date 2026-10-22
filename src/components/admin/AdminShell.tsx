@@ -139,7 +139,9 @@ export function AdminShell({ initialView = "dashboard" }: Props) {
           {viewEfetiva === "dashboard" && <AdminDashboardPage exibirReceita={podeExecutar(role, "ver_receita")} />}
           {viewEfetiva === "agenda" && <AdminAgendaPage />}
           {viewEfetiva === "quadras" && <AdminQuadrasPage />}
-          {viewEfetiva === "usuarios" && <AdminUsuariosPage />}
+          {viewEfetiva === "usuarios" && (
+            <AdminUsuariosPage arenaSlug={arenaSlug} podeRedefinirSenha={podeExecutar(role, "redefinir_senha_atleta")} />
+          )}
           {viewEfetiva === "institucional" && <AdminInstitucionalPage />}
           {viewEfetiva === "escolinhas" && <AdminEscolinhasPage />}
           {viewEfetiva === "grupos" && <AdminGruposPage />}

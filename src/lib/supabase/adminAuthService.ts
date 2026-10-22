@@ -271,3 +271,27 @@ export async function definirSenhaDefinitiva(novaSenha: string): Promise<string 
     return MSG_FALHA_GENERICA;
   }
 }
+
+/**
+ * Envia o e-mail de redefinição de senha (dono e equipe). A resposta é sempre genérica para não revelar
+ * quais e-mails têm conta. Exige SMTP próprio configurado no Supabase para chegar a qualquer endereço.
+ *
+ * @param email E-mail de login
+ * @param urlRetorno Página que recebe o link (ex.: `${origin}/admin/redefinir-senha`)
+ * @returns `null` em caso de envio aceito ou mensagem de erro amigável
+ */
+export async function solicitarRecuperacaoSenha(email: string, urlRetorno: string): Promise<string | null> {
+  if (!isSupabaseConfigured()) return MSG_SUPABASE_INDISPONIVEL;
+  const limpo = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(limpo)) return "Informe um e-mail válido.";
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(limpo, { redirectTo: urlRetorno });
+    if (error && error.status === 429) {
+      return "Muitas tentativas. Aguarde alguns minutos antes de pedir um novo link.";
+    }
+    // Outros erros (ex.: e-mail inexistente) não são revelados
+    return null;
+  } catch {
+    return MSG_FALHA_GENERICA;
+  }
+}

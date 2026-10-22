@@ -17,9 +17,15 @@ interface Props {
   onConcluido: () => void;
   /** Permite sair sem trocar a senha */
   onSair: () => void;
+  /** Texto explicativo (padrão: primeiro acesso com senha temporária) */
+  descricao?: string;
 }
 
-export function AdminTrocaSenhaObrigatoria({ onConcluido, onSair }: Props) {
+export function AdminTrocaSenhaObrigatoria({
+  onConcluido,
+  onSair,
+  descricao = "Você entrou com uma senha temporária. Para continuar, defina uma senha só sua.",
+}: Props) {
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [salvando, setSalvando] = useState(false);
@@ -58,9 +64,7 @@ export function AdminTrocaSenhaObrigatoria({ onConcluido, onSair }: Props) {
           </div>
           <h1 className="text-lg font-black text-white">Crie sua senha</h1>
         </div>
-        <p className="text-sm text-slate-400">
-          Você entrou com uma senha temporária. Para continuar, defina uma senha só sua.
-        </p>
+        <p className="text-sm text-slate-400">{descricao}</p>
         <div>
           <label htmlFor="nova-senha" className="block text-xs font-semibold text-slate-400 mb-1">
             Nova senha

@@ -37,8 +37,10 @@ import {
   CheckCircle2,
   Ban,
   CheckCircle,
+  KeyRound,
 } from "lucide-react";
 import { toast } from "sonner";
+import { chamarApi } from "@/lib/api/clienteApi";
 import {
   listarUsuariosCadastrados,
   atualizarPerfilSupabase,
@@ -67,8 +69,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function AdminUsuariosPage() {
+interface AdminUsuariosPageProps {
+  /** Slug da arena ativa (ações assistidas passam pelo servidor) */
+  arenaSlug?: string;
+  /** Permite gerar senha temporária para atletas (gerente e proprietário) */
+  podeRedefinirSenha?: boolean;
+}
+
+export function AdminUsuariosPage({ arenaSlug = "", podeRedefinirSenha = false }: AdminUsuariosPageProps = {}) {
   const nomeArena = useConfiguracaoSiteArena().nomePlataforma;
+  const [redefinindoSenha, setRedefinindoSenha] = useState(false);
+
+  /** Gera senha temporária e abre o WhatsApp do atleta com a mensagem pronta. */
+  const redefinirSenhaAtleta = async (u: UserProfile) => {
+    if (!window.confirm(`Gerar uma senha temporária para ${u.nome}? A senha atual deixa de valer.`)) return;
+    setRedefinindoSenha(true);
+    const res = await chamarApi<{ acesso: { telefone: string; senhaTemporaria: string } }>("/api/admin/atletas/senha", {
+      method: "POST",
+      corpo: { arenaSlug, usuarioId: u.id },
+    });
+    setRedefinindoSenha(false);
+    if (!res.ok || !res.dados) {
+      toast.error(res.erro);
+      return;
+    }
+    const { telefone, senhaTemporaria } = res.dados.acesso;
+    const mensagem =
+      `Olá ${u.nome}! Aqui é da ${nomeArena}. Sua senha temporária é: *${senhaTemporaria}*\n\n` +
+      `Entre com seu WhatsApp e essa senha em ${window.location.origin}/login e crie uma nova senha em Minha conta.`;
+    toast.success("Senha temporária gerada.", { description: `Senha: ${senhaTemporaria}` });
+    window.open(`https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`, "_blank", "noopener,noreferrer");
+  };
   const quadrasCatalogo = useQuadrasCatalogo();
   const { reservas, recarregarReservas } = useReservasService();
   const [usuarios, setUsuarios] = useState<UserProfile[]>([]);
@@ -687,6 +718,16 @@ export function AdminUsuariosPage() {
                   >
                     <MessageCircle className="w-3.5 h-3.5" /> Conversar no WhatsApp
                   </a>
+                  {podeRedefinirSenha && (
+                    <button
+                      type="button"
+                      disabled={redefinindoSenha}
+                      onClick={() => redefinirSenhaAtleta(usuarioDetalhes)}
+                      className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 font-bold text-xs disabled:opacity-50"
+                    >
+                      <KeyRound className="w-3.5 h-3.5" /> {redefinindoSenha ? "Gerando..." : "Nova senha"}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

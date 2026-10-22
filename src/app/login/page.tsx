@@ -117,6 +117,16 @@ export default function LoginPage() {
                   <Label className="text-slate-300 text-xs font-semibold flex items-center gap-1.5">
                     <Lock className="w-3.5 h-3.5 text-emerald-400" /> Senha
                   </Label>
+                  <a
+                    href={`https://wa.me/${configArena.whatsappNumero}?text=${encodeURIComponent(
+                      `Olá! Esqueci a senha do site de reservas da ${configArena.nomePlataforma}. Meu WhatsApp de cadastro é este número. Podem gerar uma senha temporária?`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] text-slate-400 hover:text-emerald-400 transition-colors"
+                  >
+                    Esqueci minha senha
+                  </a>
                 </div>
                 <div className="relative">
                   <Input

@@ -21,6 +21,75 @@ interface Resultado {
 }
 
 /**
+ * Redefinição assistida da senha do proprietário (quando o e-mail de recuperação não chega).
+ */
+function RedefinirSenhaProprietario({ segredo }: { segredo: string }) {
+  const [slugArena, setSlugArena] = useState("");
+  const [carregando, setCarregando] = useState(false);
+  const [mensagem, setMensagem] = useState<Resultado | null>(null);
+
+  async function handleRedefinir(e: React.FormEvent) {
+    e.preventDefault();
+    if (!window.confirm(`Gerar nova senha para o proprietário de "${slugArena}"? A senha atual deixa de valer.`)) return;
+    setCarregando(true);
+    setMensagem(null);
+    try {
+      const resposta = await fetch("/api/super-admin/acesso", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-super-admin-secret": segredo },
+        body: JSON.stringify({ slug: slugArena }),
+      });
+      const corpo: { error?: string; email?: string; senhaTemporaria?: string } = await resposta.json().catch(() => ({}));
+      setMensagem(
+        resposta.ok
+          ? {
+              tipo: "sucesso",
+              mensagem: `Login: ${corpo.email} · Senha temporária: ${corpo.senhaTemporaria} (troca obrigatória no próximo acesso)`,
+            }
+          : { tipo: "erro", mensagem: corpo.error ?? "Não foi possível redefinir." }
+      );
+    } catch {
+      setMensagem({ tipo: "erro", mensagem: "Falha de conexão. Tente novamente." });
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleRedefinir}
+      className="w-full max-w-md bg-slate-900 border border-slate-700/60 rounded-xl p-6 space-y-3"
+    >
+      <h2 className="text-base font-bold text-white">Redefinir senha do proprietário</h2>
+      <p className="text-xs text-slate-500">Usa a senha de Super Admin informada acima.</p>
+      <input
+        aria-label="Slug da arena"
+        value={slugArena}
+        onChange={(e) => setSlugArena(e.target.value.toLowerCase())}
+        placeholder="slug-da-arena"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500"
+        required
+      />
+      {mensagem && (
+        <p
+          role={mensagem.tipo === "erro" ? "alert" : "status"}
+          className={`text-sm break-all ${mensagem.tipo === "erro" ? "text-red-400" : "text-emerald-400"}`}
+        >
+          {mensagem.mensagem}
+        </p>
+      )}
+      <button
+        type="submit"
+        disabled={carregando || !segredo}
+        className="w-full bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white font-semibold rounded-lg py-2.5 text-sm"
+      >
+        {carregando ? "Gerando..." : "Gerar senha temporária"}
+      </button>
+    </form>
+  );
+}
+
+/**
  * Página `/super-admin`.
  */
 export default function SuperAdminPage() {
@@ -100,7 +169,7 @@ export default function SuperAdminPage() {
   const classeRotulo = "block text-sm font-medium text-slate-300 mb-1";
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-6 p-4">
       <form
         onSubmit={handleSubmit}
         className="w-full max-w-md bg-slate-900 border border-slate-700/60 rounded-xl p-6 space-y-4"
@@ -270,6 +339,8 @@ export default function SuperAdminPage() {
           {carregando ? "Criando..." : "Criar Arena"}
         </button>
       </form>
+
+      <RedefinirSenhaProprietario segredo={segredo} />
     </div>
   );
 }

@@ -7,6 +7,7 @@
 "use client";
 
 import { NOME_PRODUTO } from "@/lib/marca";
+import { solicitarRecuperacaoSenha } from "@/lib/supabase/adminAuthService";
 import { useState } from "react";
 import { Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
 import { useArena } from "@/hooks/useArena";
@@ -38,9 +39,23 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [shake, setShake] = useState(false);
+  const [recuperando, setRecuperando] = useState(false);
+  const [linkEnviado, setLinkEnviado] = useState(false);
 
   // Se a arena do slug não foi encontrada, o hook devolve a arena padrão: exibe o slug.
   const nomeArena = arena.slug === arenaSlug ? arena.nome : arenaSlug;
+
+  async function handleRecuperar() {
+    setRecuperando(true);
+    const falha = await solicitarRecuperacaoSenha(email, `${window.location.origin}/admin/redefinir-senha`);
+    setRecuperando(false);
+    if (falha) {
+      setErro(falha);
+      return;
+    }
+    setErro(null);
+    setLinkEnviado(true);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -184,6 +199,25 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
                 "Entrar"
               )}
             </button>
+
+            <div className="text-center">
+              {linkEnviado ? (
+                <p role="status" className="text-xs text-emerald-400">
+                  Se este e-mail tiver acesso, enviamos um link para criar uma nova senha. Confira também o spam.
+                  Não chegou? Peça ao proprietário uma nova senha na tela Equipe.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleRecuperar}
+                  disabled={recuperando || !email}
+                  title={!email ? "Digite seu e-mail acima" : undefined}
+                  className="text-xs text-slate-400 hover:text-emerald-400 disabled:opacity-50 transition-colors"
+                >
+                  {recuperando ? "Enviando link..." : "Esqueci minha senha"}
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
