@@ -33,7 +33,12 @@ function hoje() {
   return `${y}-${m}-${dd}`;
 }
 
-export function AdminDashboardPage() {
+interface Props {
+  /** Exibe o KPI de receita (sinais recebidos); oculto para operadores de balcão */
+  exibirReceita?: boolean;
+}
+
+export function AdminDashboardPage({ exibirReceita = true }: Props = {}) {
   const quadrasCatalogo = useQuadrasCatalogo();
   const horariosCatalogo = useHorariosCatalogo();
   const { reservas } = useReservasService();
@@ -149,6 +154,7 @@ export function AdminDashboardPage() {
       iconCor: "text-violet-400",
     },
   ];
+  const cardsVisiveis = exibirReceita ? cards : cards.filter((c) => c.id !== "kpi-sinais");
 
   const dataFormatada = new Date().toLocaleDateString("pt-BR", {
     weekday: "long",
@@ -167,7 +173,7 @@ export function AdminDashboardPage() {
 
       {/* KPI Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        {cards.map((card, i) => {
+        {cardsVisiveis.map((card, i) => {
           const Icon = card.icon;
           return (
             <div

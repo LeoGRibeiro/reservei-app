@@ -84,3 +84,36 @@ describe("moduloDaView / viewDisponivel", () => {
     expect(viewDisponivel("agenda", undefined)).toBe(true);
   });
 });
+
+describe("AdminSidebar - papel do usuário", () => {
+  const todos = ["fidelidade", "vagas", "escolinhas", "contratos"];
+
+  it("operador não vê financeiro, quadras, pagamentos, equipe nem configurações", () => {
+    render(
+      <AdminSidebar viewAtual="agenda" onChangeView={vi.fn()} onLogout={vi.fn()} modulosAtivos={todos} role="operador" />
+    );
+
+    expect(temAba("agenda")).toBe(true);
+    expect(temAba("usuarios")).toBe(true);
+    for (const aba of ["financeiro", "quadras", "fidelidade", "pagamentos", "equipe", "configuracoes"]) {
+      expect(temAba(aba)).toBe(false);
+    }
+  });
+
+  it("proprietário vê pagamentos, equipe e configurações", () => {
+    render(
+      <AdminSidebar viewAtual="dashboard" onChangeView={vi.fn()} onLogout={vi.fn()} modulosAtivos={todos} role="proprietario" />
+    );
+
+    expect(temAba("pagamentos")).toBe(true);
+    expect(temAba("equipe")).toBe(true);
+    expect(temAba("configuracoes")).toBe(true);
+  });
+
+  it("viewDisponivel combina módulo e papel", () => {
+    expect(viewDisponivel("fidelidade", ["fidelidade"], "operador")).toBe(false);
+    expect(viewDisponivel("fidelidade", ["fidelidade"], "gerente")).toBe(true);
+    expect(viewDisponivel("equipe", undefined, "gerente")).toBe(false);
+    expect(viewDisponivel("equipe", undefined, null)).toBe(false);
+  });
+});

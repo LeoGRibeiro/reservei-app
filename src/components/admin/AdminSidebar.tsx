@@ -9,6 +9,8 @@
 import { useState } from "react";
 import { temModuloAtivo, type ModuloArena } from "@/lib/arena/modulos";
 import { NOME_PRODUTO } from "@/lib/marca";
+import { podeAcessarView, ROTULO_PAPEL, type AdminView } from "@/lib/admin/permissoes";
+import type { ArenaUserRole } from "@/lib/arena/types";
 import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
 import {
   LayoutDashboard,
@@ -26,19 +28,11 @@ import {
   Images,
   Layers,
   Settings,
+  Wallet,
+  UserCog,
 } from "lucide-react";
 
-export type AdminView =
-  | "dashboard"
-  | "agenda"
-  | "quadras"
-  | "usuarios"
-  | "institucional"
-  | "escolinhas"
-  | "grupos"
-  | "fidelidade"
-  | "financeiro"
-  | "configuracoes";
+export type { AdminView };
 
 interface NavItem {
   id: AdminView;
@@ -58,6 +52,8 @@ const NAV_ITEMS: NavItem[] = [
   { id: "grupos", label: "Grupos", icon: UsersRound, modulo: "contratos" },
   { id: "fidelidade", label: "Fidelidade", icon: Gift, modulo: "fidelidade" },
   { id: "financeiro", label: "Financeiro", icon: DollarSign },
+  { id: "pagamentos", label: "Pagamentos", icon: Wallet },
+  { id: "equipe", label: "Equipe", icon: UserCog },
   { id: "configuracoes", label: "Configurações", icon: Settings },
 ];
 
@@ -72,18 +68,21 @@ export function moduloDaView(view: AdminView): ModuloArena | undefined {
 }
 
 /**
- * Indica se uma view está disponível para a arena conforme seus módulos ativos.
+ * Indica se uma view está disponível conforme os módulos da arena e o papel do usuário.
  *
  * @param view View do painel administrativo
  * @param modulosAtivos Módulos contratados pela arena
- * @returns `true` se a view é do core ou o módulo correspondente está ativo
+ * @param role Papel do usuário na arena; omitido = não filtra por papel
+ * @returns `true` se a view é do core (ou o módulo está ativo) e o papel permite acessá-la
  */
 export function viewDisponivel(
   view: AdminView,
-  modulosAtivos?: string[] | null
+  modulosAtivos?: string[] | null,
+  role?: ArenaUserRole | null
 ): boolean {
   const modulo = moduloDaView(view);
-  return !modulo || temModuloAtivo(modulosAtivos, modulo);
+  const moduloOk = !modulo || temModuloAtivo(modulosAtivos, modulo);
+  return moduloOk && (role === undefined || podeAcessarView(role, view));
 }
 
 interface Props {
@@ -92,6 +91,8 @@ interface Props {
   onLogout: () => void;
   /** Módulos contratados pela arena; abas de módulos não listados ficam ocultas */
   modulosAtivos?: string[] | null;
+  /** Papel do usuário na arena; abas acima do papel ficam ocultas */
+  role?: ArenaUserRole | null;
 }
 
 export function AdminSidebar({
@@ -99,10 +100,11 @@ export function AdminSidebar({
   onChangeView,
   onLogout,
   modulosAtivos,
+  role,
 }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const itensVisiveis = NAV_ITEMS.filter((item) =>
-    viewDisponivel(item.id, modulosAtivos)
+    viewDisponivel(item.id, modulosAtivos, role)
   );
 
   const nomeArena = useConfiguracaoSiteArena().nomePlataforma;
@@ -122,7 +124,9 @@ export function AdminSidebar({
           </div>
           <div>
             <p className="font-bold text-white text-sm leading-none">{nomeArena}</p>
-            <p className="text-slate-500 text-xs mt-0.5">Painel · {NOME_PRODUTO}</p>
+            <p className="text-slate-500 text-xs mt-0.5">
+              {role ? ROTULO_PAPEL[role] : "Painel"} · {NOME_PRODUTO}
+            </p>
           </div>
         </div>
       </div>

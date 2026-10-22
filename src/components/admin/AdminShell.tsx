@@ -23,6 +23,10 @@ import { AdminFidelidadePage } from "./AdminFidelidadePage";
 import { AdminInstitucionalPage } from "./AdminInstitucionalPage";
 import { AdminQuadrasPage } from "./AdminQuadrasPage";
 import { AdminConfiguracoesPage } from "./AdminConfiguracoesPage";
+import { AdminEquipePage } from "./AdminEquipePage";
+import { AdminTrocaSenhaObrigatoria } from "./AdminTrocaSenhaObrigatoria";
+import { precisaTrocarSenha } from "@/lib/supabase/adminAuthService";
+import { podeExecutar } from "@/lib/admin/permissoes";
 
 // Placeholder pages para futuras specs
 function PlaceholderPage({ titulo }: { titulo: string }) {
@@ -44,7 +48,7 @@ interface Props {
 }
 
 export function AdminShell({ initialView = "dashboard" }: Props) {
-  const { autenticado, login, logout, arenaSlug } = useAdminAuth();
+  const { autenticado, login, logout, arenaSlug, role, user } = useAdminAuth();
   const { arena, carregando: carregandoArena } = useArena(arenaSlug);
   // Token de convite do primeiro acesso (?token=...), lido uma única vez no cliente
   const [tokenConvite] = useState<string | null>(() =>
@@ -55,9 +59,24 @@ export function AdminShell({ initialView = "dashboard" }: Props) {
   const [view, setView] = useState<AdminView>(initialView);
   const router = useRouter();
 
+  // null = verificando; só é consultado depois do login
+  const [trocarSenha, setTrocarSenha] = useState<boolean | null>(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Senha temporária (convite/redefinição): o painel só abre depois da troca
+  useEffect(() => {
+    if (!autenticado) return;
+    let ativo = true;
+    precisaTrocarSenha().then((precisa) => {
+      if (ativo) setTrocarSenha(precisa);
+    });
+    return () => {
+      ativo = false;
+    };
+  }, [autenticado]);
 
   // Redireciona para /admin/dashboard após login bem-sucedido
   useEffect(() => {
@@ -95,11 +114,23 @@ export function AdminShell({ initialView = "dashboard" }: Props) {
     return <AdminLogin onLogin={login} arenaSlug={arenaSlug} />;
   }
 
+  if (trocarSenha === null) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <span className="inline-block w-6 h-6 border-2 border-slate-700 border-t-emerald-400 rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (trocarSenha) {
+    return <AdminTrocaSenhaObrigatoria onConcluido={() => setTrocarSenha(false)} onSair={logout} />;
+  }
+
   // Enquanto a arena carrega, nenhum módulo opcional é exibido (evita flash de abas indevidas)
   const modulosAtivos = carregandoArena ? undefined : arena.modulosAtivos;
 
-  // Se a view atual pertence a um módulo desativado, volta ao dashboard
-  const viewEfetiva: AdminView = viewDisponivel(view, modulosAtivos) ? view : "dashboard";
+  // Se a view atual pertence a um módulo desativado ou exige papel maior, volta ao dashboard
+  const viewEfetiva: AdminView = viewDisponivel(view, modulosAtivos, role) ? view : "dashboard";
 
   // ── Autenticado → Layout principal ───────────────────────────────────────
   return (
@@ -109,12 +140,13 @@ export function AdminShell({ initialView = "dashboard" }: Props) {
         onChangeView={setView}
         onLogout={logout}
         modulosAtivos={modulosAtivos}
+        role={role}
       />
 
       {/* Conteúdo principal */}
       <main className="flex-1 min-w-0 lg:pt-0 pt-[57px]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {viewEfetiva === "dashboard" && <AdminDashboardPage />}
+          {viewEfetiva === "dashboard" && <AdminDashboardPage exibirReceita={podeExecutar(role, "ver_receita")} />}
           {viewEfetiva === "agenda" && <AdminAgendaPage />}
           {viewEfetiva === "quadras" && <AdminQuadrasPage />}
           {viewEfetiva === "usuarios" && <AdminUsuariosPage />}
@@ -123,6 +155,8 @@ export function AdminShell({ initialView = "dashboard" }: Props) {
           {viewEfetiva === "grupos" && <AdminGruposPage />}
           {viewEfetiva === "fidelidade" && <AdminFidelidadePage />}
           {viewEfetiva === "financeiro" && <AdminFinanceiroPage />}
+          {viewEfetiva === "pagamentos" && <PlaceholderPage titulo="Pagamentos" />}
+          {viewEfetiva === "equipe" && <AdminEquipePage arenaSlug={arenaSlug} usuarioId={user?.id ?? null} />}
           {viewEfetiva === "configuracoes" && <AdminConfiguracoesPage />}
         </div>
       </main>

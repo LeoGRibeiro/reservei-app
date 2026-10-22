@@ -230,3 +230,44 @@ export function observarSaidaAdministrador(aoSair: () => void): () => void {
 
   return () => data.subscription.unsubscribe();
 }
+
+/**
+ * Indica se o usuário logado ainda usa uma senha temporária (convite ou redefinição assistida).
+ *
+ * @returns `true` quando `user_metadata.trocar_senha` está ativo
+ */
+export async function precisaTrocarSenha(): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  try {
+    const { data } = await supabase.auth.getUser();
+    return data.user?.user_metadata?.trocar_senha === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Define a senha definitiva do usuário logado e encerra a pendência de troca.
+ *
+ * @param novaSenha Senha já validada pelas regras de senha forte
+ * @returns `null` em caso de sucesso ou mensagem de erro amigável
+ *
+ * @example
+ * ```ts
+ * const erro = await definirSenhaDefinitiva("Nova@Senha1");
+ * if (erro) toast.error(erro);
+ * ```
+ */
+export async function definirSenhaDefinitiva(novaSenha: string): Promise<string | null> {
+  if (!isSupabaseConfigured()) return MSG_SUPABASE_INDISPONIVEL;
+  try {
+    const { error } = await supabase.auth.updateUser({ password: novaSenha, data: { trocar_senha: false } });
+    if (!error) return null;
+    if (error.message.toLowerCase().includes("different from the old")) {
+      return "A nova senha precisa ser diferente da senha temporária.";
+    }
+    return "Não foi possível salvar a nova senha. Tente novamente.";
+  } catch {
+    return MSG_FALHA_GENERICA;
+  }
+}
