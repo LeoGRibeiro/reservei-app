@@ -187,8 +187,10 @@ export function useReservasService() {
 
   /** Totais financeiros com discriminação de receita líquida e subsídios de fidelidade */
   const financeiro = useMemo(() => {
-    const confirmadas = reservas.filter((r) => r.status === "confirmada");
-    const naoCaneladas = reservas.filter((r) => r.status !== "cancelada");
+    // "pendente" = sinal pago e restante no balcão; "confirmada" = quitada. Ambas já entraram no caixa.
+    // Checkouts "em_processamento" (Pix ainda não pago) não são receita.
+    const confirmadas = reservas.filter((r) => r.status === "confirmada" || r.status === "pendente");
+    const naoCaneladas = confirmadas;
 
     // Total de descontos e benefícios concedidos através do programa de fidelidade
     const totalDescontoFidelidade = naoCaneladas.reduce(
@@ -227,127 +229,9 @@ export function useReservasService() {
   }, [reservas]);
 
   // ── Mutations Assíncronas (Sync com Supabase) ───────────────────────────────
-
-  /**
-   * Cria uma reserva com status "em_processamento" (lock temporário).
-   * Grava diretamente no Supabase e atualiza o estado local imediatamente.
-   */
-  const criarReservaEmProcessamento = useCallback(
-    (dados: DadosCriacaoReserva): string => {
-      const horarios = [...dados.horarios].sort();
-      const valorTotal = dados.valorTotal !== undefined ? dados.valorTotal : calcularValorTotal(horarios);
-      const valorSinal = dados.valorSinal !== undefined ? dados.valorSinal : calcularValorSinal(valorTotal);
-      const valorPendente = dados.valorPendente !== undefined ? dados.valorPendente : calcularValorPendente(valorTotal);
-      const id = `rsv_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-
-      // Se userId não foi passado explicitamente mas o cliente tem conta cadastrada com esse telefone
-      let finalUserId = dados.userId;
-      if (!finalUserId && dados.whatsappCliente) {
-        const digits = dados.whatsappCliente.replace(/\D/g, "");
-        finalUserId = getTelefonesCadastradosLocal().get(digits);
-      }
-
-      const reserva: Reserva = {
-        id,
-        arenaId: dados.arenaId,
-        userId: finalUserId,
-        quadraId: dados.quadraId,
-        data: dados.data,
-        horarios,
-        horaInicio: horarios[0],
-        horaFim: `${String(parseInt(horarios[horarios.length - 1], 10) + 1).padStart(2, "0")}:00`,
-        nomeCliente: dados.nomeCliente ?? "",
-        whatsappCliente: dados.whatsappCliente ?? "",
-        cpfCliente: dados.cpfCliente ?? "",
-        valorTotal,
-        valorSinal,
-        valorPendente,
-        status: "em_processamento",
-        statusWhatsApp: "nao_enviado",
-        criadaEm: new Date().toISOString(),
-        expiraEm: LockService.gerarTimestampExpiracaoLock(10),
-        esporte: dados.esporte,
-        observacoes: dados.observacoes,
-      };
-
-      // Atualização otimista no estado local
-      adicionarReserva(reserva);
-
-      // Persistência assíncrona no Supabase
-      void inserirReservaSupabase(reserva);
-
-      return id;
-    },
-    [adicionarReserva]
-  );
-
-  /**
-   * Atualiza os dados de identificação de uma reserva em processamento no Supabase.
-   */
-  const atualizarIdentificacao = useCallback(
-    (
-      id: string,
-      dados: Pick<Reserva, "nomeCliente" | "whatsappCliente" | "cpfCliente"> & {
-        esporte?: Esporte;
-        observacoes?: string;
-        userId?: string;
-      }
-    ) => {
-      const reservaAtual = getReservaById(id);
-      let userIdFinal = dados.userId || reservaAtual?.userId;
-      if (!userIdFinal && dados.whatsappCliente) {
-        const digits = dados.whatsappCliente.replace(/\D/g, "");
-        userIdFinal = getTelefonesCadastradosLocal().get(digits);
-      }
-
-      const atualizacao = {
-        ...dados,
-        ...(userIdFinal ? { userId: userIdFinal } : {}),
-      };
-
-      atualizarReserva(id, atualizacao);
-      void atualizarReservaSupabase(id, atualizacao);
-    },
-    [atualizarReserva, getReservaById]
-  );
-
-  /**
-   * Atualiza os dados completos de checkout (incluindo fidelidade e valores recalculados).
-   */
-  const atualizarDadosCheckout = useCallback(
-    (id: string, dados: Partial<Reserva>) => {
-      atualizarReserva(id, dados);
-      void atualizarReservaSupabase(id, dados);
-    },
-    [atualizarReserva]
-  );
-
-
-  /**
-   * Confirma o pagamento — atualiza status e valores no Supabase (UPDATE).
-   */
-  const confirmarPagamento = useCallback(
-    (id: string, tipoPagamento: "sinal" | "integral") => {
-      const reserva = getReservaById(id);
-      if (!reserva) return;
-
-      const atualizacao: Partial<Reserva> = {
-        // sinal: ainda precisa comparecer para pagar o restante → "pendente"
-        // integral: pagamento completo, sem pendência no local → "confirmada"
-        status: tipoPagamento === "integral" ? "confirmada" : "pendente",
-        statusWhatsApp: "enviado",
-      };
-
-      if (tipoPagamento === "integral") {
-        atualizacao.valorSinal = reserva.valorTotal;
-        atualizacao.valorPendente = 0;
-      }
-
-      atualizarReserva(id, atualizacao);
-      void atualizarReservaSupabase(id, atualizacao);
-    },
-    [atualizarReserva, getReservaById]
-  );
+  // O checkout público (criar reserva, identificação, pagamento e desistência) vive em
+  // `useCheckoutReserva` e passa pelo servidor. As mutações abaixo são do painel administrativo
+  // (operadores autorizados pelo RLS) ou do modo offline.
 
   /**
    * Admin: Confirma o pagamento restante no local (quitação integral).
@@ -368,15 +252,6 @@ export function useReservasService() {
       void atualizarReservaSupabase(id, atualizacao);
     },
     [atualizarReserva, getReservaById]
-  );
-
-  /** Cancela e libera o lock de uma reserva em processamento */
-  const liberarLock = useCallback(
-    (id: string) => {
-      removerReserva(id);
-      void removerReservaSupabase(id);
-    },
-    [removerReserva]
   );
 
   /** Admin: cancela uma reserva confirmada (UPDATE status = 'cancelada') */
@@ -405,15 +280,6 @@ export function useReservasService() {
       setReservas(enriquecidos);
     }
   }, [setReservas]);
-
-  /** Vincula uma reserva existente a um usuário recém-cadastrado */
-  const vincularReservaAoUsuario = useCallback(
-    (reservaId: string, userId: string) => {
-      atualizarReserva(reservaId, { userId });
-      void atualizarReservaSupabase(reservaId, { userId });
-    },
-    [atualizarReserva]
-  );
 
   /**
    * Atualiza as configurações de vagas abertas de uma reserva (abrir, fechar ou alterar quantidade).
@@ -563,16 +429,10 @@ export function useReservasService() {
     isReservaDeMembro,
 
     // Mutations
-    criarReservaEmProcessamento,
-    atualizarIdentificacao,
-    atualizarDadosCheckout,
-    confirmarPagamento,
     confirmarPagamentoRestante,
-    liberarLock,
     cancelarReserva,
     atualizarStatus,
     recarregarReservas,
-    vincularReservaAoUsuario,
     getReservasDoUsuario,
     atualizarVagasReserva,
 

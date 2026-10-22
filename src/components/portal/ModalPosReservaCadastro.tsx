@@ -14,13 +14,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useUserAuth } from "@/hooks/useUserAuth";
-import { useReservasService } from "@/hooks/useReservasService";
+import { useReservasStore } from "@/store/useReservasStore";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { vincularReservaDoCheckout } from "@/lib/reservas/reservasApi";
 import { validarSenhaForte } from "@/lib/constants";
 import { Sparkles, CheckCircle2, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 
 interface Props {
   open: boolean;
   reservaId: string | null;
+  /** Token do checkout: prova de que esta reserva foi feita por quem está criando a conta */
+  checkoutToken?: string;
   nomeCliente: string;
   whatsappCliente: string;
   onClose: () => void;
@@ -30,13 +34,24 @@ interface Props {
 export function ModalPosReservaCadastro({
   open,
   reservaId,
+  checkoutToken,
   nomeCliente,
   whatsappCliente,
   onClose,
   onSucesso,
 }: Props) {
   const { cadastrar } = useUserAuth();
-  const { vincularReservaAoUsuario } = useReservasService();
+
+  /** Vincula a reserva recém-feita à conta criada (servidor com Supabase; store no modo offline). */
+  const vincularReserva = async (id: string, userId: string) => {
+    if (isSupabaseConfigured()) {
+      if (!checkoutToken) return;
+      const r = await vincularReservaDoCheckout(id, checkoutToken);
+      if (!r.ok) console.warn("[ModalPosReservaCadastro] Reserva não vinculada:", r.erro);
+      return;
+    }
+    useReservasStore.getState().atualizarReserva(id, { userId });
+  };
 
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -61,12 +76,12 @@ export function ModalPosReservaCadastro({
 
     setLoading(true);
     const res = await cadastrar(nomeCliente, whatsappCliente, senha);
+    if (res.success && res.user && reservaId) {
+      await vincularReserva(reservaId, res.user.id);
+    }
     setLoading(false);
 
     if (res.success && res.user) {
-      if (reservaId) {
-        vincularReservaAoUsuario(reservaId, res.user.id);
-      }
       toast.success("Conta criada com sucesso! 🎉", {
         description: "Suas próximas reservas serão muito mais rápidas.",
       });

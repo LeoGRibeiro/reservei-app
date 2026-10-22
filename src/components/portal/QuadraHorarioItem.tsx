@@ -15,6 +15,10 @@ interface Props {
   avisosEscolinha?: AvisoEscolinha[];
   isAtiva: boolean; // esta quadra está com seleção ativa?
   onToggleHorario: (horario: string, quadraId: string) => void;
+  /** Antecedência mínima (minutos) para reservar online */
+  antecedenciaMinutos?: number;
+  /** Preço por hora de um horário desta quadra */
+  precoDoHorario?: (horario: string) => number;
 }
 
 export function QuadraHorarioItem({
@@ -25,6 +29,8 @@ export function QuadraHorarioItem({
   avisosEscolinha = [],
   isAtiva,
   onToggleHorario,
+  antecedenciaMinutos,
+  precoDoHorario,
 }: Props) {
   const nomeExibicao = "nome" in quadra && quadra.nome ? quadra.nome : `Quadra ${quadra.numero}`;
   const tipoPiso = "tipoPiso" in quadra ? quadra.tipoPiso : undefined;
@@ -74,6 +80,8 @@ export function QuadraHorarioItem({
         horariosOcupados={horariosOcupados}
         avisosEscolinha={avisosEscolinha}
         onToggleHorario={(horario) => onToggleHorario(horario, quadra.id)}
+        antecedenciaMinutos={antecedenciaMinutos}
+        precoDoHorario={precoDoHorario}
       />
     </div>
   );

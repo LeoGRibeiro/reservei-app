@@ -15,6 +15,7 @@ import {
   PRECOS_PADRAO,
 } from "./defaultArena";
 import type { Esporte } from "@/lib/quadras";
+import { normalizarModulosAtivos } from "./modulos";
 
 /**
  * Converte um registro bruto do Supabase (snake_case) para a entidade de domínio Arena.
@@ -41,6 +42,7 @@ export function mapearLinhaParaArena(row: Record<string, unknown>): Arena {
     percentualSinalMinimo: Number(row.percentual_sinal_minimo || 50),
     antecedenciaMinimaMinutos: Number(row.antecedencia_minima_minutos || 60),
     ativo: Boolean(row.ativo ?? true),
+    modulosAtivos: normalizarModulosAtivos(row.modulos_ativos),
     criadaEm: String(row.criado_em || new Date().toISOString()),
     atualizadaEm: row.atualizado_em ? String(row.atualizado_em) : undefined,
   };
@@ -78,7 +80,7 @@ export function mapearLinhaParaQuadra(row: Record<string, unknown>): Quadra {
     esportes,
     coberta: Boolean(row.coberta ?? false),
     iluminacao: Boolean(row.iluminacao ?? true),
-    valorHoraPadrao: Number(row.valor_hora_padrao || 90),
+    valorHoraPadrao: Number(row.valor_hora_padrao ?? 90),
     ordem: Number(row.ordem || 0),
     ativa: Boolean(row.ativa ?? true),
     criadaEm: String(row.criado_em || new Date().toISOString()),
@@ -127,7 +129,7 @@ export function mapearLinhaParaPreco(row: Record<string, unknown>): QuadraPreco 
  */
 export const ArenaRepository = {
   /**
-   * Localiza uma arena pelo seu slug textual da URL (ex: 'praia-leopoldina').
+   * Localiza uma arena pelo seu slug textual da URL (ex: 'arena-central').
    * @param slug Identificador textual da arena
    * @returns Arena correspondente ou null se inexistente
    */

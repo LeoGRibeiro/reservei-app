@@ -5,7 +5,7 @@
  * Princípio: Funções puras e desacopladas de componentes React, facilitando testes de unidade e regras de negócio.
  */
 
-import { HORARIOS_DISPONIVEIS, QUADRAS } from "@/lib/quadras";
+import { obterHorariosCatalogo, obterQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { calcularValorTotal, saoConsecutivos } from "@/lib/constants";
 import type { Reserva } from "@/store/useReservasStore";
 import type {
@@ -72,7 +72,7 @@ export function montarSlotsQuadraDia(
     (r) => r.quadraId === quadraId && r.data === data && r.status !== "cancelada"
   );
 
-  return HORARIOS_DISPONIVEIS.map((horario) => {
+  return obterHorariosCatalogo().map((horario) => {
     const horaNum = parseInt(horario.split(":")[0], 10);
     const horaFim = `${String(horaNum + 1).padStart(2, "0")}:00`;
 
@@ -125,7 +125,7 @@ export function validarConflitoBloqueio(
   horarios: string[],
   reservasExistentes: Reserva[]
 ): { valido: boolean; motivo?: string; conflitoCom?: Reserva } {
-  if (!quadraId || !QUADRAS.some((q) => q.id === quadraId)) {
+  if (!quadraId || !obterQuadrasCatalogo().some((q) => q.id === quadraId)) {
     return { valido: false, motivo: "Selecione uma quadra válida para o bloqueio." };
   }
 
@@ -147,7 +147,7 @@ export function validarConflitoBloqueio(
   );
 
   if (reservaConflitante) {
-    const quadraObj = QUADRAS.find((q) => q.id === quadraId);
+    const quadraObj = obterQuadrasCatalogo().find((q) => q.id === quadraId);
     const quadraNome = quadraObj ? `Quadra ${quadraObj.numero}` : quadraId;
     const ehBloqueio = reservaConflitante.tipoReserva === "manutencao_bloqueio";
 
@@ -186,7 +186,7 @@ export function validarReservaManual(
     erros.push("Informe o nome do cliente ou do grupo responsável.");
   }
 
-  if (!dados.quadraId || !QUADRAS.some((q) => q.id === dados.quadraId)) {
+  if (!dados.quadraId || !obterQuadrasCatalogo().some((q) => q.id === dados.quadraId)) {
     erros.push("Selecione uma quadra válida.");
   }
 

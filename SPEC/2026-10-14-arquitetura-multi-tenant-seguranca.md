@@ -26,7 +26,7 @@ Para converter o sistema em um Micro-SaaS comercializável e pronto para produç
 #### A. Tabela `public.arenas`
 Entidade central do tenant.
 * `id` (`TEXT PRIMARY KEY`): Identificador único da arena (ex: `uuid` ou slug-id).
-* `slug` (`TEXT UNIQUE NOT NULL`): Identificador textual para rotas dinâmicas no frontend (ex: `praia-leopoldina`, `arena-belem`).
+* `slug` (`TEXT UNIQUE NOT NULL`): Identificador textual para rotas dinâmicas no frontend (ex: `praia-Central`, `arena-belem`).
 * `nome` (`TEXT NOT NULL`): Nome comercial do complexo esportivo.
 * `cnpj_cpf` (`TEXT`): Documento fiscal do proprietário.
 * `telefone` (`TEXT NOT NULL DEFAULT ''`): Telefone fixo ou de contato.

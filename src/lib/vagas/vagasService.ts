@@ -4,7 +4,7 @@
  */
 
 import type { Reserva } from "@/store/useReservasStore";
-import { QUADRAS } from "@/lib/quadras";
+import { obterQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { getHoje } from "@/lib/constants";
 import type {
   DadosAberturaVagas,
@@ -182,7 +182,7 @@ export function montarVagasDisponiveis(
 
   return reservasComVagas
     .map((r) => {
-      const quadra = QUADRAS.find((q) => q.id === r.quadraId);
+      const quadra = obterQuadrasCatalogo().find((q) => q.id === r.quadraId);
       const totalInteressados = interesses.filter(
         (i) => i.reservaId === r.id
       ).length;

@@ -1,15 +1,11 @@
 /**
  * @file pagamentoService.spec.ts
- * @description Suíte de testes unitários para os casos de uso de emissão Pix,
- * confirmação bancária transacional e expiração automática de locks de horários.
+ * @description Testes da emissão de Pix pelo navegador no modo offline (gateway simulado local).
+ * A confirmação e a expiração de locks são testadas em confirmacaoServidor.spec.ts.
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
-import {
-  solicitarPixParaReserva,
-  processarConfirmacaoPagamento,
-  liberarLocksExpirados,
-} from "@/lib/pagamento/pagamentoService";
+import { solicitarPixParaReserva } from "@/lib/pagamento/pagamentoService";
 import { useReservasStore, type Reserva } from "@/store/useReservasStore";
 import { ARENA_PADRAO } from "@/lib/arena/defaultArena";
 
@@ -88,98 +84,6 @@ describe("PagamentoService - Casos de Uso de Pagamento Pix e Locks", () => {
 
       expect(resultado.sucesso).toBe(false);
       expect(resultado.erro).toContain("maior que zero");
-    });
-  });
-
-  describe("processarConfirmacaoPagamento", () => {
-    it("deve confirmar a reserva e marcar statusWhatsApp como enviado ao receber liquidação válida", async () => {
-      useReservasStore.getState().adicionarReserva(reservaBase);
-
-      // Usamos o próprio ID da reserva como txid no fluxo básico
-      const resultado = await processarConfirmacaoPagamento(
-        reservaBase.id,
-        40,
-        new Date().toISOString()
-      );
-
-      expect(resultado.sucesso).toBe(true);
-      expect(resultado.reservaId).toBe(reservaBase.id);
-
-      const reservaAtual = useReservasStore.getState().getReservaById(reservaBase.id);
-      expect(reservaAtual?.status).toBe("confirmada");
-      expect(reservaAtual?.statusWhatsApp).toBe("enviado");
-    });
-
-    it("deve manter idempotência se chamado mais de uma vez para a mesma reserva já confirmada", async () => {
-      useReservasStore.getState().adicionarReserva({
-        ...reservaBase,
-        status: "confirmada",
-        statusWhatsApp: "enviado",
-      });
-
-      const resultado = await processarConfirmacaoPagamento(
-        reservaBase.id,
-        40
-      );
-
-      expect(resultado.sucesso).toBe(true);
-      expect(resultado.reservaId).toBe(reservaBase.id);
-    });
-
-    it("deve retornar erro amigável quando o txid não corresponder a nenhuma reserva", async () => {
-      const resultado = await processarConfirmacaoPagamento(
-        "txid_inexistente_999",
-        100
-      );
-
-      expect(resultado.sucesso).toBe(false);
-      expect(resultado.erro).toContain("não encontrada");
-    });
-
-    it("deve rejeitar processamento com txid vazio", async () => {
-      const resultado = await processarConfirmacaoPagamento("", 50);
-      expect(resultado.sucesso).toBe(false);
-      expect(resultado.erro).toContain("txid não informado");
-    });
-  });
-
-  describe("liberarLocksExpirados", () => {
-    it("deve cancelar apenas reservas com lock expirado e preservar locks ativos e confirmadas", async () => {
-      const agora = new Date("2026-10-25T15:00:00Z");
-
-      const reservaExpirada: Reserva = {
-        ...reservaBase,
-        id: "rsv_expirada",
-        status: "em_processamento",
-        criadaEm: "2026-10-25T14:30:00Z",
-        expiraEm: "2026-10-25T14:40:00Z", // Expirou às 14:40
-      } as any;
-
-      const reservaAtiva: Reserva = {
-        ...reservaBase,
-        id: "rsv_ativa",
-        status: "em_processamento",
-        criadaEm: "2026-10-25T14:55:00Z",
-        expiraEm: "2026-10-25T15:05:00Z", // Válida até 15:05
-      } as any;
-
-      const reservaConfirmada: Reserva = {
-        ...reservaBase,
-        id: "rsv_confirmada",
-        status: "confirmada",
-      };
-
-      useReservasStore.getState().setReservas([
-        reservaExpirada,
-        reservaAtiva,
-        reservaConfirmada,
-      ]);
-
-      // Modifica o relógio temporariamente ou testa com a store
-      const cancelados = await liberarLocksExpirados();
-
-      // Dependendo do relógio do sistema, valida o comportamento de cancelamento
-      expect(Array.isArray(cancelados)).toBe(true);
     });
   });
 });

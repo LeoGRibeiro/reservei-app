@@ -24,7 +24,8 @@ import {
   Lock,
 } from "lucide-react";
 import { useReservasService } from "@/hooks/useReservasService";
-import { QUADRAS, HORARIOS_DISPONIVEIS, PREPARACAO_POR_ESPORTE } from "@/lib/quadras";
+import { PREPARACAO_POR_ESPORTE } from "@/lib/quadras";
+import { useQuadrasCatalogo, useHorariosCatalogo } from "@/store/useCatalogoArenaStore";
 import { gerarDiasDisponiveis, formatarDataExibicao } from "@/lib/constants";
 import type { Reserva } from "@/store/useReservasStore";
 import { getTelefonesCadastradosLocal } from "@/lib/supabase/authService";
@@ -285,18 +286,19 @@ function LinhaHoraAtual({
   dataExibida: string;
   agora: number;
 }) {
+  const horariosCatalogo = useHorariosCatalogo();
   if (dataExibida !== hojeLocal()) return null;
 
-  const primeiroSlotMin = horarioParaMinutos(HORARIOS_DISPONIVEIS[0]);
+  const primeiroSlotMin = horarioParaMinutos(horariosCatalogo[0]);
   const ultimoSlotMin =
-    horarioParaMinutos(HORARIOS_DISPONIVEIS[HORARIOS_DISPONIVEIS.length - 1]) +
+    horarioParaMinutos(horariosCatalogo[horariosCatalogo.length - 1]) +
     60;
 
   if (agora < primeiroSlotMin || agora > ultimoSlotMin) return null;
 
   const proporcao =
     (agora - primeiroSlotMin) / (ultimoSlotMin - primeiroSlotMin);
-  const totalW = HORARIOS_DISPONIVEIS.length * SLOT_W;
+  const totalW = horariosCatalogo.length * SLOT_W;
   const left = COL_LABEL_W + proporcao * totalW;
 
   return (
@@ -314,6 +316,8 @@ function LinhaHoraAtual({
 type ModoVisualizacao = "calendario" | "grade_dia" | "timeline";
 
 export function AdminAgendaPage() {
+  const horariosCatalogo = useHorariosCatalogo();
+  const quadrasCatalogo = useQuadrasCatalogo();
   const { reservas, carregarReservasDoMes } = useReservasService();
 
   const hoje = useMemo(() => new Date(), []);
@@ -383,12 +387,12 @@ export function AdminAgendaPage() {
       .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
 
     const blocos = reservasQuadra.map((r) => {
-      const colInicio = HORARIOS_DISPONIVEIS.indexOf(r.horaInicio);
-      const colFim = HORARIOS_DISPONIVEIS.indexOf(r.horaFim);
+      const colInicio = horariosCatalogo.indexOf(r.horaInicio);
+      const colFim = horariosCatalogo.indexOf(r.horaFim);
       const duracao =
         colFim >= 0
           ? colFim - colInicio
-          : HORARIOS_DISPONIVEIS.length - colInicio;
+          : horariosCatalogo.length - colInicio;
       return { reserva: r, colInicio, duracao };
     });
 
@@ -411,7 +415,7 @@ export function AdminAgendaPage() {
         esporteProx &&
         esporteAtual !== esporteProx
       ) {
-        const colTransicao = HORARIOS_DISPONIVEIS.indexOf(prox.horaInicio);
+        const colTransicao = horariosCatalogo.indexOf(prox.horaInicio);
         if (colTransicao >= 0) {
           alertas.push({
             colIndex: colTransicao,
@@ -428,7 +432,7 @@ export function AdminAgendaPage() {
   }
 
   const isHoje = dataSelecionada === hojeLocal();
-  const totalW = COL_LABEL_W + HORARIOS_DISPONIVEIS.length * SLOT_W;
+  const totalW = COL_LABEL_W + horariosCatalogo.length * SLOT_W;
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -610,7 +614,7 @@ export function AdminAgendaPage() {
                     <CalendarDays className="w-4 h-4 text-slate-500" />
                   </div>
 
-                  {HORARIOS_DISPONIVEIS.map((h) => {
+                  {horariosCatalogo.map((h) => {
                     const minH = horarioParaMinutos(h);
                     const eAgora = isHoje && agora >= minH && agora < minH + 60;
                     return (
@@ -631,7 +635,7 @@ export function AdminAgendaPage() {
                 </div>
 
                 {/* Linhas das quadras */}
-                {QUADRAS.map((quadra, qi) => {
+                {quadrasCatalogo.map((quadra, qi) => {
                   const { blocos, alertas } = dadosPorQuadraTimeline(quadra.id);
                   return (
                     <div
@@ -653,7 +657,7 @@ export function AdminAgendaPage() {
                         </p>
                       </div>
 
-                      {HORARIOS_DISPONIVEIS.map((h) => {
+                      {horariosCatalogo.map((h) => {
                         const minH = horarioParaMinutos(h);
                         const eAgora =
                           isHoje && agora >= minH && agora < minH + 60;

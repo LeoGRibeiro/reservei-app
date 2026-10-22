@@ -104,9 +104,9 @@ export class AsaasGateway implements PaymentGateway {
         ? `data:image/png;base64,${qrCodeData.encodedImage}`
         : "";
 
-      const expiraEm =
-        qrCodeData.expirationDate ||
-        new Date(Date.now() + (requisicao.expiracaoMinutos || 10) * 60 * 1000).toISOString();
+      // O prazo do lock é sempre o do Reservei (ex.: 10 min). A validade do QR Code do Asaas vai até o
+      // fim do dia de vencimento e, se usada, travaria o horário da quadra por horas.
+      const expiraEm = new Date(Date.now() + (requisicao.expiracaoMinutos || 10) * 60 * 1000).toISOString();
 
       return {
         sucesso: true,

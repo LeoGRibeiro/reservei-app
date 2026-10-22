@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { User, Sparkles, Gift } from "lucide-react";
 
 import { CalendarioSelector } from "./CalendarioSelector";
 import { QuadraHorarioItem } from "./QuadraHorarioItem";
@@ -26,37 +25,48 @@ import { useReservasService } from "@/hooks/useReservasService";
 import { useContratosService } from "@/hooks/useContratosService";
 import { useUserAuth } from "@/hooks/useUserAuth";
 import { useFidelidadeService } from "@/hooks/useFidelidadeService";
-import type { VoucherFidelidade } from "@/lib/fidelidade/types";
+import { useCheckoutReserva, type CheckoutAtivo } from "@/hooks/useCheckoutReserva";
 import { aplicarDescontoVouchers } from "@/lib/fidelidade/fidelidadeService";
-import { isTelefoneBloqueado } from "@/lib/supabase/authService";
 import {
   gerarDiasDisponiveis,
   getHoje,
   calcularValorTotal,
   calcularValorSinal,
-  calcularValorPendente,
   saoConsecutivos,
   isHorarioExpirado,
 } from "@/lib/constants";
-import { QUADRAS_PADRAO } from "@/lib/arena/defaultArena";
+import { calcularPrecoReserva } from "@/lib/arena/arenaService";
 import { useArena } from "@/hooks/useArena";
 import { usePrecoCalculado } from "@/hooks/usePrecoCalculado";
-import { solicitarPixParaReserva } from "@/lib/pagamento/pagamentoService";
+import { useCatalogoArenaStore } from "@/store/useCatalogoArenaStore";
+import { temModuloAtivo } from "@/lib/arena/modulos";
 import type { PixCobranca } from "@/lib/pagamento/types";
 
 type Etapa = "formulario" | "pix";
+
+/** Intervalo de atualização da grade pública (o Realtime só entrega eventos das próprias reservas). */
+const INTERVALO_ATUALIZACAO_GRADE_MS = 30_000;
 
 export interface PortalClienteProps {
   /** Slug da arena para carregar dados multi-tenant (ex: subdomínio) */
   arenaSlug?: string;
 }
 
+/**
+ * Portal público de agendamento da arena: grade de horários, checkout com Pix, fidelidade e mural
+ * de vagas. Toda reserva é criada e precificada pelo servidor (`/api/reservas/checkout`).
+ *
+ * @param props Slug da arena (opcional; padrão: subdomínio atual)
+ */
 export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
   // ── Contexto da Arena Multi-Tenant ─────────────────────────────────────
-  const { arena, quadras, precos } = useArena(arenaSlug);
-  const listaQuadras = useMemo(() => {
-    return quadras && quadras.length > 0 ? quadras : QUADRAS_PADRAO;
-  }, [quadras]);
+  const { arena, quadras: listaQuadras, precos, carregando: carregandoArena } = useArena(arenaSlug);
+  const antecedenciaMinutos = useCatalogoArenaStore((s) => s.antecedenciaMinutos);
+  // Módulos contratados pela arena (Feature Flags): o portal só exibe o que foi vendido
+  const temVagas = temModuloAtivo(arena.modulosAtivos, "vagas");
+  const temFidelidade = temModuloAtivo(arena.modulosAtivos, "fidelidade");
+  const temEscolinhas = temModuloAtivo(arena.modulosAtivos, "escolinhas");
+
   // ── Estado de seleção ──────────────────────────────────────────────────
   const dias = useMemo(() => gerarDiasDisponiveis(), []);
   const [dataSelecionada, setDataSelecionada] = useState<string>(getHoje());
@@ -65,18 +75,21 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
 
   // ── Checkout ────────────────────────────────────────────────────────────
   const [etapa, setEtapa] = useState<Etapa | null>(null);
-  const [reservaIdAtual, setReservaIdAtual] = useState<string | null>(null);
+  const [checkout, setCheckout] = useState<CheckoutAtivo | null>(null);
+  const [enviandoCheckout, setEnviandoCheckout] = useState(false);
   const [dadosForm, setDadosForm] = useState<DadosIdentificacao | null>(null);
   const [tipoPagamentoEscolhido, setTipoPagamentoEscolhido] = useState<"sinal" | "integral">("sinal");
   const [isCarrinhoOpen, setIsCarrinhoOpen] = useState(false);
   const [vouchersSelecionadosIds, setVouchersSelecionadosIds] = useState<string[]>([]);
+  const finalizadoRef = useRef(false);
 
   // ── Autenticação de Usuário & Fidelidade ──────────────────────────────────
   const { user, isAutenticado } = useUserAuth();
-  const { progresso, consumirVouchersNoCheckout } = useFidelidadeService();
+  const { progresso, recarregarDados: recarregarFidelidade } = useFidelidadeService();
   const [mostrarModalPosCadastro, setMostrarModalPosCadastro] = useState(false);
   const [dadosUltimaReserva, setDadosUltimaReserva] = useState<{
     id: string;
+    checkoutToken: string;
     nome: string;
     whatsapp: string;
   } | null>(null);
@@ -85,20 +98,20 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
   const [cobrancaPix, setCobrancaPix] = useState<PixCobranca | null>(null);
   const [carregandoPix, setCarregandoPix] = useState(false);
 
-  // ── Service ─────────────────────────────────────────────────────────────
-  const {
-    reservas,
-    getReservaById,
-    getHorariosOcupados,
-    criarReservaEmProcessamento,
-    atualizarIdentificacao,
-    atualizarDadosCheckout,
-    confirmarPagamento,
-    liberarLock,
-  } = useReservasService();
+  // ── Services ────────────────────────────────────────────────────────────
+  const { getHorariosOcupados, recarregarReservas } = useReservasService();
   const { getAvisosEscolinha } = useContratosService();
+  const { iniciar, gerarPix, aguardarConfirmacao, simularPagamento, cancelar } = useCheckoutReserva();
 
-  // ── Valores calculados dinamicamente ────────────────────────────────────
+  // Mantém a grade atualizada com reservas de outras pessoas
+  useEffect(() => {
+    const intervalo = setInterval(() => {
+      if (document.visibilityState === "visible") void recarregarReservas();
+    }, INTERVALO_ATUALIZACAO_GRADE_MS);
+    return () => clearInterval(intervalo);
+  }, [recarregarReservas]);
+
+  // ── Valores calculados dinamicamente (exibição; o servidor recalcula) ───
   const quadraAtual = useMemo(() => {
     return listaQuadras.find((q) => q.id === quadraSelecionada) || null;
   }, [listaQuadras, quadraSelecionada]);
@@ -116,11 +129,14 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
     return calcularValorTotal(horariosSelecionados);
   }, [precoDinamico.valorTotal, horariosSelecionados]);
 
+  const vouchersDisponiveis = useMemo(
+    () => (temFidelidade ? progresso.vouchersDisponiveis : []),
+    [temFidelidade, progresso.vouchersDisponiveis]
+  );
+
   const vouchersAtivosParaReserva = useMemo(() => {
-    return progresso.vouchersDisponiveis.filter((v) =>
-      vouchersSelecionadosIds.includes(v.id)
-    );
-  }, [vouchersSelecionadosIds, progresso.vouchersDisponiveis]);
+    return vouchersDisponiveis.filter((v) => vouchersSelecionadosIds.includes(v.id));
+  }, [vouchersSelecionadosIds, vouchersDisponiveis]);
 
   const resultadoDesconto = useMemo(
     () =>
@@ -136,14 +152,23 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
     if (resultadoDesconto) {
       return Math.round(valorTotal * (arena.percentualSinalMinimo / 100) * 100) / 100;
     }
-    return precoDinamico.valorSinal > 0
-      ? precoDinamico.valorSinal
-      : calcularValorSinal(valorTotal);
+    return precoDinamico.valorSinal > 0 ? precoDinamico.valorSinal : calcularValorSinal(valorTotal);
   }, [valorTotal, resultadoDesconto, arena.percentualSinalMinimo, precoDinamico.valorSinal]);
 
   const valorPendente = useMemo(() => {
     return Math.round((valorTotal - valorSinal) * 100) / 100;
   }, [valorTotal, valorSinal]);
+
+  /** Preço por hora de um horário em cada quadra, para os rótulos da grade. */
+  const precoDoHorarioPorQuadra = useMemo(() => {
+    const mapa = new Map<string, (h: string) => number>();
+    for (const quadra of listaQuadras) {
+      mapa.set(quadra.id, (horario: string) =>
+        calcularPrecoReserva({ quadra, precos, data: dataSelecionada, horarios: [horario] }).valorTotal
+      );
+    }
+    return mapa;
+  }, [listaQuadras, precos, dataSelecionada]);
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -181,8 +206,8 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
       if (quadraSelecionada !== null && quadraSelecionada !== quadraId) {
         setQuadraSelecionada(quadraId);
         setHorariosSelecionados([horario]);
-        const nomeQuadra = listaQuadras.find((q) => q.id === quadraId)?.numero;
-        toast.info(`Selecionada Quadra ${nomeQuadra}`);
+        const nomeQuadra = listaQuadras.find((q) => q.id === quadraId)?.nome;
+        if (nomeQuadra) toast.info(`Selecionada ${nomeQuadra}`);
         return;
       }
 
@@ -199,7 +224,7 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
         return next;
       });
     },
-    [quadraSelecionada, user?.bloqueado]
+    [quadraSelecionada, user?.bloqueado, listaQuadras]
   );
 
   const handleLimpar = useCallback(() => {
@@ -208,13 +233,11 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
     setVouchersSelecionadosIds([]);
   }, []);
 
-  const handleContinuar = useCallback(async () => {
+  /** Carrinho → formulário de identificação (o horário só é travado ao confirmar o formulário). */
+  const handleContinuar = useCallback(() => {
     if (!quadraSelecionada || horariosSelecionados.length === 0) return;
 
-    const tel = user?.telefone ? user.telefone.replace(/\D/g, "") : "";
-    const estaBloqueado = Boolean(user?.bloqueado) || (tel ? await isTelefoneBloqueado(tel) : false);
-
-    if (estaBloqueado) {
+    if (user?.bloqueado) {
       toast.error("Conta bloqueada para novas reservas", {
         description: "Sua conta está com restrição para novos agendamentos. Por favor, entre em contato para entender o motivo.",
       });
@@ -222,243 +245,177 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
     }
 
     for (const h of horariosSelecionados) {
-      if (isHorarioExpirado(dataSelecionada, h, 10)) {
-        toast.error("Horário expirado", {
-          description: "O horário escolhido já passou ou está muito próximo (menos de 10 min). Por favor, escolha outro.",
+      if (isHorarioExpirado(dataSelecionada, h, antecedenciaMinutos)) {
+        toast.error("Horário indisponível", {
+          description: `Reservas online precisam de pelo menos ${antecedenciaMinutos} minutos de antecedência. Escolha outro horário.`,
         });
         return;
       }
     }
 
-    const id = criarReservaEmProcessamento({
-      arenaId: arena.id,
-      quadraId: quadraSelecionada,
-      data: dataSelecionada,
-      horarios: horariosSelecionados,
-      userId: user?.id,
-      valorTotal: valorTotalBruto,
-      valorSinal,
-      valorPendente,
-    });
-    setReservaIdAtual(id);
     setIsCarrinhoOpen(false);
     setEtapa("formulario");
-  }, [
-    arena.id,
-    quadraSelecionada,
-    horariosSelecionados,
-    dataSelecionada,
-    user?.id,
-    user?.bloqueado,
-    user?.telefone,
-    valorTotalBruto,
-    valorSinal,
-    valorPendente,
-    criarReservaEmProcessamento,
-  ]);
+  }, [quadraSelecionada, horariosSelecionados, dataSelecionada, user?.bloqueado, antecedenciaMinutos]);
 
-  /** Formulário de dados e escolha de pagamento confirmados */
-  const handleFormConfirmar = useCallback(
-    (dados: DadosIdentificacao, tipoPagamento: "sinal" | "integral") => {
-      if (!reservaIdAtual) return;
-      setDadosForm(dados);
-      setTipoPagamentoEscolhido(tipoPagamento);
-      atualizarIdentificacao(reservaIdAtual, {
-        nomeCliente: dados.nome,
-        whatsappCliente: dados.whatsapp,
-        cpfCliente: "",
-        esporte: dados.esporte || undefined,
-        observacoes: dados.observacoes || undefined,
-      });
+  /** Limpa o estado do checkout após sucesso, desistência ou expiração. */
+  const resetarCheckout = useCallback(() => {
+    setEtapa(null);
+    setCheckout(null);
+    setDadosForm(null);
+    setCobrancaPix(null);
+    setCarregandoPix(false);
+  }, []);
 
-      const descontoVal = resultadoDesconto ? resultadoDesconto.valorDesconto : 0;
-      const isGratis = valorTotal === 0 && vouchersAtivosParaReserva.length > 0;
-      const codigosVouchers = vouchersAtivosParaReserva.map((v) => v.codigo);
+  /** Encerra o checkout com sucesso (pagamento confirmado ou reserva 100% coberta). */
+  const finalizarComSucesso = useCallback(
+    (concluido: CheckoutAtivo, dados: DadosIdentificacao | null, mensagem: { titulo: string; descricao: string }) => {
+      if (finalizadoRef.current) return;
+      finalizadoRef.current = true;
 
-      atualizarDadosCheckout(reservaIdAtual, {
-        valorTotal,
-        valorSinal: isGratis ? 0 : (tipoPagamento === "integral" ? valorTotal : valorSinal),
-        valorPendente: isGratis ? 0 : (tipoPagamento === "integral" ? 0 : valorPendente),
-        valorOriginal: valorTotalBruto,
-        descontoFidelidade: descontoVal,
-        vouchersUtilizados: codigosVouchers,
-        reservaGratuitaFidelidade: isGratis,
-        metodoPagamento: isGratis
-          ? "fidelidade"
-          : vouchersAtivosParaReserva.length > 0
-          ? "misto"
-          : "pix",
-      });
-
-      // Se a reserva for 100% coberta pelos vouchers de fidelidade (valorTotal === 0)
-      if (isGratis) {
-        confirmarPagamento(reservaIdAtual, "integral");
-
-        // Consome os vouchers selecionados utilizados nesta reserva
-        void consumirVouchersNoCheckout(
-          vouchersAtivosParaReserva.map((v) => v.id),
-          reservaIdAtual
-        );
-        setVouchersSelecionadosIds([]);
-
-        // Se visitante sem conta, salva dados para convidar a criar senha
-        if (!isAutenticado && dados) {
-          setDadosUltimaReserva({
-            id: reservaIdAtual,
-            nome: dados.nome,
-            whatsapp: dados.whatsapp,
-          });
-          setMostrarModalPosCadastro(true);
-        }
-
-        // Reseta estado local
-        setEtapa(null);
-        setReservaIdAtual(null);
-        setDadosForm(null);
-        setHorariosSelecionados([]);
-        setQuadraSelecionada(null);
-
-        const qtdVch = vouchersAtivosParaReserva.length;
-        toast.success("Reserva Gratuita Confirmada! 🎉", {
-          description: `Sua reserva foi 100% coberta com ${
-            qtdVch > 1
-              ? `seus ${qtdVch} vouchers de fidelidade`
-              : "seu voucher de fidelidade"
-          }! Bom jogo!`,
-          duration: 7000,
-        });
-        return;
-      }
-
-      setEtapa("pix");
-      setCarregandoPix(true);
-      const reserva = getReservaById(reservaIdAtual);
-      if (reserva) {
-        void solicitarPixParaReserva({
-          reserva: {
-            ...reserva,
-            nomeCliente: dados.nome,
-            whatsappCliente: dados.whatsapp,
-            valorTotal,
-            valorSinal: tipoPagamento === "integral" ? valorTotal : valorSinal,
-            valorPendente: tipoPagamento === "integral" ? 0 : valorPendente,
-          },
-          arena,
-          tipoPagamento,
-        })
-          .then((resultado) => {
-            if (resultado.sucesso && resultado.cobranca) {
-              setCobrancaPix(resultado.cobranca);
-            } else {
-              toast.error("Erro ao gerar cobrança Pix", {
-                description: resultado.erro || "Tente novamente ou fale com a arena.",
-              });
-            }
-          })
-          .finally(() => {
-            setCarregandoPix(false);
-          });
-      } else {
-        setCarregandoPix(false);
-      }
-    },
-    [
-      reservaIdAtual,
-      getReservaById,
-      arena,
-      atualizarIdentificacao,
-      atualizarDadosCheckout,
-      valorTotal,
-      valorTotalBruto,
-      valorSinal,
-      valorPendente,
-      resultadoDesconto,
-      vouchersAtivosParaReserva,
-      confirmarPagamento,
-      consumirVouchersNoCheckout,
-      isAutenticado,
-    ]
-  );
-
-  /**
-   * Simula pagamento Pix — confirmação com o tipo escolhido previamente.
-   */
-  const handleSimularPagamento = useCallback(
-    (tipo: "sinal" | "integral") => {
-      if (!reservaIdAtual) return;
-
-      // Validação de 1 minuto antes do início do primeiro horário
-      if (horariosSelecionados.length > 0) {
-        const primeiroHorario = [...horariosSelecionados].sort()[0];
-        if (isHorarioExpirado(dataSelecionada, primeiroHorario, 1)) {
-           toast.error("Tempo esgotado para pagamento", {
-             description: "O pagamento deve ser feito até 1 minuto antes do início do horário.",
-           });
-           return;
-        }
-      }
-
-      confirmarPagamento(reservaIdAtual, tipo);
-
-      // Consome os vouchers de fidelidade selecionados se foram aplicados nesta reserva
-      if (vouchersAtivosParaReserva.length > 0 && reservaIdAtual) {
-        void consumirVouchersNoCheckout(
-          vouchersAtivosParaReserva.map((v) => v.id),
-          reservaIdAtual
-        );
-        setVouchersSelecionadosIds([]);
-      }
-
-      // Se visitante sem conta, salva dados para convidar a criar senha
-      if (!isAutenticado && dadosForm) {
+      if (!isAutenticado && dados) {
         setDadosUltimaReserva({
-          id: reservaIdAtual,
-          nome: dadosForm.nome,
-          whatsapp: dadosForm.whatsapp,
+          id: concluido.reservaId,
+          checkoutToken: concluido.checkoutToken,
+          nome: dados.nome,
+          whatsapp: dados.whatsapp,
         });
         setMostrarModalPosCadastro(true);
       }
 
-      // Reseta estado local
-      setEtapa(null);
-      setReservaIdAtual(null);
-      setDadosForm(null);
-      setCobrancaPix(null);
-      setCarregandoPix(false);
+      setVouchersSelecionadosIds([]);
       setHorariosSelecionados([]);
       setQuadraSelecionada(null);
+      resetarCheckout();
+      void recarregarFidelidade();
+      toast.success(mensagem.titulo, { description: mensagem.descricao, duration: 7000 });
+    },
+    [isAutenticado, resetarCheckout, recarregarFidelidade]
+  );
 
-      const descricao =
-        tipo === "integral"
-          ? "Pagamento integral confirmado! ✅"
-          : "Sinal confirmado. O restante será pago no local. 👍";
+  /** Formulário confirmado: o servidor cria a reserva, valida o preço e trava o horário. */
+  const handleFormConfirmar = useCallback(
+    async (dados: DadosIdentificacao, tipoPagamento: "sinal" | "integral") => {
+      if (!quadraSelecionada || enviandoCheckout) return;
+      setEnviandoCheckout(true);
+      setDadosForm(dados);
+      setTipoPagamentoEscolhido(tipoPagamento);
+      finalizadoRef.current = false;
 
-      toast.success("Mensagem enviada no WhatsApp 📱", {
-        description: descricao,
-        duration: 6000,
-      });
+      const resultado = await iniciar(
+        {
+          arenaId: arena.id,
+          quadraId: quadraSelecionada,
+          data: dataSelecionada,
+          horarios: horariosSelecionados,
+          nomeCliente: dados.nome,
+          whatsappCliente: dados.whatsapp,
+          esporte: dados.esporte || undefined,
+          observacoes: dados.observacoes || undefined,
+          tipoPagamento,
+          voucherIds: vouchersAtivosParaReserva.map((v) => v.id),
+        },
+        {
+          valorOriginal: valorTotalBruto,
+          descontoFidelidade: resultadoDesconto?.valorDesconto ?? 0,
+          valorTotal,
+          valorSinal,
+          valorPendente,
+          codigosVouchers: vouchersAtivosParaReserva.map((v) => v.codigo),
+        },
+        user?.id
+      );
+      setEnviandoCheckout(false);
+
+      if (!resultado.ok) {
+        toast.error("Não foi possível reservar", { description: resultado.erro });
+        void recarregarReservas();
+        return;
+      }
+
+      if (resultado.gratuita) {
+        const qtd = vouchersAtivosParaReserva.length;
+        finalizarComSucesso(resultado.checkout, dados, {
+          titulo: "Reserva Gratuita Confirmada! 🎉",
+          descricao: `Sua reserva foi 100% coberta com ${qtd > 1 ? `seus ${qtd} vouchers de fidelidade` : "seu voucher de fidelidade"}! Bom jogo!`,
+        });
+        return;
+      }
+
+      setCheckout(resultado.checkout);
+      setEtapa("pix");
+      setCarregandoPix(true);
+      const pix = await gerarPix(resultado.checkout, arena, tipoPagamento);
+      setCarregandoPix(false);
+
+      if (!pix.ok) {
+        toast.error("Erro ao gerar cobrança Pix", { description: pix.erro });
+        await cancelar(resultado.checkout);
+        resetarCheckout();
+        return;
+      }
+      setCobrancaPix(pix.cobranca);
+      aguardarConfirmacao(resultado.checkout, () => undefined);
     },
     [
-      reservaIdAtual,
-      confirmarPagamento,
-      isAutenticado,
-      dadosForm,
+      quadraSelecionada,
+      enviandoCheckout,
+      iniciar,
+      arena,
       dataSelecionada,
       horariosSelecionados,
       vouchersAtivosParaReserva,
-      consumirVouchersNoCheckout,
+      valorTotalBruto,
+      resultadoDesconto,
+      valorTotal,
+      valorSinal,
+      valorPendente,
+      user?.id,
+      recarregarReservas,
+      finalizarComSucesso,
+      gerarPix,
+      cancelar,
+      resetarCheckout,
+      aguardarConfirmacao,
     ]
   );
 
-  /** Cancela checkout e libera o lock */
+  /** Pagamento identificado (webhook acompanhado, simulação ou modo offline). */
+  const handlePagamentoConfirmado = useCallback(() => {
+    if (!checkout) return;
+    finalizarComSucesso(checkout, dadosForm, {
+      titulo: "Reserva confirmada! 📱",
+      descricao:
+        tipoPagamentoEscolhido === "integral"
+          ? "Pagamento integral confirmado! ✅"
+          : "Sinal confirmado. O restante será pago no local. 👍",
+    });
+  }, [checkout, dadosForm, tipoPagamentoEscolhido, finalizarComSucesso]);
+
+  /** Simula a liquidação do Pix (somente gateway simulado). */
+  const handleSimularPagamento = useCallback(
+    async (tipo: "sinal" | "integral") => {
+      if (!checkout) return;
+      const r = await simularPagamento(checkout, tipo);
+      if (!r.ok) {
+        toast.error("Não foi possível simular o pagamento", { description: r.erro });
+      }
+    },
+    [checkout, simularPagamento]
+  );
+
+  /** Cancela o checkout e libera o lock. */
   const handleCancelarCheckout = useCallback(() => {
-    if (reservaIdAtual) liberarLock(reservaIdAtual);
-    setEtapa(null);
-    setReservaIdAtual(null);
-    setDadosForm(null);
+    if (checkout) void cancelar(checkout);
+    resetarCheckout();
+  }, [checkout, cancelar, resetarCheckout]);
+
+  /** Volta do Pix para o formulário: libera o lock atual (um novo será criado ao confirmar). */
+  const handleVoltarParaFormulario = useCallback(() => {
+    if (checkout) void cancelar(checkout);
+    setCheckout(null);
     setCobrancaPix(null);
-    setCarregandoPix(false);
-  }, [reservaIdAtual, liberarLock]);
+    setEtapa("formulario");
+  }, [checkout, cancelar]);
 
   // ── Render ──────────────────────────────────────────────────────────────
 
@@ -475,7 +432,7 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
       vouchersSelecionadosIds={vouchersSelecionadosIds}
       onToggleVoucher={handleToggleVoucher}
       onLimparVouchers={handleLimparVouchers}
-      vouchersDisponiveis={progresso.vouchersDisponiveis}
+      vouchersDisponiveis={vouchersDisponiveis}
     />
   );
 
@@ -513,12 +470,12 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
                   </div>
                 </div>
                 <a
-                  href={`https://wa.me/5500000000000?text=${encodeURIComponent("Olá, gostaria de entender o motivo do bloqueio da minha conta no Reservei.")}`}
+                  href={`https://wa.me/55${arena.whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent("Olá, gostaria de entender o motivo do bloqueio da minha conta.")}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-200 border border-red-500/40 font-bold text-xs flex items-center justify-center gap-2 whitespace-nowrap transition-colors"
                 >
-                  Falar com Suporte
+                  Falar com a Arena
                 </a>
               </div>
             )}
@@ -542,13 +499,16 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
               </p>
             </div>
 
+            {!carregandoArena && listaQuadras.length === 0 && (
+              <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6 text-center text-sm text-slate-400">
+                Esta arena ainda não liberou quadras para reserva online.
+              </div>
+            )}
+
             {/* Quadras sempre expandidas verticalmente */}
             {listaQuadras.map((quadra) => {
               const isAtiva = quadraSelecionada === quadra.id;
-              const horariosOcupados = getHorariosOcupados(
-                dataSelecionada,
-                quadra.id
-              );
+              const horariosOcupados = getHorariosOcupados(dataSelecionada, quadra.id);
 
               return (
                 <QuadraHorarioItem
@@ -560,14 +520,18 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
                   avisosEscolinha={getAvisosEscolinha(dataSelecionada, quadra.id)}
                   isAtiva={isAtiva}
                   onToggleHorario={handleToggleHorario}
+                  antecedenciaMinutos={antecedenciaMinutos}
+                  precoDoHorario={precoDoHorarioPorQuadra.get(quadra.id)}
                 />
               );
             })}
 
             {/* Mural de Vagas Abertas (Versão Mobile) */}
-            <div className="md:hidden pt-4">
-              <MuralVagasAbertas />
-            </div>
+            {temVagas && (
+              <div className="md:hidden pt-4">
+                <MuralVagasAbertas />
+              </div>
+            )}
           </main>
 
           {/* Coluna direita: carrinho (desktop / tablet) e Mural de Vagas */}
@@ -577,7 +541,7 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
             </div>
 
             {/* Mural de Vagas Abertas posicionado abaixo do carrinho */}
-            <MuralVagasAbertas />
+            {temVagas && <MuralVagasAbertas />}
           </aside>
         </div>
         </section>
@@ -586,7 +550,7 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
         <SecaoEstrutura />
 
         {/* ── Seção: Escolinhas e Aulas Esportivas ─────────────────────── */}
-        <SecaoEscolinhas />
+        {temEscolinhas && <SecaoEscolinhas />}
 
         {/* ── Seções institucionais futuras (placeholders das próximas specs) ── */}
         <LandingSecoesPlaceholder />
@@ -628,26 +592,28 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
         valorTotal={valorTotal}
         valorSinal={valorSinal}
         valorPendente={valorPendente}
-        vouchersDisponiveis={progresso.vouchersDisponiveis}
+        vouchersDisponiveis={vouchersDisponiveis}
         vouchersSelecionadosIds={vouchersSelecionadosIds}
         onToggleVoucher={handleToggleVoucher}
         onLimparVouchers={handleLimparVouchers}
         onClose={handleCancelarCheckout}
         onConfirmar={handleFormConfirmar}
+        enviando={enviandoCheckout}
       />
 
       {/* Modal: Pix */}
       <ModalPix
         open={etapa === "pix"}
-        reservaId={reservaIdAtual}
+        reservaId={checkout?.reservaId ?? null}
         tipoPagamento={tipoPagamentoEscolhido}
-        valorSinal={valorSinal}
-        valorTotal={valorTotal}
+        valorSinal={checkout?.reserva.valorSinal ?? valorSinal}
+        valorTotal={checkout?.reserva.valorTotal ?? valorTotal}
         nomeCliente={dadosForm?.nome ?? ""}
         cobrancaPix={cobrancaPix}
         carregando={carregandoPix}
         onSimularPagamento={handleSimularPagamento}
-        onVoltar={() => setEtapa("formulario")}
+        onPagamentoConfirmado={handlePagamentoConfirmado}
+        onVoltar={handleVoltarParaFormulario}
         onCancelar={handleCancelarCheckout}
       />
 
@@ -656,6 +622,7 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
         <ModalPosReservaCadastro
           open={mostrarModalPosCadastro}
           reservaId={dadosUltimaReserva.id}
+          checkoutToken={dadosUltimaReserva.checkoutToken}
           nomeCliente={dadosUltimaReserva.nome}
           whatsappCliente={dadosUltimaReserva.whatsapp}
           onClose={() => setMostrarModalPosCadastro(false)}

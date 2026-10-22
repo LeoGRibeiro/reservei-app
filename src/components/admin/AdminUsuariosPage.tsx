@@ -52,7 +52,7 @@ import {
   formatarDataExibicao,
   mascaraWhatsApp,
 } from "@/lib/constants";
-import { QUADRAS } from "@/lib/quadras";
+import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import type { Reserva } from "@/store/useReservasStore";
 import {
   Dialog,
@@ -67,6 +67,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function AdminUsuariosPage() {
+  const quadrasCatalogo = useQuadrasCatalogo();
   const { reservas, recarregarReservas } = useReservasService();
   const [usuarios, setUsuarios] = useState<UserProfile[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -715,7 +716,7 @@ export function AdminUsuariosPage() {
                 return (
                   <div className="space-y-2.5 max-h-[40vh] overflow-y-auto pr-1">
                     {userRes.map((r) => {
-                      const quadra = QUADRAS.find((q) => q.id === r.quadraId);
+                      const quadra = quadrasCatalogo.find((q) => q.id === r.quadraId);
                       return (
                         <div
                           key={r.id}

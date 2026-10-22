@@ -187,7 +187,7 @@ export function AdminConfiguracoesPage() {
                 type="text"
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
-                placeholder="Ex: Arena Praia Leopoldina"
+                placeholder="Ex: Arena Central"
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
                 required
               />
@@ -204,7 +204,7 @@ export function AdminConfiguracoesPage() {
                   onChange={(e) =>
                     setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                   }
-                  placeholder="ex: leopoldina"
+                  placeholder="ex: arena-central"
                   className="w-full bg-slate-950 border border-slate-800 rounded-l-xl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
                   required
                 />

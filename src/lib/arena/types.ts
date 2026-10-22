@@ -5,6 +5,7 @@
  */
 
 import type { Esporte } from "@/lib/quadras";
+import type { ModuloArena } from "./modulos";
 
 /**
  * Tipos de piso suportados pelos complexos esportivos.
@@ -28,7 +29,7 @@ export type ArenaUserRole = "proprietario" | "gerente" | "operador";
 export interface Arena {
   /** Identificador único primário da arena (ex: 'arena-padrao' ou UUID) */
   id: string;
-  /** Slug exclusivo para acesso via URL amigável (ex: 'praia-leopoldina', 'arena-belem') */
+  /** Slug exclusivo para acesso via URL amigável (ex: 'arena-central', 'arena-belem') */
   slug: string;
   /** Razão social ou nome fantasia do complexo esportivo */
   nome: string;
@@ -62,6 +63,8 @@ export interface Arena {
   antecedenciaMinimaMinutos: number;
   /** Indica se a arena está ativa na plataforma SaaS */
   ativo: boolean;
+  /** Módulos (Feature Flags) contratados pela arena; ver `arenas.modulos_ativos` */
+  modulosAtivos: ModuloArena[];
   /** Data e hora de cadastro da arena no sistema (ISO 8601) */
   criadaEm: string;
   /** Data e hora da última modificação dos dados cadastrais (ISO 8601) */

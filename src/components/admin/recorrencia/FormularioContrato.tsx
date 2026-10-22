@@ -7,7 +7,8 @@
 
 import { useMemo, useState } from "react";
 import { Loader2, Upload } from "lucide-react";
-import { ESPORTES, HORARIOS_DISPONIVEIS, QUADRAS, type Esporte } from "@/lib/quadras";
+import { ESPORTES, type Esporte } from "@/lib/quadras";
+import { useQuadrasCatalogo, useHorariosCatalogo } from "@/store/useCatalogoArenaStore";
 import { getHoje, mascaraWhatsApp } from "@/lib/constants";
 import { horariosFimDisponiveis, expandirHorarios, gerarDatasRecorrentes } from "@/lib/recorrencia/ocorrencias";
 import { formatarDataExibicao } from "@/lib/constants";
@@ -47,6 +48,8 @@ const TEXTOS: Record<TipoContrato, { nome: string; placeholderNome: string; titu
 };
 
 export function FormularioContrato({ tipo, onSubmit, onSucesso, onCancelar }: Props) {
+  const quadrasCatalogo = useQuadrasCatalogo();
+  const horariosCatalogo = useHorariosCatalogo();
   const textos = TEXTOS[tipo];
   const hoje = getHoje();
 
@@ -55,7 +58,7 @@ export function FormularioContrato({ tipo, onSubmit, onSucesso, onCancelar }: Pr
   const [descricao, setDescricao] = useState("");
   const [responsavelNome, setResponsavelNome] = useState("");
   const [contatoWhatsapp, setContatoWhatsapp] = useState("");
-  const [quadraId, setQuadraId] = useState(QUADRAS[0].id);
+  const [quadraId, setQuadraId] = useState((quadrasCatalogo[0]?.id ?? ""));
   const [diasSemana, setDiasSemana] = useState<DiaSemana[]>([]);
   const [horaInicio, setHoraInicio] = useState("14:00");
   const [horaFim, setHoraFim] = useState("16:00");
@@ -181,7 +184,7 @@ export function FormularioContrato({ tipo, onSubmit, onSucesso, onCancelar }: Pr
             value={quadraId}
             onChange={(e) => setQuadraId(e.target.value)}
           >
-            {QUADRAS.map((q) => (
+            {quadrasCatalogo.map((q) => (
               <option key={q.id} value={q.id}>
                 Quadra {q.numero}
               </option>
@@ -325,7 +328,7 @@ export function FormularioContrato({ tipo, onSubmit, onSucesso, onCancelar }: Pr
             value={horaInicio}
             onChange={(e) => setHoraInicio(e.target.value)}
           >
-            {HORARIOS_DISPONIVEIS.map((h) => (
+            {horariosCatalogo.map((h) => (
               <option key={h} value={h}>
                 {h}
               </option>

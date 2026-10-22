@@ -8,7 +8,8 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { GraduationCap, Users, X, Loader2, Info, Upload } from "lucide-react";
-import { ESPORTES, QUADRAS, type Esporte } from "@/lib/quadras";
+import { ESPORTES, type Esporte } from "@/lib/quadras";
+import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { mascaraWhatsApp, formatarDataExibicao } from "@/lib/constants";
 import { DIAS_SEMANA, type ContratoRecorrente } from "@/lib/recorrencia/types";
 import { uploadImagemInstitucional } from "@/lib/supabase/institucionalRepository";
@@ -35,6 +36,7 @@ const CLASSE_INPUT =
 const CLASSE_LABEL = "block text-xs font-semibold text-slate-400 mb-1.5";
 
 export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
+  const quadrasCatalogo = useQuadrasCatalogo();
   const [mounted, setMounted] = useState(false);
   const [nome, setNome] = useState("");
   const [esporte, setEsporte] = useState<Esporte | "">("");
@@ -67,7 +69,7 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
   if (!mounted || !contrato) return null;
 
   const ehEscolinha = contrato.tipo === "escolinha";
-  const quadra = QUADRAS.find((q) => q.id === contrato.quadraId);
+  const quadra = quadrasCatalogo.find((q) => q.id === contrato.quadraId);
   const dias = DIAS_SEMANA.filter((d) => contrato.diasSemana.includes(d.valor))
     .map((d) => d.curto)
     .join(", ");

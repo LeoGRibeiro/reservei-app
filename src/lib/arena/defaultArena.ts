@@ -7,6 +7,7 @@
  */
 
 import type { Arena, Quadra, QuadraPreco } from "./types";
+import { MODULOS_PADRAO } from "./modulos";
 
 /**
  * Identificador padrão da arena de demonstração / legada.
@@ -40,6 +41,7 @@ export const ARENA_PADRAO: Arena = {
   percentualSinalMinimo: 50.0,
   antecedenciaMinimaMinutos: 60,
   ativo: true,
+  modulosAtivos: [...MODULOS_PADRAO],
   criadaEm: "2026-01-01T00:00:00Z",
 };
 

@@ -20,7 +20,9 @@ import {
   TOLERANCIA_CANCELAMENTO_HORAS,
   ENDERECO_COMPLEXO,
 } from "@/lib/constants";
-import { ESPORTES, QUADRAS, type Esporte } from "@/lib/quadras";
+import { ESPORTES, type Esporte } from "@/lib/quadras";
+import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
+import { useEnderecoArena, usePercentualSinalArena } from "@/hooks/useConfiguracaoSiteArena";
 import {
   User,
   Phone,
@@ -33,12 +35,12 @@ import {
   Sparkles,
   Gift,
   X,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUserAuth } from "@/hooks/useUserAuth";
 import type { VoucherFidelidade } from "@/lib/fidelidade/types";
 import { toast } from "sonner";
-import { isTelefoneBloqueado } from "@/lib/supabase/authService";
 
 export interface DadosIdentificacao {
   nome: string;
@@ -74,6 +76,8 @@ interface Props {
   vouchersAplicados?: boolean;
   /** Alterna a aplicação de todos os vouchers na reserva atual (retrocompatibilidade) */
   onToggleVouchers?: (aplicar: boolean) => void;
+  /** Indica que o servidor está criando a reserva (desabilita o botão) */
+  enviando?: boolean;
 }
 
 const initialState: DadosIdentificacao = {
@@ -100,7 +104,11 @@ export function FormularioIdentificacao({
   onLimparVouchers,
   vouchersAplicados = false,
   onToggleVouchers,
+  enviando = false,
 }: Props) {
+  const quadrasCatalogo = useQuadrasCatalogo();
+  const percentualSinal = usePercentualSinalArena(PERCENTUAL_SINAL);
+  const enderecoArena = useEnderecoArena(ENDERECO_COMPLEXO);
   const { user } = useUserAuth();
   const [dados, setDados] = useState<DadosIdentificacao>(initialState);
   const [tipoPagamento, setTipoPagamento] = useState<"sinal" | "integral">("sinal");
@@ -117,7 +125,7 @@ export function FormularioIdentificacao({
     }
   }, [user, open]);
 
-  const quadra = QUADRAS.find((q) => q.id === quadraId);
+  const quadra = quadrasCatalogo.find((q) => q.id === quadraId);
   const horariosOrdenados = [...(horariosSelecionados ?? [])].sort();
   const primeiroHorario = horariosOrdenados[0] ?? "";
   const ultimoHorario = horariosOrdenados[horariosOrdenados.length - 1];
@@ -175,10 +183,8 @@ export function FormularioIdentificacao({
   };
 
   const handleSubmit = async () => {
-    const tel = user ? user.telefone : dados.whatsapp;
-    const isBloqueado = Boolean(user?.bloqueado) || (tel ? await isTelefoneBloqueado(tel) : false);
-
-    if (isBloqueado) {
+    // O servidor também recusa telefones bloqueados; aqui só evitamos a ida quando já sabemos
+    if (user?.bloqueado) {
       toast.error("Conta bloqueada para novas reservas", {
         description: "Sua conta está com restrição para novos agendamentos. Por favor, entre em contato para entender o motivo.",
       });
@@ -350,7 +356,7 @@ export function FormularioIdentificacao({
                   <MapPin className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-xs text-slate-500">Local</p>
-                    <p className="text-slate-200 font-medium">{ENDERECO_COMPLEXO}</p>
+                    <p className="text-slate-200 font-medium">{enderecoArena}</p>
                   </div>
                 </div>
 
@@ -558,7 +564,7 @@ export function FormularioIdentificacao({
                     >
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-xs font-bold text-slate-200">
-                          Sinal ({Math.round(PERCENTUAL_SINAL * 100)}%)
+                          Sinal ({Math.round(percentualSinal * 100)}%)
                         </span>
                         {tipoPagamento === "sinal" && (
                           <span className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950">
@@ -637,8 +643,8 @@ export function FormularioIdentificacao({
                     {isGratis
                       ? "100% Grátis (Fidelidade)"
                       : tipoPagamento === "sinal"
-                      ? "Sinal (40%)"
-                      : "Integral (100%)"}
+                      ? "Sinal"
+                      : "Integral"}
                   </span>
                 </div>
               </div>
@@ -646,9 +652,14 @@ export function FormularioIdentificacao({
               {/* Botão de Conclusão / Ir para Pagamento Pix */}
               <Button
                 onClick={handleSubmit}
+                disabled={enviando}
                 className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black h-12 rounded-xl gap-2 text-sm shadow-lg shadow-emerald-500/20"
               >
-                {isGratis ? (
+                {enviando ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Reservando horário...
+                  </>
+                ) : isGratis ? (
                   <>
                     Confirmar Reserva Gratuita 🎉
                   </>

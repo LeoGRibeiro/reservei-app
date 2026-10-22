@@ -17,7 +17,7 @@ import {
   Lock,
   MessageSquare,
 } from "lucide-react";
-import { QUADRAS, HORARIOS_DISPONIVEIS } from "@/lib/quadras";
+import { useQuadrasCatalogo, useHorariosCatalogo } from "@/store/useCatalogoArenaStore";
 import { MOTIVOS_BLOQUEIO_SUGERIDOS } from "@/lib/adminAgenda/types";
 import { formatarDataExibicao, saoConsecutivos } from "@/lib/constants";
 import { useReservasService } from "@/hooks/useReservasService";
@@ -40,6 +40,8 @@ export function ModalBloqueioHorario({
   onFechar,
   onSucesso,
 }: Props) {
+  const quadrasCatalogo = useQuadrasCatalogo();
+  const horariosCatalogo = useHorariosCatalogo();
   const { reservas, criarBloqueio } = useReservasService();
   const [mounted, setMounted] = useState(false);
 
@@ -47,7 +49,7 @@ export function ModalBloqueioHorario({
     setMounted(true);
   }, []);
 
-  const [quadraId, setQuadraId] = useState(quadraIdPadrao || "q1");
+  const [quadraId, setQuadraId] = useState(quadraIdPadrao || quadrasCatalogo[0]?.id || "");
   const [data, setData] = useState(dataPadrao || new Date().toISOString().split("T")[0]);
   const [horarios, setHorarios] = useState<string[]>(horariosPadrao || ["08:00"]);
   const [motivo, setMotivo] = useState<string>(MOTIVOS_BLOQUEIO_SUGERIDOS[0]);
@@ -245,7 +247,7 @@ export function ModalBloqueioHorario({
                   onChange={(e) => setQuadraId(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 transition-colors"
                 >
-                  {QUADRAS.map((q) => (
+                  {quadrasCatalogo.map((q) => (
                     <option key={q.id} value={q.id}>
                       Quadra {q.numero} (Poliesportiva)
                     </option>
@@ -280,7 +282,7 @@ export function ModalBloqueioHorario({
               </label>
 
               <div className="flex flex-wrap gap-1.5 p-2 bg-slate-800/40 border border-slate-700/50 rounded-xl max-h-36 overflow-y-auto">
-                {HORARIOS_DISPONIVEIS.map((h) => {
+                {horariosCatalogo.map((h) => {
                   const selecionado = horarios.includes(h);
                   return (
                     <button

@@ -267,11 +267,11 @@ export function AdminInstitucionalPage() {
         toast.success("Escolinha atualizada com sucesso!");
       } else {
         await criarNovaEscolinha(formEscolinha);
-        toast.success("Nova escolinha cadastrada com sucesso!");
+        toast.success("Escolinha publicada na landing page!");
       }
       setModalEscolinhaAberto(false);
-    } catch {
-      toast.error("Erro ao salvar dados da escolinha.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar dados da escolinha.");
     }
   };
 
@@ -343,7 +343,7 @@ export function AdminInstitucionalPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-xs text-slate-400">
-              Fotos que aparecem na seção <strong>"O Local e Estrutura"</strong>
+              Fotos que aparecem na seção <strong>&ldquo;O Local e Estrutura&rdquo;</strong>
             </span>
             <button
               type="button"
@@ -445,7 +445,7 @@ export function AdminInstitucionalPage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <span className="text-xs text-slate-400">
-              Modalidades e turmas exibidas na seção <strong>"Escolinhas e Aulas"</strong> da LP.
+              Modalidades e turmas exibidas na seção <strong>&ldquo;Escolinhas e Aulas&rdquo;</strong> da LP.
             </span>
             <div className="flex items-center gap-2">
               <button

@@ -1,11 +1,13 @@
 /**
  * Sidebar de navegação do painel administrativo.
  * Responsiva: collapsa em menu hambúrguer no mobile.
+ * Abas de módulos opcionais (Feature Flags) só são exibidas se a arena contratou o módulo.
  */
 
 "use client";
 
 import { useState } from "react";
+import { temModuloAtivo, type ModuloArena } from "@/lib/arena/modulos";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -40,6 +42,8 @@ interface NavItem {
   id: AdminView;
   label: string;
   icon: React.ElementType;
+  /** Módulo (Feature Flag) exigido para exibir a aba; ausente = aba do core */
+  modulo?: ModuloArena;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -48,21 +52,56 @@ const NAV_ITEMS: NavItem[] = [
   { id: "quadras", label: "Gestão de Quadras", icon: Layers },
   { id: "usuarios", label: "Usuários", icon: Users },
   { id: "institucional", label: "Institucional & LP", icon: Images },
-  { id: "escolinhas", label: "Escolinhas", icon: GraduationCap },
-  { id: "grupos", label: "Grupos", icon: UsersRound },
-  { id: "fidelidade", label: "Fidelidade", icon: Gift },
+  { id: "escolinhas", label: "Escolinhas", icon: GraduationCap, modulo: "escolinhas" },
+  { id: "grupos", label: "Grupos", icon: UsersRound, modulo: "contratos" },
+  { id: "fidelidade", label: "Fidelidade", icon: Gift, modulo: "fidelidade" },
   { id: "financeiro", label: "Financeiro", icon: DollarSign },
   { id: "configuracoes", label: "Configurações", icon: Settings },
 ];
+
+/**
+ * Retorna o módulo (Feature Flag) exigido por uma view do painel.
+ *
+ * @param view View do painel administrativo
+ * @returns Módulo exigido, ou undefined se a view pertence ao core
+ */
+export function moduloDaView(view: AdminView): ModuloArena | undefined {
+  return NAV_ITEMS.find((item) => item.id === view)?.modulo;
+}
+
+/**
+ * Indica se uma view está disponível para a arena conforme seus módulos ativos.
+ *
+ * @param view View do painel administrativo
+ * @param modulosAtivos Módulos contratados pela arena
+ * @returns `true` se a view é do core ou o módulo correspondente está ativo
+ */
+export function viewDisponivel(
+  view: AdminView,
+  modulosAtivos?: string[] | null
+): boolean {
+  const modulo = moduloDaView(view);
+  return !modulo || temModuloAtivo(modulosAtivos, modulo);
+}
 
 interface Props {
   viewAtual: AdminView;
   onChangeView: (view: AdminView) => void;
   onLogout: () => void;
+  /** Módulos contratados pela arena; abas de módulos não listados ficam ocultas */
+  modulosAtivos?: string[] | null;
 }
 
-export function AdminSidebar({ viewAtual, onChangeView, onLogout }: Props) {
+export function AdminSidebar({
+  viewAtual,
+  onChangeView,
+  onLogout,
+  modulosAtivos,
+}: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const itensVisiveis = NAV_ITEMS.filter((item) =>
+    viewDisponivel(item.id, modulosAtivos)
+  );
 
   function handleNav(view: AdminView) {
     onChangeView(view);
@@ -89,7 +128,7 @@ export function AdminSidebar({ viewAtual, onChangeView, onLogout }: Props) {
         <p className="px-3 text-[10px] font-semibold text-slate-600 uppercase tracking-widest mb-3">
           Navegação
         </p>
-        {NAV_ITEMS.map((item) => {
+        {itensVisiveis.map((item) => {
           const Icon = item.icon;
           const ativo = viewAtual === item.id;
           return (

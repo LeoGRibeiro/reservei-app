@@ -6,6 +6,7 @@
 
 "use client";
 
+import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { useMemo } from "react";
 import {
   ChevronLeft,
@@ -46,6 +47,7 @@ export function CalendarioMensal({
   onSelecionarDia,
   onIrParaHoje,
 }: Props) {
+  const quadrasCatalogo = useQuadrasCatalogo();
   const hoje = useMemo(() => new Date(), []);
   const hojeIso = useMemo(() => {
     const y = hoje.getFullYear();
@@ -178,7 +180,7 @@ export function CalendarioMensal({
             {resumo.totalHorariosOcupados}h
           </p>
           <p className="text-[10px] text-slate-500 mt-0.5">
-            total nas 3 quadras
+            total {quadrasCatalogo.length === 1 ? "na quadra" : `nas ${quadrasCatalogo.length} quadras`}
           </p>
         </div>
 
