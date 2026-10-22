@@ -93,6 +93,7 @@ describe("authService - Supabase Auth", () => {
         telefone: "91981234567",
         senha: "SenhaSecreta99",
         dataNascimento: "1990-05-10",
+        aceiteTermos: true,
       });
       expect(mocks.signUp).not.toHaveBeenCalled();
       expect(mocks.signInWithPassword).toHaveBeenCalledWith({

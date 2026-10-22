@@ -5,6 +5,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { VERSAO_TERMOS } from "@/lib/legal/termos";
 import type { ConsultaRegistrada } from "../../helpers/supabaseMock";
 
 const mocks = vi.hoisted(() => ({
@@ -91,6 +92,9 @@ const PEDIDO: SolicitacaoCheckout = {
   voucherIds: [],
 };
 
+/** Corpo bruto como o navegador envia (inclui o aceite dos termos). */
+const ENTRADA = { ...PEDIDO, aceiteTermos: true };
+
 const inserts = () => mocks.consultas.filter((c) => c.tabela === "reservas" && c.operacao === "insert");
 
 async function erroDe(promessa: Promise<unknown>): Promise<ErroHttp> {
@@ -115,6 +119,7 @@ describe("validarSolicitacaoCheckout", () => {
       tipoPagamento: "integral",
       voucherIds: ["v1", 3],
       valorTotal: 0.01,
+      aceiteTermos: true,
     });
 
     expect(r).toMatchObject({
@@ -129,14 +134,16 @@ describe("validarSolicitacaoCheckout", () => {
   });
 
   it.each([
-    [{ ...PEDIDO, quadraId: "" }, /quadra/],
-    [{ ...PEDIDO, data: "22/10/2026" }, /Data inválida/],
-    [{ ...PEDIDO, horarios: [] }, /horários válidos/],
-    [{ ...PEDIDO, horarios: ["19:00", "x"] }, /horários válidos/],
-    [{ ...PEDIDO, horarios: ["18:00", "20:00"] }, /consecutivos/],
-    [{ ...PEDIDO, horarios: ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"] }, /no máximo/],
-    [{ ...PEDIDO, nomeCliente: "A" }, /nome/],
-    [{ ...PEDIDO, whatsappCliente: "1234" }, /WhatsApp/],
+    [{ ...ENTRADA, quadraId: "" }, /quadra/],
+    [{ ...ENTRADA, data: "22/10/2026" }, /Data inválida/],
+    [{ ...ENTRADA, horarios: [] }, /horários válidos/],
+    [{ ...ENTRADA, horarios: ["19:00", "x"] }, /horários válidos/],
+    [{ ...ENTRADA, horarios: ["18:00", "20:00"] }, /consecutivos/],
+    [{ ...ENTRADA, horarios: ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"] }, /no máximo/],
+    [{ ...ENTRADA, nomeCliente: "A" }, /nome/],
+    [{ ...ENTRADA, whatsappCliente: "1234" }, /WhatsApp/],
+    [{ ...PEDIDO }, /Termos de Uso/],
+    [{ ...ENTRADA, aceiteTermos: "sim" }, /Termos de Uso/],
   ])("rejeita entrada inválida (%#)", (entrada, mensagem) => {
     expect(() => validarSolicitacaoCheckout(entrada)).toThrow(mensagem);
   });
@@ -182,6 +189,20 @@ describe("criarReservaCheckout", () => {
       checkout_token: checkoutToken,
       valor_total: 240,
     });
+  });
+
+  it("registra o aceite dos termos com a versão vigente (bancos com a Fase 8)", async () => {
+    mocks.arena = { ...ARENA, modo_pagamento: "manual" };
+    await criarReservaCheckout(PEDIDO, null, AGORA);
+    expect(inserts()[0].payload).toMatchObject({
+      termos_aceitos_em: AGORA.toISOString(),
+      termos_versao: VERSAO_TERMOS,
+    });
+  });
+
+  it("não grava colunas da Fase 8 em bancos sem a migração", async () => {
+    await criarReservaCheckout(PEDIDO, null, AGORA);
+    expect(inserts()[0].payload).not.toHaveProperty("termos_versao");
   });
 
   it("vincula a reserva ao atleta autenticado pelo token", async () => {

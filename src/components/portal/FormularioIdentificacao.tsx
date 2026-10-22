@@ -21,8 +21,9 @@ import {
   ENDERECO_COMPLEXO,
 } from "@/lib/constants";
 import { ESPORTES, type Esporte } from "@/lib/quadras";
-import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
+import { useCatalogoArenaStore, useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { useEnderecoArena, usePercentualSinalArena } from "@/hooks/useConfiguracaoSiteArena";
+import { POLITICA_CANCELAMENTO_PADRAO } from "@/lib/legal/termos";
 import {
   User,
   Phone,
@@ -47,6 +48,8 @@ export interface DadosIdentificacao {
   whatsapp: string;
   esporte: Esporte | "";
   observacoes: string;
+  /** Aceite dos Termos de Uso, da Política de Privacidade e da política de cancelamento da arena */
+  aceiteTermos: boolean;
 }
 
 interface Props {
@@ -85,6 +88,7 @@ const initialState: DadosIdentificacao = {
   whatsapp: "",
   esporte: "",
   observacoes: "",
+  aceiteTermos: false,
 };
 
 export function FormularioIdentificacao({
@@ -110,6 +114,8 @@ export function FormularioIdentificacao({
   const percentualSinal = usePercentualSinalArena(PERCENTUAL_SINAL);
   const enderecoArena = useEnderecoArena(ENDERECO_COMPLEXO);
   const { user } = useUserAuth();
+  const politicaCancelamento =
+    useCatalogoArenaStore((s) => s.arena?.politicaCancelamento)?.trim() || POLITICA_CANCELAMENTO_PADRAO;
   const [dados, setDados] = useState<DadosIdentificacao>(initialState);
   const [tipoPagamento, setTipoPagamento] = useState<"sinal" | "integral">("sinal");
   const [errors, setErrors] = useState<Partial<Record<keyof DadosIdentificacao, string>>>({});
@@ -178,6 +184,7 @@ export function FormularioIdentificacao({
       if (dados.whatsapp.replace(/\D/g, "").length < 11)
         novosErrors.whatsapp = "WhatsApp inválido. Use DDD + número.";
     }
+    if (!dados.aceiteTermos) novosErrors.aceiteTermos = "Aceite os termos para continuar.";
     setErrors(novosErrors);
     return Object.keys(novosErrors).length === 0;
   };
@@ -647,6 +654,37 @@ export function FormularioIdentificacao({
                       : "Integral"}
                   </span>
                 </div>
+              </div>
+
+              {/* Política de cancelamento e aceite dos termos (LGPD) */}
+              <div className="space-y-2">
+                <div className="text-[11px] text-slate-400 bg-slate-800/40 border border-slate-700/40 rounded-xl p-3">
+                  <p className="font-semibold text-slate-300 mb-0.5">Política de cancelamento</p>
+                  <p className="leading-relaxed">{politicaCancelamento}</p>
+                </div>
+                <label className="flex items-start gap-2 text-xs text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={dados.aceiteTermos}
+                    onChange={(e) => {
+                      setDados((prev) => ({ ...prev, aceiteTermos: e.target.checked }));
+                      if (errors.aceiteTermos) setErrors((prev) => ({ ...prev, aceiteTermos: undefined }));
+                    }}
+                    className="mt-0.5 accent-emerald-500"
+                  />
+                  <span>
+                    Li e aceito os{" "}
+                    <a href="/termos" target="_blank" className="text-emerald-400 underline">
+                      Termos de Uso
+                    </a>
+                    , a{" "}
+                    <a href="/privacidade" target="_blank" className="text-emerald-400 underline">
+                      Política de Privacidade
+                    </a>{" "}
+                    e a política de cancelamento.
+                  </span>
+                </label>
+                {errors.aceiteTermos && <p className="text-[11px] text-red-400">{errors.aceiteTermos}</p>}
               </div>
 
               {/* Botão de Conclusão / Ir para Pagamento Pix */}

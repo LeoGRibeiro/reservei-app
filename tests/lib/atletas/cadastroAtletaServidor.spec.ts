@@ -20,6 +20,7 @@ vi.mock("@/lib/supabase/adminClient", () => ({
 }));
 
 import { cadastrarAtleta, validarCadastroAtleta } from "@/lib/atletas/cadastroAtletaServidorService";
+import { VERSAO_TERMOS } from "@/lib/legal/termos";
 
 const DADOS = { nome: "Ana Lima", telefone: "91981234567", senha: "Senha#Forte1", dataNascimento: null };
 
@@ -27,7 +28,13 @@ describe("validarCadastroAtleta", () => {
   it("normaliza telefone e data", () => {
     expect(
       validarCadastroAtleta({ nome: " Ana Lima ", telefone: "(91) 98123-4567", senha: "Senha#Forte1", dataNascimento: "1990-05-10" })
-    ).toEqual({ nome: "Ana Lima", telefone: "91981234567", senha: "Senha#Forte1", dataNascimento: "1990-05-10" });
+    ).toEqual({
+      nome: "Ana Lima",
+      telefone: "91981234567",
+      senha: "Senha#Forte1",
+      dataNascimento: "1990-05-10",
+      aceiteTermos: false,
+    });
   });
 
   it.each([
@@ -57,6 +64,21 @@ describe("cadastrarAtleta", () => {
     });
     const perfil = mocks.insertPerfil.mock.calls[0][0];
     expect(perfil).toEqual({ id: "u1", auth_user_id: "u1", nome: "Ana Lima", telefone: "91981234567", data_nascimento: null });
+  });
+
+  it("registra o aceite dos termos com a versão vigente", async () => {
+    await cadastrarAtleta({ ...DADOS, aceiteTermos: true });
+    expect(mocks.insertPerfil.mock.calls[0][0]).toMatchObject({ termos_versao: VERSAO_TERMOS, termos_aceitos_em: expect.any(String) });
+  });
+
+  it("sem as colunas do aceite (banco sem a Fase 8), grava o perfil sem elas", async () => {
+    mocks.insertPerfil
+      .mockResolvedValueOnce({ error: { code: "PGRST204", message: "Could not find the 'termos_versao' column" } })
+      .mockResolvedValueOnce({ error: null });
+
+    expect(await cadastrarAtleta({ ...DADOS, aceiteTermos: true })).toEqual({ userId: "u1" });
+    expect(mocks.insertPerfil.mock.calls[1][0]).not.toHaveProperty("termos_versao");
+    expect(mocks.deleteUser).not.toHaveBeenCalled();
   });
 
   it("responde 409 quando o WhatsApp já tem conta", async () => {

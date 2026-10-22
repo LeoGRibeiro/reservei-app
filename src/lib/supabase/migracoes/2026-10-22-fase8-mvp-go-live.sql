@@ -83,3 +83,14 @@ ALTER TABLE public.reservas
 CREATE INDEX IF NOT EXISTS idx_reservas_pix_manual_informado
   ON public.reservas (arena_id, pagamento_informado_em)
   WHERE status = 'em_processamento' AND pagamento_informado_em IS NOT NULL;
+
+-- ------------------------------------------------------------------------------
+-- 8.4. LGPD: registro do aceite dos Termos de Uso e da Política de Privacidade (M4)
+-- ------------------------------------------------------------------------------
+ALTER TABLE public.usuarios
+  ADD COLUMN IF NOT EXISTS termos_aceitos_em TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS termos_versao TEXT;
+
+ALTER TABLE public.reservas
+  ADD COLUMN IF NOT EXISTS termos_aceitos_em TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS termos_versao TEXT;

@@ -135,7 +135,8 @@ async function cadastrarViaSupabaseAuth(
     const resposta = await fetch("/api/atletas/cadastro", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, telefone: digits, senha, dataNascimento: dataNascimento || null }),
+      // O cadastro só é oferecido depois do aceite dos termos (tela de cadastro ou checkout)
+      body: JSON.stringify({ nome, telefone: digits, senha, dataNascimento: dataNascimento || null, aceiteTermos: true }),
     });
     const corpo = (await resposta.json().catch(() => ({}))) as { sucesso?: boolean; erro?: string };
 

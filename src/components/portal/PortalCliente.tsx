@@ -314,6 +314,7 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
           observacoes: dados.observacoes || undefined,
           tipoPagamento,
           voucherIds: vouchersAtivosParaReserva.map((v) => v.id),
+          aceiteTermos: dados.aceiteTermos,
         },
         {
           valorOriginal: valorTotalBruto,

@@ -19,6 +19,8 @@ export interface PedidoCheckout {
   observacoes?: string;
   tipoPagamento: "sinal" | "integral";
   voucherIds: string[];
+  /** O atleta aceitou os Termos de Uso e a Política de Privacidade */
+  aceiteTermos: boolean;
 }
 
 /** Reserva criada pelo servidor no checkout. */

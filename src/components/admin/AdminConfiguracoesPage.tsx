@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useArena } from "@/hooks/useArena";
 import { ArenaRepository } from "@/lib/arena/arenaRepository";
 import { construirUrlArena } from "@/lib/arena/subdomain";
+import { POLITICA_CANCELAMENTO_PADRAO } from "@/lib/legal/termos";
 
 export function AdminConfiguracoesPage() {
   const { arena, recarregar, carregando } = useArena();
@@ -44,7 +45,10 @@ export function AdminConfiguracoesPage() {
   const [horarioFechamento, setHorarioFechamento] = useState("23:00");
   const [percentualSinal, setPercentualSinal] = useState(50);
   const [antecedenciaMinutos, setAntecedenciaMinutos] = useState(60);
+  const [politicaCancelamento, setPoliticaCancelamento] = useState("");
   const [salvando, setSalvando] = useState(false);
+  // A coluna só existe em bancos com a migração da Fase 8
+  const suportaPolitica = arena?.modoPagamento !== undefined && arena.modoPagamento !== "legado";
 
   useEffect(() => {
     if (arena) {
@@ -62,6 +66,7 @@ export function AdminConfiguracoesPage() {
       setHorarioFechamento(arena.horarioFechamento || "23:00");
       setPercentualSinal(arena.percentualSinalMinimo || 50);
       setAntecedenciaMinutos(arena.antecedenciaMinimaMinutos || 60);
+      setPoliticaCancelamento(arena.politicaCancelamento || "");
     }
   }, [arena]);
 
@@ -97,6 +102,7 @@ export function AdminConfiguracoesPage() {
         horarioFechamento,
         percentualSinalMinimo: Number(percentualSinal),
         antecedenciaMinimaMinutos: Number(antecedenciaMinutos),
+        ...(suportaPolitica ? { politicaCancelamento: politicaCancelamento.trim() } : {}),
       });
 
       if (atualizada) {
@@ -389,6 +395,29 @@ export function AdminConfiguracoesPage() {
             </div>
           </div>
         </div>
+
+        {/* ── Política de cancelamento (exibida no checkout e nos Termos) ───────── */}
+        {suportaPolitica && (
+          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-3">
+            <h2 className="text-base font-bold text-white flex items-center gap-2">
+              <Shield className="w-4 h-4 text-emerald-400" />
+              Política de Cancelamento
+            </h2>
+            <p className="text-xs text-slate-400">
+              Aparece para o atleta antes do pagamento e nos Termos de Uso. Seja claro sobre prazos e devolução do
+              sinal.
+            </p>
+            <textarea
+              aria-label="Política de cancelamento"
+              value={politicaCancelamento}
+              onChange={(e) => setPoliticaCancelamento(e.target.value.slice(0, 1000))}
+              rows={4}
+              placeholder={POLITICA_CANCELAMENTO_PADRAO}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+            />
+            <p className="text-[10px] text-slate-500">Em branco, vale o texto padrão mostrado acima.</p>
+          </div>
+        )}
 
         {/* ── Botão Salvar ────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-end gap-3 pt-2">

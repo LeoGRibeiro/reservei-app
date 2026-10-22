@@ -8,6 +8,7 @@
  * em `usuarios` é criado na mesma operação. O navegador apenas faz o login em seguida.
  */
 
+import { VERSAO_TERMOS } from "@/lib/legal/termos";
 import { supabaseAdmin } from "@/lib/supabase/adminClient";
 import { emailSinteticoDoTelefone } from "@/lib/supabase/authService";
 import { validarSenhaForte } from "@/lib/constants";
@@ -19,6 +20,8 @@ export interface DadosCadastroAtleta {
   telefone: string;
   senha: string;
   dataNascimento: string | null;
+  /** Aceite dos Termos de Uso e da Política de Privacidade (dado no cadastro ou no checkout) */
+  aceiteTermos?: boolean;
 }
 
 export const MSG_TELEFONE_DUPLICADO = "Este número de WhatsApp já possui uma conta cadastrada.";
@@ -43,7 +46,7 @@ export function validarCadastroAtleta(input: unknown): DadosCadastroAtleta {
   if (!forca.valido || senha.length > 72) throw new ErroHttp(forca.erros[0] ?? "Senha inválida.", 400);
   if (data && !/^\d{4}-\d{2}-\d{2}$/.test(data)) throw new ErroHttp("Data de nascimento inválida.", 400);
 
-  return { nome, telefone, senha, dataNascimento: data || null };
+  return { nome, telefone, senha, dataNascimento: data || null, aceiteTermos: bruto.aceiteTermos === true };
 }
 
 /** Indica se o erro do Supabase Auth significa usuário já existente. */
@@ -73,13 +76,21 @@ export async function cadastrarAtleta(dados: DadosCadastroAtleta): Promise<{ use
   }
 
   const userId = data.user.id;
-  const { error: erroPerfil } = await supabaseAdmin.from("usuarios").insert({
+  const perfil = {
     id: userId,
     auth_user_id: userId,
     nome: dados.nome,
     telefone: dados.telefone,
     data_nascimento: dados.dataNascimento,
-  });
+  };
+  const aceite = dados.aceiteTermos
+    ? { termos_aceitos_em: new Date().toISOString(), termos_versao: VERSAO_TERMOS }
+    : {};
+  let { error: erroPerfil } = await supabaseAdmin.from("usuarios").insert({ ...perfil, ...aceite });
+  // Banco sem a Fase 8 (colunas do aceite ausentes): grava o perfil sem elas em vez de falhar o cadastro
+  if (erroPerfil?.code === "PGRST204" && dados.aceiteTermos) {
+    ({ error: erroPerfil } = await supabaseAdmin.from("usuarios").insert(perfil));
+  }
 
   if (erroPerfil) {
     // Sem perfil a conta fica inconsistente: desfaz a identidade criada

@@ -37,6 +37,7 @@ export default function CadastroPage() {
   const [senha, setSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [aceiteTermos, setAceiteTermos] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,6 +69,13 @@ export default function CadastroPage() {
     if (senha !== confirmarSenha) {
       toast.error("Senhas não coincidem", {
         description: "A confirmação deve ser exatamente igual à senha.",
+      });
+      return;
+    }
+
+    if (!aceiteTermos) {
+      toast.error("Aceite os termos para criar a conta", {
+        description: "Leia e aceite os Termos de Uso e a Política de Privacidade.",
       });
       return;
     }
@@ -272,6 +280,27 @@ export default function CadastroPage() {
                   className="bg-slate-800/80 border-slate-700 text-white placeholder:text-slate-500 focus:border-emerald-500 h-10 rounded-xl"
                 />
               </div>
+
+              {/* Aceite dos termos (LGPD) */}
+              <label className="flex items-start gap-2 text-xs text-slate-300 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={aceiteTermos}
+                  onChange={(e) => setAceiteTermos(e.target.checked)}
+                  className="mt-0.5 accent-emerald-500"
+                />
+                <span>
+                  Li e aceito os{" "}
+                  <Link href="/termos" target="_blank" className="text-emerald-400 underline">
+                    Termos de Uso
+                  </Link>{" "}
+                  e a{" "}
+                  <Link href="/privacidade" target="_blank" className="text-emerald-400 underline">
+                    Política de Privacidade
+                  </Link>
+                  .
+                </span>
+              </label>
 
               {/* Botão de Cadastrar */}
               <Button

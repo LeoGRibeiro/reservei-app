@@ -8,6 +8,7 @@ import type { ConfiguracaoSite, SecaoLandingPage } from "@/lib/landingPage/types
 import { IconeRedeSocial } from "./IconeRedeSocial";
 import { ListaLinksNavegacao } from "./ListaLinksNavegacao";
 import { LogoReservei } from "./LogoReservei";
+import { NOME_PRODUTO } from "@/lib/marca";
 
 /** Mensagem padrão enviada pelo atalho de WhatsApp do rodapé. */
 export const MENSAGEM_WHATSAPP_RODAPE = "Olá! Vim pelo site e gostaria de mais informações.";
@@ -111,11 +112,18 @@ export function LandingFooter({
       <div className="border-t border-slate-800/70">
         <div className="max-w-7xl mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
           <p>
-            © {ano} {config.descricaoEstabelecimento}. Todos os direitos reservados.
+            © {ano} {config.nomePlataforma}. Todos os direitos reservados.
           </p>
+          <nav aria-label="Documentos legais" className="flex gap-4">
+            <a href="/termos" className="hover:text-slate-300 transition-colors">
+              Termos de Uso
+            </a>
+            <a href="/privacidade" className="hover:text-slate-300 transition-colors">
+              Privacidade
+            </a>
+          </nav>
           <p>
-            Reservas online por{" "}
-            <span className="font-bold text-slate-300">{config.nomePlataforma}</span>
+            Reservas online por <span className="font-bold text-slate-300">{NOME_PRODUTO}</span>
           </p>
         </div>
       </div>

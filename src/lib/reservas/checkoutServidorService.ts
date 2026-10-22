@@ -16,6 +16,7 @@
  * autoria do checkout para gerar o Pix, consultar o status, cancelar o lock e vincular a conta.
  */
 
+import { VERSAO_TERMOS } from "@/lib/legal/termos";
 import { randomUUID } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase/adminClient";
 import {
@@ -100,6 +101,11 @@ export function validarSolicitacaoCheckout(input: unknown): SolicitacaoCheckout 
 
   const nomeCliente = texto(bruto.nomeCliente, 120);
   if (nomeCliente.length < 2) throw new ErroHttp("Informe seu nome.", 400);
+
+  // LGPD: o aceite dos termos e da política de privacidade é condição para reservar
+  if (bruto.aceiteTermos !== true) {
+    throw new ErroHttp("Para reservar, aceite os Termos de Uso e a Política de Privacidade.", 400);
+  }
 
   const whatsappCliente = typeof bruto.whatsappCliente === "string" ? bruto.whatsappCliente.replace(/\D/g, "") : "";
   if (whatsappCliente.length < 10 || whatsappCliente.length > 13) {
@@ -314,6 +320,10 @@ export async function criarReservaCheckout(
     expira_em: expiraEm,
     checkout_token: checkoutToken,
     criada_em: agoraIso,
+    // Registro do aceite (colunas da Fase 8; bancos sem a migração operam em modo legado)
+    ...(arena.modoPagamento && arena.modoPagamento !== "legado"
+      ? { termos_aceitos_em: agoraIso, termos_versao: VERSAO_TERMOS }
+      : {}),
   };
 
   const { error: erroInsert } = await supabaseAdmin.from("reservas").insert(linha);

@@ -403,6 +403,7 @@ export const ArenaRepository = {
       if (dados.percentualSinalMinimo !== undefined) payload.percentual_sinal_minimo = dados.percentualSinalMinimo;
       if (dados.antecedenciaMinimaMinutos !== undefined) payload.antecedencia_minima_minutos = dados.antecedenciaMinimaMinutos;
       if (dados.ativo !== undefined) payload.ativo = dados.ativo;
+      if (dados.politicaCancelamento !== undefined) payload.politica_cancelamento = dados.politicaCancelamento;
 
       const { data, error } = await supabase
         .from("arenas")
