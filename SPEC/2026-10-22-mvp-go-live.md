@@ -1,7 +1,7 @@
 # Especificação Técnica: MVP Go-Live — Recebimento na Conta da Arena, Equipe com Papéis, Recuperação de Acesso, LGPD e Vitrine Comercial
 
 **Data:** 22/10/2026
-**Status:** Em revisão (aguardando aprovação do fundador)
+**Status:** Implementado em 22/10/2026 (branch `feat/mvp-go-live`, commits M6→M5). Ver §13.
 **Escopo:** Tudo o que falta para entregar uma URL funcional a uma arena pagante e fazer uma demonstração comercial
 sem depender de explicações ("isso ainda não funciona"). Funcionalidades novas de produto ficam no `BACKLOG.md`.
 
@@ -222,3 +222,27 @@ comanda de bar, rate limiting com Redis.
 
 Cada módulo: testes de regra de negócio (sucesso, erro, permissão), `tsc` limpo, suíte verde e build ok antes do próximo.
 Os 21 erros de lint antigos ficam fora desta spec (backlog).
+
+---
+
+## 13. Registro de implementação (22/10/2026)
+
+Decisões tomadas durante a implementação, diferentes do texto acima:
+
+- **Pix manual (§3.4):** em vez de estender o lock por 2 h, o "Já fiz o Pix" segura o horário **até o fim da partida**
+  (mínimo de 30 min). A grade pública, `grade_publica` e o `LockService` não precisaram mudar, e quem informou o
+  pagamento nunca perde o horário por demora do balcão. A fila destaca avisos com mais de 30 min.
+- **Domínio (§8):** sem domínio próprio, o host serve uma arena inteira (portal e admin) definida por
+  `NEXT_PUBLIC_ARENA_RAIZ_SLUG`. Com `NEXT_PUBLIC_ROOT_DOMAIN`, a raiz mostra a página comercial.
+- **RBAC no banco (§4.2):** as policies de `arenas`, `quadras` e `quadras_precos` já restringiam escrita por papel
+  (Fase 3); nenhuma policy nova foi necessária.
+- **Convite de e-mail existente (§4.2):** retorna 409 com orientação; o vínculo de conta existente foi para o backlog.
+- **Achados fora do plano e corrigidos:**
+  - `token_convite` era legível por visitantes anônimos (linha pública de `arenas`). Agora só o hash SHA-256 fica no banco.
+  - Mensagens de WhatsApp diziam "Complexo Esportivo Reservei" e "Quadra q1" em vez do nome da arena e da quadra.
+  - O catálogo de esportes não tinha Beach Tennis, Futevôlei, Vôlei de Praia, Futebol Society, Tênis e Padel.
+  - `schema.sql` não rodava num banco novo (tabela `profiles` legada, `END IF` faltando, comparação `uuid = text`).
+  - Next.js 16.3.7 tinha vulnerabilidade crítica (atualizado para 16.4.2); `shadcn` saiu das dependências de produção.
+- **Validação do SQL:** `schema.sql`, a migração e o seed foram executados duas vezes num PostgreSQL em WASM (PGlite)
+  partindo de um banco vazio.
+
