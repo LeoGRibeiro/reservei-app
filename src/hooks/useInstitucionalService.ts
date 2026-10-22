@@ -32,16 +32,19 @@ import {
   uploadImagemInstitucional,
 } from "@/lib/supabase/institucionalRepository";
 import { GALERIA_INICIAL } from "@/lib/institucional/dadosIniciais";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { useContratosService } from "@/hooks/useContratosService";
 
 export function useInstitucionalService() {
-  const [galeria, setGaleria] = useState<GaleriaItem[]>([...GALERIA_INICIAL]);
+  // Com Supabase, começa vazio: fotos de demonstração nunca devem piscar na landing de uma arena real
+  const [galeria, setGaleria] = useState<GaleriaItem[]>(() =>
+    isSupabaseConfigured() ? [] : [...GALERIA_INICIAL]
+  );
   const [carregando, setCarregando] = useState(true);
   const [filtroCategoria, setFiltroCategoria] = useState<FiltroCategoriaGaleria>("todas");
 
   // Acesso direto aos contratos de escolinhas cadastrados na aba Escolinhas (mesmo banco)
-  const { getContratosPorTipo, criarContrato, atualizarContrato, encerrarContrato } =
-    useContratosService();
+  const { getContratosPorTipo, atualizarContrato } = useContratosService();
   const contratosEscolinhas = useMemo(
     () => getContratosPorTipo("escolinha"),
     [getContratosPorTipo]
@@ -57,7 +60,7 @@ export function useInstitucionalService() {
       const itensGaleria = await listarGaleria();
       setGaleria(itensGaleria);
     } catch {
-      // Fallback gracioso mantendo os itens iniciais da galeria
+      // Mantém a galeria atual se a consulta falhar
     } finally {
       setCarregando(false);
     }
@@ -108,32 +111,38 @@ export function useInstitucionalService() {
     return ok;
   }, []);
 
-  // Ações de gerenciamento das escolinhas diretamente no mesmo banco (contratos_recorrentes)
+  // Ações de gerenciamento das escolinhas diretamente no mesmo banco (contratos_recorrentes).
+  // A escolinha nasce na aba Escolinhas (com quadra, dias e horários reais); aqui só se publica
+  // a vitrine dela na landing. Criar um contrato daqui ocuparia a quadra com um horário fictício.
   const criarNovaEscolinha = useCallback(
     async (input: CriarEscolinhaInput) => {
-      const res = await criarContrato({
-        tipo: "escolinha",
+      if (!input.contratoId) {
+        throw new Error(
+          "Cadastre a escolinha primeiro na aba Escolinhas (quadra, dias e horários) e depois importe-a aqui."
+        );
+      }
+
+      const contrato = contratosEscolinhas.find((c) => c.id === input.contratoId);
+      if (!contrato) {
+        throw new Error("Contrato de escolinha não encontrado. Atualize a página e tente novamente.");
+      }
+
+      const dados = {
         nome: input.sportName,
-        esporte: "Outro",
         responsavelNome: input.teacherName,
         contatoWhatsapp: input.whatsappNumber,
         fotoUrl: input.teacherImageUrl,
         faixaEtaria: input.faixaEtaria,
         descricao: input.descricao,
-        quadraId: "q1",
-        diasSemana: [1, 3],
-        horaInicio: "08:00",
-        horaFim: "10:00",
-        dataInicio: new Date().toISOString().split("T")[0],
-        meses: 12,
-      });
-
-      if (res.ok) {
-        return converterContratoParaEscolinhaItem(res.contrato);
+        ativo: input.isActive ?? true,
+      };
+      const res = await atualizarContrato(contrato.id, dados);
+      if (!res.ok) {
+        throw new Error(res.motivo || "Erro ao publicar a escolinha.");
       }
-      throw new Error(res.erros?.join(", ") || "Erro ao cadastrar escolinha");
+      return converterContratoParaEscolinhaItem({ ...contrato, ...dados });
     },
-    [criarContrato]
+    [atualizarContrato, contratosEscolinhas]
   );
 
   const atualizarEscolinhaExistente = useCallback(

@@ -9,7 +9,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
 import { AdminLogin } from "./AdminLogin";
-import { AdminSidebar, type AdminView } from "./AdminSidebar";
+import { useArena } from "@/hooks/useArena";
+import { useSetupAdmin } from "@/hooks/useSetupAdmin";
+import { AdminSetupWizard } from "./AdminSetupWizard";
+import { AdminSidebar, viewDisponivel, type AdminView } from "./AdminSidebar";
 import { AdminDashboardPage } from "./AdminDashboardPage";
 import { AdminAgendaPage } from "./AdminAgendaPage";
 import { AdminUsuariosPage } from "./AdminUsuariosPage";
@@ -41,7 +44,13 @@ interface Props {
 }
 
 export function AdminShell({ initialView = "dashboard" }: Props) {
-  const { autenticado, login, logout } = useAdminAuth();
+  const { autenticado, login, logout, arenaSlug } = useAdminAuth();
+  const { arena, carregando: carregandoArena } = useArena(arenaSlug);
+  // Token de convite do primeiro acesso (?token=...), lido uma única vez no cliente
+  const [tokenConvite] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("token")
+  );
+  const { precisaSetup, tokenValido } = useSetupAdmin(arenaSlug, autenticado === false, tokenConvite);
   const [mounted, setMounted] = useState(false);
   const [view, setView] = useState<AdminView>(initialView);
   const router = useRouter();
@@ -60,8 +69,8 @@ export function AdminShell({ initialView = "dashboard" }: Props) {
     }
   }, [autenticado, router]);
 
-  // ── Carregando (hidratação do LocalStorage e montagem no cliente) ─────────
-  if (!mounted || autenticado === null) {
+  // ── Carregando (verificação da sessão Supabase e montagem no cliente) ─────────
+  if (!mounted || autenticado === null || (autenticado === false && precisaSetup === null)) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
         <span className="inline-block w-6 h-6 border-2 border-slate-700 border-t-emerald-400 rounded-full animate-spin" />
@@ -69,33 +78,52 @@ export function AdminShell({ initialView = "dashboard" }: Props) {
     );
   }
 
+  // ── Arena sem nenhum operador → Setup Wizard (primeiro acesso) ───────────
+  if (!autenticado && precisaSetup) {
+    return (
+      <AdminSetupWizard
+        arenaSlug={arenaSlug}
+        onSetupConcluido={login}
+        token={tokenConvite}
+        tokenValido={tokenValido}
+      />
+    );
+  }
+
   // ── Não autenticado → Tela de login ──────────────────────────────────────
   if (!autenticado) {
-    return <AdminLogin onLogin={login} />;
+    return <AdminLogin onLogin={login} arenaSlug={arenaSlug} />;
   }
+
+  // Enquanto a arena carrega, nenhum módulo opcional é exibido (evita flash de abas indevidas)
+  const modulosAtivos = carregandoArena ? undefined : arena.modulosAtivos;
+
+  // Se a view atual pertence a um módulo desativado, volta ao dashboard
+  const viewEfetiva: AdminView = viewDisponivel(view, modulosAtivos) ? view : "dashboard";
 
   // ── Autenticado → Layout principal ───────────────────────────────────────
   return (
     <div className="flex min-h-screen bg-slate-950">
       <AdminSidebar
-        viewAtual={view}
+        viewAtual={viewEfetiva}
         onChangeView={setView}
         onLogout={logout}
+        modulosAtivos={modulosAtivos}
       />
 
       {/* Conteúdo principal */}
       <main className="flex-1 min-w-0 lg:pt-0 pt-[57px]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {view === "dashboard" && <AdminDashboardPage />}
-          {view === "agenda" && <AdminAgendaPage />}
-          {view === "quadras" && <AdminQuadrasPage />}
-          {view === "usuarios" && <AdminUsuariosPage />}
-          {view === "institucional" && <AdminInstitucionalPage />}
-          {view === "escolinhas" && <AdminEscolinhasPage />}
-          {view === "grupos" && <AdminGruposPage />}
-          {view === "fidelidade" && <AdminFidelidadePage />}
-          {view === "financeiro" && <AdminFinanceiroPage />}
-          {view === "configuracoes" && <AdminConfiguracoesPage />}
+          {viewEfetiva === "dashboard" && <AdminDashboardPage />}
+          {viewEfetiva === "agenda" && <AdminAgendaPage />}
+          {viewEfetiva === "quadras" && <AdminQuadrasPage />}
+          {viewEfetiva === "usuarios" && <AdminUsuariosPage />}
+          {viewEfetiva === "institucional" && <AdminInstitucionalPage />}
+          {viewEfetiva === "escolinhas" && <AdminEscolinhasPage />}
+          {viewEfetiva === "grupos" && <AdminGruposPage />}
+          {viewEfetiva === "fidelidade" && <AdminFidelidadePage />}
+          {viewEfetiva === "financeiro" && <AdminFinanceiroPage />}
+          {viewEfetiva === "configuracoes" && <AdminConfiguracoesPage />}
         </div>
       </main>
     </div>

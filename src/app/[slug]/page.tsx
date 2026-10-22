@@ -6,6 +6,7 @@
  */
 
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { PortalCliente } from "@/components/portal/PortalCliente";
 import { ArenaRepository } from "@/lib/arena/arenaRepository";
 
@@ -40,9 +41,11 @@ export async function generateMetadata({
 export const dynamic = "force-dynamic";
 
 /**
- * Página dinâmica da Arena.
+ * Página dinâmica da Arena. Slug inexistente ou arena inativa responde 404 (nunca exibe outra arena).
  */
 export default async function ArenaPage({ params }: ArenaPageProps) {
   const { slug } = await params;
+  const arena = await ArenaRepository.buscarPorSlug(slug);
+  if (!arena) notFound();
   return <PortalCliente arenaSlug={slug} />;
 }

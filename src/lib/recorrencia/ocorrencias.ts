@@ -3,7 +3,7 @@
  * Funções puras (sem React, Zustand ou Supabase) para facilitar os testes.
  */
 
-import { HORARIOS_DISPONIVEIS, QUADRAS } from "@/lib/quadras";
+import { obterHorariosCatalogo, obterQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { calcularValorTotal } from "@/lib/constants";
 import type { Reserva } from "@/store/useReservasStore";
 import {
@@ -42,7 +42,7 @@ export function expandirHorarios(horaInicio: string, horaFim: string): string[] 
 
 /** Horários de fim aceitos: o fim de cada slot disponível (09:00 ... 23:00) */
 export function horariosFimDisponiveis(): string[] {
-  return HORARIOS_DISPONIVEIS.map((h) => horaParaTexto(textoParaHora(h) + 1));
+  return obterHorariosCatalogo().map((h) => horaParaTexto(textoParaHora(h) + 1));
 }
 
 // ─── Datas ────────────────────────────────────────────────────────────────────
@@ -102,7 +102,7 @@ export function validarDadosContrato(dados: DadosNovoContrato, hoje: string): st
     erros.push("Informe um WhatsApp válido com DDD.");
   }
 
-  if (!QUADRAS.some((q) => q.id === dados.quadraId)) {
+  if (!obterQuadrasCatalogo().some((q) => q.id === dados.quadraId)) {
     erros.push("Selecione uma quadra válida.");
   }
 
@@ -113,7 +113,7 @@ export function validarDadosContrato(dados: DadosNovoContrato, hoje: string): st
   const slots = expandirHorarios(dados.horaInicio, dados.horaFim);
   if (slots.length === 0) {
     erros.push("O horário de fim deve ser posterior ao horário de início.");
-  } else if (!slots.every((s) => HORARIOS_DISPONIVEIS.includes(s))) {
+  } else if (!slots.every((s) => obterHorariosCatalogo().includes(s))) {
     erros.push("O intervalo contém horários fora do funcionamento do complexo.");
   }
 

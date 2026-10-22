@@ -1,11 +1,59 @@
 import { supabase, isSupabaseConfigured } from "./client";
 import { rowToReserva, reservaToRow, type ReservaDbRow } from "./types";
 import type { Reserva } from "@/store/useReservasStore";
+import { obterArenaAtivaId } from "@/lib/arena/arenaAtiva";
 
 const TABELA_RESERVAS = "reservas";
+const RPC_GRADE_PUBLICA = "grade_publica";
 
 /**
- * Busca todas as reservas cadastradas no Supabase.
+ * Busca os slots ocupados da arena ativa pela função pública sanitizada `grade_publica`
+ * (sem CPF/telefone de terceiros — LGPD). Necessária porque o RLS da tabela `reservas` só
+ * permite ler as reservas do próprio usuário ou, para operadores, as da sua arena.
+ *
+ * @param dataInicio Filtro opcional de data inicial (YYYY-MM-DD)
+ * @param dataFim Filtro opcional de data final (YYYY-MM-DD)
+ * @returns Reservas "esqueleto" da arena ativa, ou lista vazia se a arena não existir ou a consulta falhar
+ */
+export async function fetchGradePublicaSupabase(
+  dataInicio?: string,
+  dataFim?: string
+): Promise<Reserva[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  try {
+    const arenaId = await obterArenaAtivaId();
+    if (!arenaId) return [];
+
+    const { data, error } = await supabase.rpc(RPC_GRADE_PUBLICA, {
+      p_arena_id: arenaId,
+      p_data_inicio: dataInicio ?? null,
+      p_data_fim: dataFim ?? null,
+    });
+    if (error || !data) {
+      console.warn("[Supabase] Grade pública indisponível:", error?.message);
+      return [];
+    }
+
+    return (data as ReservaDbRow[]).map(rowToReserva);
+  } catch (err) {
+    console.warn("[Supabase] Falha ao consultar a grade pública:", err);
+    return [];
+  }
+}
+
+/**
+ * Acrescenta à lista os slots ocupados da grade pública que o usuário atual não enxerga
+ * na tabela base (reservas de terceiros). Itens já presentes (mesmo id) são preservados.
+ */
+function mesclarGradePublica(reservas: Reserva[], grade: Reserva[]): Reserva[] {
+  const ids = new Set(reservas.map((r) => r.id));
+  return [...reservas, ...grade.filter((g) => !ids.has(g.id))];
+}
+
+/**
+ * Busca as reservas da arena ativa visíveis ao usuário atual (próprias, ou todas se for operador),
+ * completadas pelos slots ocupados da grade pública.
  */
 export async function fetchReservasSupabase(): Promise<Reserva[] | null> {
   if (!isSupabaseConfigured()) {
@@ -13,9 +61,13 @@ export async function fetchReservasSupabase(): Promise<Reserva[] | null> {
   }
 
   try {
+    const arenaId = await obterArenaAtivaId();
+    if (!arenaId) return [];
+
     const { data, error } = await supabase
       .from(TABELA_RESERVAS)
       .select("*")
+      .eq("arena_id", arenaId)
       .order("criada_em", { ascending: false });
 
     if (error) {
@@ -23,7 +75,8 @@ export async function fetchReservasSupabase(): Promise<Reserva[] | null> {
       return null;
     }
 
-    return (data as ReservaDbRow[]).map(rowToReserva);
+    const proprias = (data as ReservaDbRow[]).map(rowToReserva);
+    return mesclarGradePublica(proprias, await fetchGradePublicaSupabase());
   } catch (err) {
     console.error("[Supabase] Falha inesperada ao buscar reservas:", err);
     return null;
@@ -45,6 +98,9 @@ export async function fetchReservasPorMesSupabase(
   }
 
   try {
+    const arenaId = await obterArenaAtivaId();
+    if (!arenaId) return [];
+
     const ultimoDia = new Date(ano, mes, 0).getDate();
     const dataInicio = `${ano}-${String(mes).padStart(2, "0")}-01`;
     const dataFim = `${ano}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
@@ -52,6 +108,7 @@ export async function fetchReservasPorMesSupabase(
     const { data, error } = await supabase
       .from(TABELA_RESERVAS)
       .select("*")
+      .eq("arena_id", arenaId)
       .gte("data", dataInicio)
       .lte("data", dataFim)
       .order("data", { ascending: true });
@@ -64,7 +121,8 @@ export async function fetchReservasPorMesSupabase(
       return null;
     }
 
-    return (data as ReservaDbRow[]).map(rowToReserva);
+    const proprias = (data as ReservaDbRow[]).map(rowToReserva);
+    return mesclarGradePublica(proprias, await fetchGradePublicaSupabase(dataInicio, dataFim));
   } catch (err) {
     console.error(
       `[Supabase] Falha inesperada ao buscar reservas do mês ${mes}/${ano}:`,
@@ -100,7 +158,18 @@ function expurgarColunaIncompativel(
 }
 
 /**
- * Insere uma nova reserva no banco de dados Supabase.
+ * Preenche o `arena_id` com a arena ativa quando a reserva ainda não o tiver.
+ * Sem ele, o RLS rejeita a gravação (o operador só grava na própria arena).
+ */
+async function comArenaAtiva(row: Record<string, unknown>): Promise<Record<string, unknown>> {
+  if (row.arena_id) return row;
+  const arenaId = await obterArenaAtivaId();
+  return arenaId ? { ...row, arena_id: arenaId } : row;
+}
+
+/**
+ * Insere uma nova reserva no banco de dados Supabase (uso do painel administrativo:
+ * reservas manuais e bloqueios). Visitantes e atletas usam `POST /api/reservas/checkout`.
  * Trata graciosamente eventuais colunas ausentes no schema cache com retry automático resiliente.
  */
 export async function inserirReservaSupabase(reserva: Reserva): Promise<boolean> {
@@ -109,7 +178,7 @@ export async function inserirReservaSupabase(reserva: Reserva): Promise<boolean>
   }
 
   try {
-    const payload: Record<string, unknown> = { ...reservaToRow(reserva) };
+    const payload: Record<string, unknown> = await comArenaAtiva({ ...reservaToRow(reserva) });
     let tentativa = 0;
 
     while (tentativa < 6) {
@@ -145,7 +214,7 @@ export async function inserirReservasEmLoteSupabase(reservas: Reserva[]): Promis
   }
 
   try {
-    const rows = reservas.map((r) => reservaToRow(r));
+    const rows = await Promise.all(reservas.map((r) => comArenaAtiva(reservaToRow(r))));
     const { error } = await supabase
       .from(TABELA_RESERVAS)
       .upsert(rows, { onConflict: "id" });
@@ -271,7 +340,8 @@ export async function removerReservaSupabase(id: string): Promise<boolean> {
 
 /**
  * Cria uma inscrição Realtime para escutar inserções, atualizações e deleções
- * na tabela 'reservas' em tempo real.
+ * na tabela 'reservas' da arena ativa. O RLS limita os eventos ao que o usuário pode ler
+ * (operadores recebem tudo da arena; atletas, só as próprias reservas).
  */
 export function subscreverReservasSupabase(
   onInsert: (reserva: Reserva) => void,
@@ -294,50 +364,45 @@ export function subscreverReservasSupabase(
     console.warn("[Supabase] Aviso ao limpar canais anteriores:", err);
   }
 
-  const canalId = `mudancas-reservas-realtime-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-  const canal = supabase
-    .channel(canalId)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: TABELA_RESERVAS,
-      },
-      (payload) => {
-        const nova = rowToReserva(payload.new as ReservaDbRow);
-        onInsert(nova);
-      }
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "UPDATE",
-        schema: "public",
-        table: TABELA_RESERVAS,
-      },
-      (payload) => {
-        const atualizada = rowToReserva(payload.new as ReservaDbRow);
-        onUpdate(atualizada);
-      }
-    )
-    .on(
-      "postgres_changes",
-      {
-        event: "DELETE",
-        schema: "public",
-        table: TABELA_RESERVAS,
-      },
-      (payload) => {
-        const idDeletado = (payload.old as { id?: string })?.id;
-        if (idDeletado) {
-          onDelete(idDeletado);
+  let cancelado = false;
+  let canal: ReturnType<typeof supabase.channel> | null = null;
+
+  void obterArenaAtivaId().then((arenaId) => {
+    if (cancelado || !arenaId) return;
+
+    const filtro = `arena_id=eq.${arenaId}`;
+    const canalId = `mudancas-reservas-realtime-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    canal = supabase
+      .channel(canalId)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: TABELA_RESERVAS, filter: filtro },
+        (payload) => {
+          onInsert(rowToReserva(payload.new as ReservaDbRow));
         }
-      }
-    )
-    .subscribe();
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: TABELA_RESERVAS, filter: filtro },
+        (payload) => {
+          onUpdate(rowToReserva(payload.new as ReservaDbRow));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: TABELA_RESERVAS },
+        (payload) => {
+          const idDeletado = (payload.old as { id?: string })?.id;
+          if (idDeletado) {
+            onDelete(idDeletado);
+          }
+        }
+      )
+      .subscribe();
+  });
 
   return () => {
-    void supabase.removeChannel(canal);
+    cancelado = true;
+    if (canal) void supabase.removeChannel(canal);
   };
 }

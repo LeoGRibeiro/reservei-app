@@ -274,3 +274,31 @@ export interface UserProfile {
   bloqueado?: boolean;
   motivo_bloqueio?: string | null;
 }
+
+/**
+ * Registro bruto da tabela `public.arena_usuarios` (vínculo RBAC entre um usuário
+ * do Supabase Auth e uma arena).
+ */
+export interface ArenaUsuarioRow {
+  /** Identificador do vínculo */
+  id: string;
+  /** Arena (tenant) à qual o usuário está vinculado */
+  arena_id: string;
+  /** UUID do usuário em `auth.users` */
+  user_id: string;
+  /** Perfil de acesso do usuário na arena */
+  role: "proprietario" | "gerente" | "operador";
+  /** Indica se o vínculo está habilitado */
+  ativo: boolean;
+  /** Data de concessão do acesso (ISO 8601) */
+  criado_em: string;
+}
+
+/**
+ * Resultado da consulta `arena_usuarios` com `arenas(slug)` embutido (join do PostgREST).
+ * Dependendo da cardinalidade inferida, o PostgREST pode devolver o relacionamento
+ * como objeto único ou como array de um elemento.
+ */
+export interface ArenaUsuarioComArenaRow extends Pick<ArenaUsuarioRow, "role" | "ativo" | "arena_id"> {
+  arenas: { slug: string } | { slug: string }[] | null;
+}

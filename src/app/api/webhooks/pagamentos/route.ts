@@ -2,11 +2,19 @@
  * @file route.ts
  * @description API Route Handler para recebimento assíncrono de Webhooks transacionais
  * de liquidação Pix (Asaas, Mercado Pago, Efí) e confirmação em tempo real de reservas.
+ *
+ * Segurança:
+ * - Gateway simulado (mock): aceita confirmações apenas fora de produção (ou com
+ *   PAGAMENTO_SIMULADO_HABILITADO=true, para demonstrações). Em produção, qualquer pessoa poderia
+ *   confirmar qualquer reserva enviando um txid.
+ * - Asaas: em produção exige ASAAS_WEBHOOK_SECRET, validado pelo gateway no cabeçalho
+ *   `asaas-access-token`.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
 import { obterPaymentGateway } from "@/lib/pagamento/paymentGateway";
-import { processarConfirmacaoPagamento } from "@/lib/pagamento/pagamentoService";
+import { pagamentoSimuladoHabilitado } from "@/lib/pagamento/simulacao";
+import { processarConfirmacaoPagamento } from "@/lib/pagamento/confirmacaoServidorService";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +23,18 @@ export const dynamic = "force-dynamic";
  * POST /api/webhooks/pagamentos
  */
 export async function POST(request: NextRequest) {
+  const gateway = obterPaymentGateway();
+
+  if (gateway.provedor === "mock" && !pagamentoSimuladoHabilitado()) {
+    return NextResponse.json({ status: "rejected", motivo: "Gateway simulado desabilitado." }, { status: 403 });
+  }
+  if (gateway.provedor === "asaas" && process.env.NODE_ENV === "production" && !process.env.ASAAS_WEBHOOK_SECRET) {
+    console.error("[Webhook API] ASAAS_WEBHOOK_SECRET ausente em produção: webhook recusado.");
+    return NextResponse.json({ status: "rejected", motivo: "Webhook sem segredo configurado." }, { status: 503 });
+  }
+
   try {
     const body = await request.json();
-    const gateway = obterPaymentGateway();
 
     // Normaliza os dados do webhook utilizando a estratégia do provedor ativo
     const eventoNormalizado = gateway.normalizarWebhook(request.headers, body);

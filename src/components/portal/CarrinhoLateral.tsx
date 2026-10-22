@@ -9,7 +9,8 @@ import {
   PERCENTUAL_SINAL,
   ENDERECO_COMPLEXO,
 } from "@/lib/constants";
-import { QUADRAS } from "@/lib/quadras";
+import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
+import { useEnderecoArena, usePercentualSinalArena } from "@/hooks/useConfiguracaoSiteArena";
 import { ShoppingCart, MapPin, Calendar, Clock, Trash2, Gift, Ticket, Check, X } from "lucide-react";
 import type { VoucherFidelidade } from "@/lib/fidelidade/types";
 import { aplicarDescontoVouchers } from "@/lib/fidelidade/fidelidadeService";
@@ -56,7 +57,10 @@ export function CarrinhoLateral({
   voucherAplicado,
   onSelecionarVoucher,
 }: Props) {
-  const quadra = QUADRAS.find((q) => q.id === quadraId);
+  const quadrasCatalogo = useQuadrasCatalogo();
+  const percentualSinal = usePercentualSinalArena(PERCENTUAL_SINAL);
+  const enderecoArena = useEnderecoArena(ENDERECO_COMPLEXO);
+  const quadra = quadrasCatalogo.find((q) => q.id === quadraId);
   const temItens = (horariosSelecionados ?? []).length > 0;
 
   const vouchersParaAplicar =
@@ -72,7 +76,7 @@ export function CarrinhoLateral({
     : null;
   const valorTotalFinal = resultadoDesconto ? resultadoDesconto.valorFinal : valorTotal;
   const valorSinalFinal = resultadoDesconto
-    ? Math.round(valorTotalFinal * PERCENTUAL_SINAL * 100) / 100
+    ? Math.round(valorTotalFinal * percentualSinal * 100) / 100
     : valorSinal;
   const valorPendenteFinal = resultadoDesconto
     ? Math.max(0, valorTotalFinal - valorSinalFinal)
@@ -113,7 +117,7 @@ export function CarrinhoLateral({
               <MapPin className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-xs text-slate-500 font-medium">Local</p>
-                <p className="text-sm text-slate-200">{ENDERECO_COMPLEXO}</p>
+                <p className="text-sm text-slate-200">{enderecoArena}</p>
                 {quadra && (
                   <p className="text-xs text-emerald-400 font-semibold mt-0.5">
                     Quadra {quadra.numero}
@@ -312,7 +316,7 @@ export function CarrinhoLateral({
 
               <div className="flex justify-between text-sm">
                 <span className="text-slate-400">
-                  Sinal ({Math.round(PERCENTUAL_SINAL * 100)}%)
+                  Sinal ({Math.round(percentualSinal * 100)}%)
                 </span>
                 <span className="text-emerald-400 font-bold">
                   {formatarMoeda(valorSinalFinal)}

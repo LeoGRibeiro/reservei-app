@@ -1,42 +1,68 @@
 /**
- * Tela de login do painel administrativo.
- * Verifica a senha mockada e grava flag no LocalStorage.
+ * @file AdminLogin.tsx
+ * @description Tela de login do painel administrativo. Autentica o operador com
+ * e-mail corporativo e senha via Supabase Auth, exibindo a arena (tenant) acessada.
  */
 
 "use client";
 
 import { useState } from "react";
-import { Eye, EyeOff, Lock, Shield } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
+import { useArena } from "@/hooks/useArena";
+import type { ResultadoLogin } from "@/hooks/useAdminAuth";
 
+/**
+ * Propriedades do componente {@link AdminLogin}.
+ */
 interface Props {
-  onLogin: (senha: string) => boolean;
+  /** Executa o login; retorna `success: false` com a mensagem de erro em caso de falha */
+  onLogin: (email: string, senha: string) => Promise<ResultadoLogin>;
+  /** Slug da arena acessada (subdomínio), usado para exibir o nome do complexo */
+  arenaSlug: string;
 }
 
-export function AdminLogin({ onLogin }: Props) {
+/**
+ * Formulário de login administrativo.
+ *
+ * @example
+ * ```tsx
+ * <AdminLogin onLogin={login} arenaSlug="central" />
+ * ```
+ */
+export function AdminLogin({ onLogin, arenaSlug }: Props) {
+  const { arena } = useArena(arenaSlug);
+  const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [erro, setErro] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(false);
   const [shake, setShake] = useState(false);
+
+  // Se a arena do slug não foi encontrada, o hook devolve a arena padrão: exibe o slug.
+  const nomeArena = arena.slug === arenaSlug ? arena.nome : arenaSlug;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setCarregando(true);
-    setErro(false);
+    setErro(null);
 
-    // Pequeno delay para dar sensação de verificação
-    await new Promise((r) => setTimeout(r, 600));
-
-    const ok = onLogin(senha);
+    const resultado = await onLogin(email, senha);
     setCarregando(false);
 
-    if (!ok) {
-      setErro(true);
+    if (!resultado.success) {
+      setErro(resultado.error ?? "Não foi possível autenticar. Tente novamente.");
       setSenha("");
       setShake(true);
       setTimeout(() => setShake(false), 500);
     }
   }
+
+  const classeCampo = `w-full bg-slate-800 border rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all
+    ${
+      erro
+        ? "border-red-500/70 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+        : "border-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+    }`;
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
@@ -64,16 +90,44 @@ export function AdminLogin({ onLogin }: Props) {
               <Shield className="w-8 h-8 text-emerald-400" />
             </div>
             <h1 className="text-2xl font-bold text-white mb-1">Área Admin</h1>
-            <p className="text-slate-400 text-sm">
-              Complexo Esportivo · Gestão Interna
+            <p id="admin-login-arena" className="text-slate-400 text-sm">
+              {nomeArena} · Gestão Interna
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="px-8 py-8 space-y-5">
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-slate-300">
-                Senha de acesso
+              <label
+                htmlFor="admin-email"
+                className="block text-sm font-medium text-slate-300"
+              >
+                E-mail corporativo
+              </label>
+              <div className="relative group">
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                <input
+                  id="admin-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (erro) setErro(null);
+                  }}
+                  placeholder="voce@suaarena.com.br"
+                  autoComplete="username"
+                  className={classeCampo}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="admin-senha"
+                className="block text-sm font-medium text-slate-300"
+              >
+                Senha
               </label>
               <div className="relative group">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
@@ -83,20 +137,16 @@ export function AdminLogin({ onLogin }: Props) {
                   value={senha}
                   onChange={(e) => {
                     setSenha(e.target.value);
-                    if (erro) setErro(false);
+                    if (erro) setErro(null);
                   }}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  className={`w-full bg-slate-800 border rounded-xl pl-10 pr-10 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all
-                    ${
-                      erro
-                        ? "border-red-500/70 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
-                        : "border-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                    }`}
+                  className={`${classeCampo} pr-10`}
                   required
                 />
                 <button
                   type="button"
+                  aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
                   onClick={() => setMostrarSenha((v) => !v)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
                 >
@@ -108,9 +158,12 @@ export function AdminLogin({ onLogin }: Props) {
                 </button>
               </div>
               {erro && (
-                <p className="text-red-400 text-xs flex items-center gap-1.5 animate-fade-in">
+                <p
+                  role="alert"
+                  className="text-red-400 text-xs flex items-center gap-1.5 animate-fade-in"
+                >
                   <span className="inline-block w-1 h-1 rounded-full bg-red-400" />
-                  Senha incorreta. Tente novamente.
+                  {erro}
                 </p>
               )}
             </div>
@@ -118,7 +171,7 @@ export function AdminLogin({ onLogin }: Props) {
             <button
               id="admin-login-btn"
               type="submit"
-              disabled={carregando || !senha}
+              disabled={carregando || !email || !senha}
               className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-semibold rounded-xl py-3 text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
             >
               {carregando ? (

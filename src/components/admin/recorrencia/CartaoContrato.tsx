@@ -5,7 +5,7 @@
 
 import { CalendarDays, Clock, MapPin, Phone, User } from "lucide-react";
 import { mascaraWhatsApp, formatarDataExibicao } from "@/lib/constants";
-import { QUADRAS } from "@/lib/quadras";
+import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { DIAS_SEMANA, type ContratoRecorrente } from "@/lib/recorrencia/types";
 
 interface Props {
@@ -16,7 +16,8 @@ interface Props {
 }
 
 export function CartaoContrato({ contrato, sessoesFuturas, children }: Props) {
-  const quadra = QUADRAS.find((q) => q.id === contrato.quadraId);
+  const quadrasCatalogo = useQuadrasCatalogo();
+  const quadra = quadrasCatalogo.find((q) => q.id === contrato.quadraId);
   const dias = DIAS_SEMANA.filter((d) => contrato.diasSemana.includes(d.valor))
     .map((d) => d.curto)
     .join(", ");

@@ -117,8 +117,10 @@ export interface ModalPixProps {
   cobrancaPix?: PixCobranca | null;
   /** Se os dados do Pix ainda estão sendo gerados */
   carregando?: boolean;
-  /** Callback para simular aprovação instantânea (ambiente de teste/sandbox) */
-  onSimularPagamento: (tipo: "sinal" | "integral") => void;
+  /** Callback para simular aprovação instantânea (somente gateway simulado) */
+  onSimularPagamento: (tipo: "sinal" | "integral") => void | Promise<void>;
+  /** Chamado uma vez quando a reserva passa a paga (webhook, simulação ou acompanhamento) */
+  onPagamentoConfirmado: () => void;
   /** Callback ao clicar no botão voltar */
   onVoltar: () => void;
   /** Callback ao cancelar a reserva */
@@ -135,10 +137,13 @@ export function ModalPix({
   cobrancaPix,
   carregando = false,
   onSimularPagamento,
+  onPagamentoConfirmado,
   onVoltar,
   onCancelar,
 }: ModalPixProps) {
   const [copiado, setCopiado] = useState(false);
+  const [simulando, setSimulando] = useState(false);
+  const gatewaySimulado = !cobrancaPix || cobrancaPix.provedor === "mock";
   const [segundosRestantes, setSegundosRestantes] = useState<number>(10 * 60);
 
   const valorCobrado = cobrancaPix?.valor ?? (tipoPagamento === "sinal" ? valorSinal : valorTotal);
@@ -156,17 +161,18 @@ export function ModalPix({
     )
   );
 
-  // Monitora se o status foi confirmado via Webhook ou Realtime
+  // Monitora a confirmação (webhook acompanhado pelo servidor, simulação ou modo offline)
+  const statusReserva = reservaNoStore?.status;
   useEffect(() => {
-    if (open && reservaNoStore && reservaNoStore.status === "confirmada") {
-      toast.success("Pagamento Confirmado em Tempo Real! 🚀", {
-        description: "Seu pagamento Pix foi identificado e a quadra está garantida.",
-        duration: 5000,
-      });
-      // Fecha e celebra chamando a simulação correspondente
-      onSimularPagamento(tipoPagamento);
+    if (open && (statusReserva === "confirmada" || statusReserva === "pendente")) {
+      onPagamentoConfirmado();
     }
-  }, [open, reservaNoStore?.status, onSimularPagamento, tipoPagamento]);
+  }, [open, statusReserva, onPagamentoConfirmado]);
+
+  const handleSimular = useCallback(() => {
+    setSimulando(true);
+    void Promise.resolve(onSimularPagamento(tipoPagamento)).finally(() => setSimulando(false));
+  }, [onSimularPagamento, tipoPagamento]);
 
   // Contagem regressiva precisa baseada na data de expiração do lock
   useEffect(() => {
@@ -262,7 +268,7 @@ export function ModalPix({
             {/* Badge de tipo de pagamento */}
             <div className="text-center">
               <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-500/15 border border-emerald-500/30 text-emerald-400">
-                {tipoPagamento === "sinal" ? "Pagamento do Sinal (40%)" : "Pagamento Integral (100%)"}
+                {tipoPagamento === "sinal" ? "Pagamento do Sinal" : "Pagamento Integral"}
               </span>
 
               {/* Valor em destaque */}
@@ -363,22 +369,31 @@ export function ModalPix({
               </div>
             </div>
 
-            {/* Banner de Demonstração / Sandbox */}
-            <div className="w-full bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5">
-              <p className="text-[11px] text-amber-400 text-center leading-relaxed">
-                🛠️ <strong>Ambiente Sandbox/Demonstração.</strong> Clique abaixo para simular a liquidação bancária automática.
-              </p>
-            </div>
+            {gatewaySimulado ? (
+              <div className="w-full bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5">
+                <p className="text-[11px] text-amber-400 text-center leading-relaxed">
+                  🛠️ <strong>Ambiente de demonstração.</strong> Clique abaixo para simular a liquidação bancária.
+                </p>
+              </div>
+            ) : (
+              <div className="w-full flex items-center justify-center gap-2 text-xs text-slate-400">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                Aguardando a confirmação do pagamento...
+              </div>
+            )}
 
             {/* Botões de Ação */}
             <div className="w-full space-y-2">
-              <Button
-                onClick={() => onSimularPagamento(tipoPagamento)}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold h-12 rounded-xl gap-2 shadow-lg shadow-emerald-500/20 text-sm"
-              >
-                <CheckCircle2 className="w-5 h-5" />
-                Simular Pagamento Aprovado
-              </Button>
+              {gatewaySimulado && (
+                <Button
+                  onClick={handleSimular}
+                  disabled={simulando}
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold h-12 rounded-xl gap-2 shadow-lg shadow-emerald-500/20 text-sm"
+                >
+                  {simulando ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                  Simular Pagamento Aprovado
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 onClick={onCancelar}

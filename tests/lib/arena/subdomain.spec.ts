@@ -8,17 +8,22 @@ import { extrairSubdominio, construirUrlArena } from "@/lib/arena/subdomain";
 
 describe("Subdomain Parser - extrairSubdominio", () => {
   it("deve extrair o slug de subdomínios padrão de produção (.reservei.com)", () => {
-    expect(extrairSubdominio("praia-leopoldina.reservei.com")).toBe("praia-leopoldina");
+    expect(extrairSubdominio("arena-central.reservei.com")).toBe("arena-central");
     expect(extrairSubdominio("arena-belem.reservei.com:443")).toBe("arena-belem");
   });
 
+  it("trata domínios da Vercel (produção e previews) como domínio raiz, sem arena", () => {
+    expect(extrairSubdominio("reserveei.vercel.app")).toBeNull();
+    expect(extrairSubdominio("reservei-p0lyvm7um-leo-gr-ibeiro.vercel.app")).toBeNull();
+  });
+
   it("deve extrair o slug de domínios com extensão composta (.com.br)", () => {
-    expect(extrairSubdominio("praia-leopoldina.reservei.com.br")).toBe("praia-leopoldina");
+    expect(extrairSubdominio("arena-central.reservei.com.br")).toBe("arena-central");
     expect(extrairSubdominio("reservei.com.br")).toBeNull();
   });
 
   it("deve extrair subdomínios em ambiente de desenvolvimento local (*.localhost)", () => {
-    expect(extrairSubdominio("leopoldina.localhost:3000")).toBe("leopoldina");
+    expect(extrairSubdominio("central.localhost:3000")).toBe("central");
     expect(extrairSubdominio("arena-demo.localhost:3000")).toBe("arena-demo");
     expect(extrairSubdominio("localhost:3000")).toBeNull();
     expect(extrairSubdominio("localhost")).toBeNull();
@@ -48,7 +53,7 @@ describe("Subdomain Parser - extrairSubdominio", () => {
 
 describe("Subdomain Builder - construirUrlArena", () => {
   it("deve gerar URL completa para a arena", () => {
-    const url = construirUrlArena("leopoldina", "https");
-    expect(url).toContain("leopoldina");
+    const url = construirUrlArena("central", "https");
+    expect(url).toContain("central");
   });
 });

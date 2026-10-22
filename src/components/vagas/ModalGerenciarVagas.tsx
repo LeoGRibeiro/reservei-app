@@ -33,7 +33,7 @@ import type { Reserva } from "@/store/useReservasStore";
 import { useVagasService } from "@/hooks/useVagasService";
 import { TERMO_RESPONSABILIDADE_ORGANIZADOR } from "@/lib/vagas/types";
 import { formatarDataExibicao, mascaraWhatsApp } from "@/lib/constants";
-import { QUADRAS } from "@/lib/quadras";
+import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 
 interface ModalGerenciarVagasProps {
   open: boolean;
@@ -46,6 +46,7 @@ export function ModalGerenciarVagas({
   onClose,
   reserva,
 }: ModalGerenciarVagasProps) {
+  const quadrasCatalogo = useQuadrasCatalogo();
   const {
     abrirVagas,
     fecharVagas,
@@ -71,7 +72,7 @@ export function ModalGerenciarVagas({
   }, [open, reserva]);
 
   const interessados = getInteressadosReserva(reserva.id);
-  const quadra = QUADRAS.find((q) => q.id === reserva.quadraId);
+  const quadra = quadrasCatalogo.find((q) => q.id === reserva.quadraId);
   const estaAberto = Boolean(reserva.permiteVagas && (reserva.vagasAbertas ?? 0) > 0);
 
   const handleSalvarVagas = async () => {
@@ -286,7 +287,7 @@ export function ModalGerenciarVagas({
             {interessados.length === 0 ? (
               <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-5 text-center text-xs text-slate-400">
                 Ainda não há jogadores interessados nesta partida. Assim que alguém clicar em
-                "Mostrar Interesse" no Mural, o contato aparecerá aqui para você chamar!
+                &ldquo;Mostrar Interesse&rdquo; no Mural, o contato aparecerá aqui para você chamar!
               </div>
             ) : (
               <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">

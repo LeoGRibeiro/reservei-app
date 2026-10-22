@@ -1,5 +1,7 @@
+"use client";
+
 import { cn } from "@/lib/utils";
-import { SITE_CONFIG } from "@/lib/landingPage/siteConfig";
+import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
 
 /** Props do {@link LogoReservei}. */
 export interface LogoReserveiProps {
@@ -16,6 +18,7 @@ export interface LogoReserveiProps {
  * <LogoReservei exibirDescricao />
  */
 export function LogoReservei({ exibirDescricao = true, className }: LogoReserveiProps) {
+  const config = useConfiguracaoSiteArena();
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <span className="text-2xl" aria-hidden="true">
@@ -23,11 +26,11 @@ export function LogoReservei({ exibirDescricao = true, className }: LogoReservei
       </span>
       <div>
         <span className="font-black text-white text-lg tracking-tight">
-          {SITE_CONFIG.nomePlataforma}
+          {config.nomePlataforma}
         </span>
         {exibirDescricao && (
           <span className="hidden sm:inline text-slate-500 text-sm ml-2">
-            · {SITE_CONFIG.descricaoEstabelecimento}
+            · {config.descricaoEstabelecimento}
           </span>
         )}
       </div>

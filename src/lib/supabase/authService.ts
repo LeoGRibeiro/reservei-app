@@ -1,3 +1,16 @@
+/**
+ * @file authService.ts
+ * @description Serviço de autenticação e perfil de atletas (clientes) do Reservei.
+ *
+ * O login continua sendo feito por WhatsApp + Senha, porém ancorado no **Supabase Auth**:
+ * o número de WhatsApp (apenas dígitos) é mapeado para um e-mail sintético
+ * (`<digitos>@auth.reservei.com.br`) usado como identidade. A senha nunca é gravada em
+ * tabelas ou no `localStorage`; a sessão é mantida com tokens JWT pelo próprio Supabase.
+ *
+ * Quando o Supabase não está configurado (desenvolvimento/testes offline), um fallback
+ * local armazena apenas um hash SHA-256 salgado da senha.
+ */
+
 import { supabase, isSupabaseConfigured } from "./client";
 import { mascaraWhatsApp } from "@/lib/constants";
 import type { UserProfile } from "./types";
@@ -5,15 +18,43 @@ import type { UserProfile } from "./types";
 const STORAGE_CURRENT_USER_KEY = "reservei_current_user";
 const STORAGE_MOCK_USERS_DB = "reservei_users_db";
 
+/** Domínio do e-mail sintético usado para mapear WhatsApp -> identidade do Supabase Auth. */
+export const DOMINIO_EMAIL_SINTETICO = "auth.reservei.com.br";
+
+const MSG_TELEFONE_DUPLICADO = "Este número de WhatsApp já possui uma conta cadastrada.";
+const MSG_CREDENCIAIS_INVALIDAS = "WhatsApp ou senha incorretos.";
+const MSG_SENHA_FRACA = "A senha informada é muito curta ou fraca. Use ao menos 6 caracteres.";
+const MSG_FALHA_GENERICA = "Não foi possível concluir a operação. Tente novamente em instantes.";
+
 interface StoredUserRow {
   id: string;
   nome: string;
   telefone: string;
+  /** Hash SHA-256 (hex) da senha — usado somente no fallback local sem Supabase */
+  senha_hash?: string;
+  /** Salt aleatório (hex) do hash da senha */
+  senha_salt?: string;
+  /** @deprecated Legado: senha em texto puro. Migrada para hash no próximo login e nunca mais gravada. */
   senha?: string;
   data_nascimento?: string | null;
   criado_em?: string;
   bloqueado?: boolean;
   motivo_bloqueio?: string | null;
+}
+
+/**
+ * Converte o WhatsApp informado pelo atleta no e-mail sintético usado no Supabase Auth.
+ *
+ * @param telefone WhatsApp com ou sem máscara (ex: '(91) 98123-4567')
+ * @returns E-mail sintético (ex: '91981234567@auth.reservei.com.br')
+ *
+ * @example
+ * ```ts
+ * emailSinteticoDoTelefone("(91) 98123-4567"); // "91981234567@auth.reservei.com.br"
+ * ```
+ */
+export function emailSinteticoDoTelefone(telefone: string): string {
+  return `${telefone.replace(/\D/g, "")}@${DOMINIO_EMAIL_SINTETICO}`;
 }
 
 function getLocalUsers(): StoredUserRow[] {
@@ -43,87 +84,95 @@ function saveLocalUsers(users: StoredUserRow[]) {
   }
 }
 
+function bytesParaHex(bytes: Uint8Array): string {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Gera um salt aleatório de 16 bytes em hexadecimal. */
+function gerarSalt(): string {
+  return bytesParaHex(crypto.getRandomValues(new Uint8Array(16)));
+}
+
+/** Calcula SHA-256(salt + senha) em hexadecimal (fallback local; nunca persiste a senha pura). */
+async function hashSenhaLocal(senha: string, salt: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${salt}:${senha}`));
+  return bytesParaHex(new Uint8Array(digest));
+}
+
+/** Converte um registro da tabela `usuarios` no perfil de domínio. */
+function perfilDeLinha(row: Record<string, unknown>): UserProfile {
+  return {
+    id: String(row.id),
+    nome: String(row.nome ?? ""),
+    telefone: mascaraWhatsApp(String(row.telefone ?? "")),
+    dataNascimento: (row.data_nascimento as string | null | undefined) ?? null,
+    criadoEm: row.criado_em ? String(row.criado_em) : undefined,
+    bloqueado: row.bloqueado === undefined || row.bloqueado === null ? undefined : Boolean(row.bloqueado),
+    motivo_bloqueio: (row.motivo_bloqueio as string | null | undefined) ?? null,
+  };
+}
+
+function salvarSessaoLocal(perfil: UserProfile) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(perfil));
+  }
+}
+
 /**
- * Cria cadastro de usuário com Nome, Telefone (WhatsApp) e Senha.
- * Grava na tabela 'usuarios' do Supabase se disponível, com fallback local seguro.
+ * Cadastro via servidor (`POST /api/atletas/cadastro`): a conta é criada já confirmada pela API
+ * administrativa do Supabase, junto com o perfil em `usuarios`, e em seguida o navegador entra.
+ *
+ * O `auth.signUp` público não é usado porque o Supabase recusa o e-mail sintético
+ * (`<whatsapp>@auth.reservei.com.br`) como endereço inválido.
  */
-export async function cadastrarUsuarioSupabase(
+async function cadastrarViaSupabaseAuth(
   nome: string,
-  telefone: string,
+  digits: string,
   senha: string,
   dataNascimento?: string
 ): Promise<{ user: UserProfile | null; error?: string }> {
-  const digits = telefone.replace(/\D/g, "");
-  const id = `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-  const telefoneFormatado = mascaraWhatsApp(digits);
+  try {
+    const resposta = await fetch("/api/atletas/cadastro", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome, telefone: digits, senha, dataNascimento: dataNascimento || null }),
+    });
+    const corpo = (await resposta.json().catch(() => ({}))) as { sucesso?: boolean; erro?: string };
 
-  // 1. Tenta salvar na tabela 'usuarios' do Supabase
-  if (isSupabaseConfigured()) {
-    try {
-      const { data, error } = await supabase
-        .from("usuarios")
-        .insert([
-          {
-            id,
-            nome,
-            telefone: digits,
-            senha,
-            data_nascimento: dataNascimento || null,
-          },
-        ])
-        .select()
-        .single();
-
-      if (error) {
-        // Telefone duplicado
-        if (error.code === "23505" || error.message.includes("duplicate") || error.message.includes("unique")) {
-          return {
-            user: null,
-            error: "Este número de WhatsApp já possui uma conta cadastrada.",
-          };
-        }
-        // Se a tabela 'usuarios' ainda não existe no Supabase, continua para o fallback
-        console.warn(
-          "[Auth] Tabela 'usuarios' ainda não configurada no Supabase. Utilizando armazenamento local sincronizado.",
-          error.message
-        );
-      } else if (data) {
-        const perfil: UserProfile = {
-          id: data.id,
-          nome: data.nome,
-          telefone: mascaraWhatsApp(data.telefone),
-          dataNascimento: data.data_nascimento,
-          criadoEm: data.criado_em,
-          bloqueado: data.bloqueado,
-          motivo_bloqueio: data.motivo_bloqueio,
-        };
-
-        if (typeof window !== "undefined") {
-          localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(perfil));
-        }
-
-        return { user: perfil };
-      }
-    } catch (err) {
-      console.warn("[Auth] Falha de conexão com Supabase:", err);
+    if (!resposta.ok || !corpo.sucesso) {
+      if (resposta.status === 409) return { user: null, error: MSG_TELEFONE_DUPLICADO };
+      if (resposta.status === 400) return { user: null, error: corpo.erro ?? MSG_SENHA_FRACA };
+      console.warn("[Auth] Falha no cadastro:", corpo.erro);
+      return { user: null, error: MSG_FALHA_GENERICA };
     }
-  }
 
-  // 2. Fallback Local Storage (garante funcionamento imediato mesmo sem tabela no Supabase)
+    return loginViaSupabaseAuth(digits, senha);
+  } catch (err) {
+    console.warn("[Auth] Falha de conexão no cadastro:", err);
+    return { user: null, error: MSG_FALHA_GENERICA };
+  }
+}
+
+/** Cadastro no fallback local (sem Supabase): guarda apenas hash salgado da senha. */
+async function cadastrarLocal(
+  nome: string,
+  digits: string,
+  senha: string,
+  dataNascimento?: string
+): Promise<{ user: UserProfile | null; error?: string }> {
   const users = getLocalUsers();
   const existe = users.find((u) => u.telefone.replace(/\D/g, "") === digits);
   if (existe) {
-    return {
-      user: null,
-      error: "Este número de WhatsApp já possui uma conta cadastrada.",
-    };
+    return { user: null, error: MSG_TELEFONE_DUPLICADO };
   }
 
+  const salt = gerarSalt();
   const novoUsuario: StoredUserRow = {
-    id,
+    id: `usr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     nome,
     telefone: digits,
-    senha,
+    senha_salt: salt,
+    senha_hash: await hashSenhaLocal(senha, salt),
     data_nascimento: dataNascimento || null,
     criado_em: new Date().toISOString(),
   };
@@ -134,69 +183,126 @@ export async function cadastrarUsuarioSupabase(
   const perfil: UserProfile = {
     id: novoUsuario.id,
     nome: novoUsuario.nome,
-    telefone: telefoneFormatado,
+    telefone: mascaraWhatsApp(digits),
     dataNascimento: novoUsuario.data_nascimento,
     criadoEm: novoUsuario.criado_em,
-          bloqueado: novoUsuario.bloqueado,
-          motivo_bloqueio: novoUsuario.motivo_bloqueio,
+    bloqueado: novoUsuario.bloqueado,
+    motivo_bloqueio: novoUsuario.motivo_bloqueio,
   };
 
-  if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(perfil));
-  }
-
+  salvarSessaoLocal(perfil);
   return { user: perfil };
 }
 
 /**
- * Realiza login com WhatsApp e Senha
+ * Cria cadastro de usuário com Nome, Telefone (WhatsApp) e Senha.
+ * Com Supabase configurado usa o Supabase Auth (`signUp`) + perfil em `usuarios`;
+ * caso contrário usa o fallback local seguro (hash salgado).
+ *
+ * @param nome Nome completo do atleta
+ * @param telefone WhatsApp com ou sem máscara
+ * @param senha Senha escolhida (nunca persistida em texto puro)
+ * @param dataNascimento Data de nascimento (opcional, 'YYYY-MM-DD')
+ * @returns Perfil criado ou mensagem de erro amigável
+ *
+ * @example
+ * ```ts
+ * const { user, error } = await cadastrarUsuarioSupabase("Ana", "(91) 98123-4567", "segredo1");
+ * ```
  */
-export async function loginUsuarioSupabase(
+export async function cadastrarUsuarioSupabase(
+  nome: string,
   telefone: string,
-  senha: string
+  senha: string,
+  dataNascimento?: string
 ): Promise<{ user: UserProfile | null; error?: string }> {
   const digits = telefone.replace(/\D/g, "");
 
-  // 1. Tenta autenticar na tabela 'usuarios' do Supabase
   if (isSupabaseConfigured()) {
-    try {
-      const { data, error } = await supabase
+    return cadastrarViaSupabaseAuth(nome, digits, senha, dataNascimento);
+  }
+
+  return cadastrarLocal(nome, digits, senha, dataNascimento);
+}
+
+/**
+ * Login via Supabase Auth com o e-mail sintético derivado do WhatsApp.
+ * Se o usuário existir no Auth mas não possuir perfil em `usuarios`, o perfil é recriado.
+ */
+async function loginViaSupabaseAuth(
+  digits: string,
+  senha: string
+): Promise<{ user: UserProfile | null; error?: string }> {
+  try {
+    const { data: sessao, error } = await supabase.auth.signInWithPassword({
+      email: emailSinteticoDoTelefone(digits),
+      password: senha,
+    });
+
+    if (error || !sessao.user) {
+      const credenciaisInvalidas = (error?.message ?? "").toLowerCase().includes("invalid login credentials");
+      return { user: null, error: credenciaisInvalidas || !error ? MSG_CREDENCIAIS_INVALIDAS : MSG_FALHA_GENERICA };
+    }
+
+    const authUser = sessao.user;
+    const { data: existente } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("auth_user_id", authUser.id)
+      .maybeSingle();
+
+    let linha = existente;
+    if (!linha) {
+      const nomeMeta = (authUser.user_metadata as { nome?: string } | undefined)?.nome;
+      const { data: criado, error: erroPerfil } = await supabase
         .from("usuarios")
-        .select("*")
-        .eq("telefone", digits)
-        .eq("senha", senha)
+        .insert([{ id: authUser.id, auth_user_id: authUser.id, nome: nomeMeta || "Cliente", telefone: digits }])
+        .select()
         .single();
 
-      if (!error && data) {
-        const perfil: UserProfile = {
-          id: data.id,
-          nome: data.nome,
-          telefone: mascaraWhatsApp(data.telefone),
-          dataNascimento: data.data_nascimento,
-          criadoEm: data.criado_em,
-          bloqueado: data.bloqueado,
-          motivo_bloqueio: data.motivo_bloqueio,
-        };
-
-        if (typeof window !== "undefined") {
-          localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(perfil));
-        }
-
-        return { user: perfil };
+      if (erroPerfil || !criado) {
+        await supabase.auth.signOut();
+        console.warn("[Auth] Perfil de usuário indisponível:", erroPerfil?.message);
+        return { user: null, error: MSG_FALHA_GENERICA };
       }
-    } catch (err) {
-      console.warn("[Auth] Falha ao consultar Supabase:", err);
+      linha = criado;
+    }
+
+    const perfil = perfilDeLinha(linha);
+    salvarSessaoLocal(perfil);
+    return { user: perfil };
+  } catch (err) {
+    console.warn("[Auth] Falha ao consultar Supabase:", err);
+    return { user: null, error: MSG_FALHA_GENERICA };
+  }
+}
+
+/** Login no fallback local (sem Supabase); migra senhas legadas em texto puro para hash. */
+async function loginLocal(
+  digits: string,
+  senha: string
+): Promise<{ user: UserProfile | null; error?: string }> {
+  const users = getLocalUsers();
+  const index = users.findIndex((u) => u.telefone.replace(/\D/g, "") === digits);
+  const encontrado = index >= 0 ? users[index] : undefined;
+
+  let autenticado = false;
+  if (encontrado?.senha_hash && encontrado.senha_salt) {
+    autenticado = (await hashSenhaLocal(senha, encontrado.senha_salt)) === encontrado.senha_hash;
+  } else if (encontrado?.senha !== undefined) {
+    // Registro legado com senha em texto puro: valida e migra para hash, descartando o texto puro
+    autenticado = encontrado.senha === senha;
+    if (autenticado) {
+      const salt = gerarSalt();
+      const { senha: _legado, ...semSenha } = encontrado;
+      void _legado;
+      users[index] = { ...semSenha, senha_salt: salt, senha_hash: await hashSenhaLocal(senha, salt) };
+      saveLocalUsers(users);
     }
   }
 
-  // 2. Fallback Local Storage
-  const users = getLocalUsers();
-  const encontrado = users.find(
-    (u) => u.telefone.replace(/\D/g, "") === digits && u.senha === senha
-  );
-
-  if (!encontrado) {
-    return { user: null, error: "WhatsApp ou senha incorretos." };
+  if (!encontrado || !autenticado) {
+    return { user: null, error: MSG_CREDENCIAIS_INVALIDAS };
   }
 
   const perfil: UserProfile = {
@@ -205,19 +311,38 @@ export async function loginUsuarioSupabase(
     telefone: mascaraWhatsApp(encontrado.telefone),
     dataNascimento: encontrado.data_nascimento,
     criadoEm: encontrado.criado_em,
-          bloqueado: encontrado.bloqueado,
-          motivo_bloqueio: encontrado.motivo_bloqueio,
+    bloqueado: encontrado.bloqueado,
+    motivo_bloqueio: encontrado.motivo_bloqueio,
   };
 
-  if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(perfil));
-  }
-
+  salvarSessaoLocal(perfil);
   return { user: perfil };
 }
 
 /**
- * Obtém usuário logado atualmente (ou null)
+ * Realiza login com WhatsApp e Senha (Supabase Auth ou fallback local sem Supabase).
+ *
+ * @param telefone WhatsApp com ou sem máscara
+ * @param senha Senha do atleta
+ * @returns Perfil autenticado ou mensagem de erro amigável
+ */
+export async function loginUsuarioSupabase(
+  telefone: string,
+  senha: string
+): Promise<{ user: UserProfile | null; error?: string }> {
+  const digits = telefone.replace(/\D/g, "");
+
+  if (isSupabaseConfigured()) {
+    return loginViaSupabaseAuth(digits, senha);
+  }
+
+  return loginLocal(digits, senha);
+}
+
+/**
+ * Obtém usuário logado atualmente (ou null).
+ * Com Supabase configurado, a sessão do Supabase Auth é a fonte da verdade: se ela
+ * expirou ou foi encerrada, o cache local do perfil é descartado.
  */
 export async function obterUsuarioAtual(): Promise<UserProfile | null> {
   if (typeof window === "undefined") return null;
@@ -226,6 +351,14 @@ export async function obterUsuarioAtual(): Promise<UserProfile | null> {
     const raw = localStorage.getItem(STORAGE_CURRENT_USER_KEY);
     if (!raw) return null;
     let user: UserProfile = JSON.parse(raw);
+
+    if (isSupabaseConfigured()) {
+      const { data: sessao } = await supabase.auth.getSession();
+      if (!sessao.session) {
+        localStorage.removeItem(STORAGE_CURRENT_USER_KEY);
+        return null;
+      }
+    }
 
     // Consulta em tempo real com o Supabase se configurado
     if (isSupabaseConfigured() && user.id) {
@@ -416,6 +549,7 @@ export async function excluirContaSupabase(userId: string): Promise<boolean> {
   if (isSupabaseConfigured()) {
     try {
       await supabase.from("usuarios").delete().eq("id", userId);
+      await supabase.auth.signOut();
     } catch (err) {
       console.warn("[Auth] Erro ao deletar no Supabase:", err);
     }

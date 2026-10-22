@@ -1,7 +1,8 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { QUADRAS, type Quadra } from "@/lib/quadras";
+import { type Quadra } from "@/lib/quadras";
+import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 
 interface Props {
   quadraSelecionada: string | null;
@@ -14,13 +15,14 @@ export function QuadraSelector({
   onSelectQuadra,
   horariosOcupados,
 }: Props) {
+  const quadrasCatalogo = useQuadrasCatalogo();
   return (
     <div className="w-full">
       <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">
         Selecione a quadra
       </p>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x">
-        {QUADRAS.map((quadra: Quadra) => {
+        {quadrasCatalogo.map((quadra: Quadra) => {
           const isSelecionada = quadraSelecionada === quadra.id;
           // Desabilita outras quadras quando há horários no carrinho
           const isDesabilitada =

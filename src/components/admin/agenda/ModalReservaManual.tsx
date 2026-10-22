@@ -21,7 +21,8 @@ import {
   MessageSquare,
   ShieldCheck,
 } from "lucide-react";
-import { QUADRAS, ESPORTES, type Esporte, HORARIOS_DISPONIVEIS } from "@/lib/quadras";
+import { ESPORTES, type Esporte } from "@/lib/quadras";
+import { useQuadrasCatalogo, useHorariosCatalogo } from "@/store/useCatalogoArenaStore";
 import { calcularValorTotal, formatarDataExibicao, saoConsecutivos } from "@/lib/constants";
 import { useReservasService } from "@/hooks/useReservasService";
 import { toast } from "sonner";
@@ -43,6 +44,8 @@ export function ModalReservaManual({
   onFechar,
   onSucesso,
 }: Props) {
+  const quadrasCatalogo = useQuadrasCatalogo();
+  const horariosCatalogo = useHorariosCatalogo();
   const { reservas, criarReservaManual } = useReservasService();
   const [mounted, setMounted] = useState(false);
 
@@ -50,7 +53,7 @@ export function ModalReservaManual({
     setMounted(true);
   }, []);
 
-  const [quadraId, setQuadraId] = useState(quadraIdPadrao || "q1");
+  const [quadraId, setQuadraId] = useState(quadraIdPadrao || quadrasCatalogo[0]?.id || "");
   const [data, setData] = useState(dataPadrao || new Date().toISOString().split("T")[0]);
   const [horarios, setHorarios] = useState<string[]>(horariosPadrao || ["18:00"]);
   const [nomeCliente, setNomeCliente] = useState("");
@@ -227,7 +230,7 @@ export function ModalReservaManual({
                   onChange={(e) => setQuadraId(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-sky-500 transition-colors"
                 >
-                  {QUADRAS.map((q) => (
+                  {quadrasCatalogo.map((q) => (
                     <option key={q.id} value={q.id}>
                       Quadra {q.numero} (Poliesportiva)
                     </option>
@@ -262,7 +265,7 @@ export function ModalReservaManual({
               </label>
 
               <div className="flex flex-wrap gap-1.5 p-2 bg-slate-800/40 border border-slate-700/50 rounded-xl max-h-36 overflow-y-auto">
-                {HORARIOS_DISPONIVEIS.map((h) => {
+                {horariosCatalogo.map((h) => {
                   const ocupado = horariosOcupados.includes(h);
                   const selecionado = horarios.includes(h);
                   const horaFim = String(parseInt(h.split(":")[0], 10) + 1).padStart(2, "0") + ":00";

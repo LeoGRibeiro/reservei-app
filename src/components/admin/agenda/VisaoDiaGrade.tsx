@@ -24,7 +24,8 @@ import {
   Sparkles,
   Calendar,
 } from "lucide-react";
-import { QUADRAS, type Quadra } from "@/lib/quadras";
+import { type Quadra } from "@/lib/quadras";
+import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { formatarDataExibicao, formatarMoeda } from "@/lib/constants";
 import type { Reserva } from "@/store/useReservasStore";
 import { montarSlotsQuadraDia } from "@/lib/adminAgenda/adminAgendaService";
@@ -48,6 +49,7 @@ export function VisaoDiaGrade({
   onAbrirBloqueio,
   onVerDetalhesReserva,
 }: Props) {
+  const quadrasCatalogo = useQuadrasCatalogo();
   const { reservas, removerBloqueio } = useReservasService();
   const [quadraFiltro, setQuadraFiltro] = useState<string>("todas");
 
@@ -64,8 +66,8 @@ export function VisaoDiaGrade({
 
   const quadrasExibidas =
     quadraFiltro === "todas"
-      ? QUADRAS
-      : QUADRAS.filter((q) => q.id === quadraFiltro);
+      ? quadrasCatalogo
+      : quadrasCatalogo.filter((q) => q.id === quadraFiltro);
 
   async function handleDesbloquear(bloqueioId: string, e: React.MouseEvent) {
     e.stopPropagation();
@@ -124,7 +126,7 @@ export function VisaoDiaGrade({
         >
           Todas as Quadras (3)
         </button>
-        {QUADRAS.map((q) => (
+        {quadrasCatalogo.map((q) => (
           <button
             key={q.id}
             type="button"

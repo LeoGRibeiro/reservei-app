@@ -3,7 +3,7 @@
 import { MessageCircle } from "lucide-react";
 import { getAnoCopyright, getSecoesDoMenu, montarLinkWhatsApp, rolarParaSecao } from "@/lib/landingPage/navegacao";
 import { SECOES_LANDING_PAGE } from "@/lib/landingPage/secoes";
-import { SITE_CONFIG } from "@/lib/landingPage/siteConfig";
+import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
 import type { ConfiguracaoSite, SecaoLandingPage } from "@/lib/landingPage/types";
 import { IconeRedeSocial } from "./IconeRedeSocial";
 import { ListaLinksNavegacao } from "./ListaLinksNavegacao";
@@ -38,10 +38,12 @@ export interface LandingFooterProps {
  * <LandingFooter />
  */
 export function LandingFooter({
-  config = SITE_CONFIG,
+  config: configInformada,
   secoes = SECOES_LANDING_PAGE,
   agora,
 }: LandingFooterProps) {
+  const configArena = useConfiguracaoSiteArena();
+  const config = configInformada ?? configArena;
   const secoesMenu = getSecoesDoMenu(secoes);
   const linkWhatsApp = montarLinkWhatsApp(config.whatsappNumero, MENSAGEM_WHATSAPP_RODAPE);
   const ano = getAnoCopyright(agora);

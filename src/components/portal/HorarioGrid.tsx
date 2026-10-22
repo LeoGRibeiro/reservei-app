@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { HORARIOS_DISPONIVEIS } from "@/lib/quadras";
-import { saoConsecutivos, isHorarioExpirado } from "@/lib/constants";
+import { useHorariosCatalogo } from "@/store/useCatalogoArenaStore";
+import { saoConsecutivos, isHorarioExpirado, formatarMoeda } from "@/lib/constants";
 import { toast } from "sonner";
 import { type AvisoEscolinha } from "@/lib/recorrencia/agenda";
 import { ModalEscolinha } from "./ModalEscolinha";
@@ -19,6 +19,10 @@ interface Props {
   horariosOcupados: string[];     // slots já reservados (persistidos)
   avisosEscolinha?: AvisoEscolinha[]; // avisos de escolinha na data/quadra
   onToggleHorario: (horario: string) => void;
+  /** Antecedência mínima (minutos) para reservar online; horários mais próximos ficam indisponíveis */
+  antecedenciaMinutos?: number;
+  /** Preço por hora de um horário na tabela da quadra (para os rótulos de cada faixa) */
+  precoDoHorario?: (horario: string) => number;
 }
 
 // ─── Faixas de horário ────────────────────────────────────────────────────────
@@ -36,9 +40,26 @@ const PRECO_POR_FAIXA: Record<string, string> = {
 };
 
 function getFaixa(hora: number): "MANHA" | "TARDE" | "NOITE" {
-  if (hora >= 8  && hora < 12) return "MANHA";
-  if (hora >= 12 && hora < 18) return "TARDE";
+  if (hora < 12) return "MANHA";
+  if (hora < 18) return "TARDE";
   return "NOITE";
+}
+
+/** Intervalo exibido de uma faixa a partir dos seus horários (ex.: '08h – 12h'). */
+function intervaloDaFaixa(horarios: string[]): string {
+  const inicio = parseInt(horarios[0], 10);
+  const fim = parseInt(horarios[horarios.length - 1], 10) + 1;
+  return `${String(inicio).padStart(2, "0")}h – ${String(fim).padStart(2, "0")}h`;
+}
+
+/** Rótulo de preço de uma faixa (ex.: 'R$ 90 / hora' ou 'R$ 90 – R$ 120 / hora'). */
+function precoDaFaixa(horarios: string[], precoDoHorario: (h: string) => number): string {
+  const valores = horarios.map(precoDoHorario).filter((v) => v > 0);
+  if (valores.length === 0) return "";
+  const formatar = (v: number) => formatarMoeda(v).replace(",00", "");
+  const min = Math.min(...valores);
+  const max = Math.max(...valores);
+  return min === max ? `${formatar(min)} / hora` : `${formatar(min)} – ${formatar(max)} / hora`;
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
@@ -50,7 +71,10 @@ export function HorarioGrid({
   horariosOcupados,
   avisosEscolinha = [],
   onToggleHorario,
+  antecedenciaMinutos = 10,
+  precoDoHorario,
 }: Props) {
+  const horariosCatalogo = useHorariosCatalogo();
   const [isMounted, setIsMounted] = useState(false);
   const [avisoSelecionado, setAvisoSelecionado] = useState<AvisoEscolinha | null>(null);
   const [vagaSelecionada, setVagaSelecionada] = useState<VagaDisponivelItem | null>(null);
@@ -77,7 +101,7 @@ export function HorarioGrid({
     }
 
     if (horariosOcupados.includes(horario)) return;
-    if (isHorarioExpirado(dataSelecionada, horario, 10)) return;
+    if (isHorarioExpirado(dataSelecionada, horario, antecedenciaMinutos)) return;
 
     const isSelecionado = horariosSelecionados.includes(horario);
     if (!isSelecionado) {
@@ -95,7 +119,7 @@ export function HorarioGrid({
   // Agrupar slots por faixa
   const grupos: Array<{ faixa: string; horarios: string[] }> = [];
   let faixaAtual = "";
-  for (const h of HORARIOS_DISPONIVEIS) {
+  for (const h of horariosCatalogo) {
     const f = getFaixa(parseInt(h.split(":")[0], 10));
     if (f !== faixaAtual) {
       faixaAtual = f;
@@ -123,10 +147,10 @@ export function HorarioGrid({
               {FAIXA[faixa].label}
             </span>
             <span className="text-base sm:text-lg font-black text-white">
-              {PRECO_POR_FAIXA[faixa]}
+              {precoDoHorario ? precoDaFaixa(horarios, precoDoHorario) : PRECO_POR_FAIXA[faixa]}
             </span>
             <span className="text-xs text-slate-500 font-medium">
-              ({FAIXA[faixa].faixaHora})
+              ({intervaloDaFaixa(horarios)})
             </span>
           </div>
 
@@ -154,7 +178,7 @@ export function HorarioGrid({
               const isVagaAberta = isOcupado && !!vagaAberta;
 
               const expiradoParaSelecao = isMounted
-                ? isHorarioExpirado(dataSelecionada, horario, 10)
+                ? isHorarioExpirado(dataSelecionada, horario, antecedenciaMinutos)
                 : false;
               const isDisabled = (isOcupado && !isEscolinha && !isVagaAberta) || expiradoParaSelecao;
 

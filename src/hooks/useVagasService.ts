@@ -21,6 +21,9 @@ import {
   atualizarStatusInteresseSupabase,
   getInteressesLocais,
 } from "@/lib/supabase/vagasService";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { useReservasStore } from "@/store/useReservasStore";
+import { atualizarVagasDoAtleta } from "@/lib/reservas/reservasApi";
 import type {
   InteresseVaga,
   StatusInteresse,
@@ -33,6 +36,27 @@ export function useVagasService() {
   const { reservas, atualizarVagasReserva } = useReservasService();
   const [interesses, setInteresses] = useState<InteresseVaga[]>(() => getInteressesLocais());
   const [carregando, setCarregando] = useState<boolean>(true);
+
+  /**
+   * Grava as vagas da partida. Com Supabase, o servidor confere que a reserva é do atleta
+   * (o RLS não permite que atletas alterem `reservas`); sem Supabase, atualiza a store local.
+   */
+  const persistirVagas = useCallback(
+    async (reservaId: string, vagasAbertas: number): Promise<{ sucesso: boolean; erro?: string }> => {
+      if (!isSupabaseConfigured()) {
+        atualizarVagasReserva(reservaId, vagasAbertas > 0, vagasAbertas);
+        return { sucesso: true };
+      }
+      const res = await atualizarVagasDoAtleta(reservaId, vagasAbertas);
+      if (!res.ok || !res.dados) return { sucesso: false, erro: res.erro };
+      useReservasStore.getState().atualizarReserva(reservaId, {
+        permiteVagas: res.dados.permiteVagas,
+        vagasAbertas: res.dados.vagasAbertas,
+      });
+      return { sucesso: true };
+    },
+    [atualizarVagasReserva]
+  );
 
   // Carregamento inicial de interesses da persistência
   useEffect(() => {
@@ -90,14 +114,13 @@ export function useVagasService() {
       }
 
       try {
-        atualizarVagasReserva(reservaId, true, vagasAbertas);
-        return { sucesso: true };
+        return await persistirVagas(reservaId, vagasAbertas);
       } catch (err) {
         console.error("[useVagasService] Falha ao abrir vagas:", err);
         return { sucesso: false, erro: "Erro inesperado ao salvar alterações." };
       }
     },
-    [reservas, atualizarVagasReserva]
+    [reservas, persistirVagas]
   );
 
   /**
@@ -111,14 +134,13 @@ export function useVagasService() {
       }
 
       try {
-        atualizarVagasReserva(reservaId, false, 0);
-        return { sucesso: true };
+        return await persistirVagas(reservaId, 0);
       } catch (err) {
         console.error("[useVagasService] Falha ao fechar vagas:", err);
         return { sucesso: false, erro: "Não foi possível fechar as vagas." };
       }
     },
-    [reservas, atualizarVagasReserva]
+    [reservas, persistirVagas]
   );
 
   /**
@@ -135,18 +157,16 @@ export function useVagasService() {
       }
 
       if (novaQuantidade <= 0) {
-        atualizarVagasReserva(reservaId, false, 0);
-        return { sucesso: true };
+        return persistirVagas(reservaId, 0);
       }
 
       if (!Number.isInteger(novaQuantidade) || novaQuantidade > 30) {
         return { sucesso: false, erro: "Quantidade de vagas inválida." };
       }
 
-      atualizarVagasReserva(reservaId, true, novaQuantidade);
-      return { sucesso: true };
+      return persistirVagas(reservaId, novaQuantidade);
     },
-    [reservas, atualizarVagasReserva]
+    [reservas, persistirVagas]
   );
 
   /**

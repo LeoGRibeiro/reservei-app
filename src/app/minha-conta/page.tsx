@@ -11,10 +11,14 @@ import {
   formatarMoeda,
   mascaraWhatsApp,
   getHoje,
-  TELEFONE_COMPLEXO,
-  NOME_COMPLEXO,
 } from "@/lib/constants";
-import { QUADRAS } from "@/lib/quadras";
+import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
+import { useArena } from "@/hooks/useArena";
+import { whatsappInternacional } from "@/hooks/useConfiguracaoSiteArena";
+import { temModuloAtivo } from "@/lib/arena/modulos";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
+import { useReservasStore } from "@/store/useReservasStore";
+import { cancelarReservaDoAtleta } from "@/lib/reservas/reservasApi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,6 +56,11 @@ import {
 } from "@/components/ui/dialog";
 
 export default function MinhaContaPage() {
+  const quadrasCatalogo = useQuadrasCatalogo();
+  const { arena } = useArena();
+  const whatsappArena = whatsappInternacional(arena.whatsapp || arena.telefone);
+  const temVagas = temModuloAtivo(arena.modulosAtivos, "vagas");
+  const temFidelidade = temModuloAtivo(arena.modulosAtivos, "fidelidade");
   const router = useRouter();
   const { user, loading, logout, atualizarPerfil, excluirConta } = useUserAuth();
   const { reservas, cancelarReserva } = useReservasService();
@@ -65,7 +74,21 @@ export default function MinhaContaPage() {
     if (!reservaParaCancelar) return;
     setCancelandoReserva(true);
     try {
-      await cancelarReserva(reservaParaCancelar.id);
+      if (isSupabaseConfigured()) {
+        // O servidor confere que a reserva é do atleta e que a partida ainda não começou
+        const res = await cancelarReservaDoAtleta(reservaParaCancelar.id);
+        if (!res.ok) {
+          toast.error("Não foi possível cancelar", { description: res.erro });
+          return;
+        }
+        useReservasStore.getState().atualizarReserva(reservaParaCancelar.id, {
+          status: "cancelada",
+          permiteVagas: false,
+          vagasAbertas: 0,
+        });
+      } else {
+        cancelarReserva(reservaParaCancelar.id);
+      }
       toast.success("Reserva cancelada com sucesso.");
       setReservaParaCancelar(null);
     } catch {
@@ -292,6 +315,7 @@ export default function MinhaContaPage() {
               Minhas Reservas ({userReservas.length})
             </button>
 
+            {temFidelidade && (
             <button
               onClick={() => setTabAtiva("fidelidade")}
               className={`pb-3 px-3 text-sm font-semibold transition-all border-b-2 flex items-center gap-2 shrink-0 ${
@@ -312,6 +336,7 @@ export default function MinhaContaPage() {
                 </span>
               )}
             </button>
+            )}
 
             <button
               onClick={() => setTabAtiva("perfil")}
@@ -386,7 +411,7 @@ export default function MinhaContaPage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {proximasReservas.map((reserva) => {
-                    const quadra = QUADRAS.find((q) => q.id === reserva.quadraId);
+                    const quadra = quadrasCatalogo.find((q) => q.id === reserva.quadraId);
                     return (
                       <div
                         key={reserva.id}
@@ -405,7 +430,7 @@ export default function MinhaContaPage() {
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <a
-                                href={`https://wa.me/${TELEFONE_COMPLEXO.replace(/\D/g, "")}?text=Olá,%20tenho%20uma%20dúvida%20sobre%20minha%20reserva%20no%20dia%20${reserva.data}%20(Quadra%20${quadra?.numero})`}
+                                href={`https://wa.me/${whatsappArena}?text=Olá,%20tenho%20uma%20dúvida%20sobre%20minha%20reserva%20no%20dia%20${reserva.data}%20(Quadra%20${quadra?.numero})`}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="text-[11px] text-slate-400 hover:text-emerald-400 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-slate-800 border border-slate-700/60 transition-colors"
@@ -460,6 +485,7 @@ export default function MinhaContaPage() {
                           </div>
 
                           {/* Bloco de Vagas Abertas: Status e Botão lado a lado */}
+                          {temVagas && (
                           <div className="mt-4 p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-center justify-between gap-3 flex-wrap">
                             <div className="flex items-center gap-2 flex-wrap min-w-0">
                               <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
@@ -494,6 +520,7 @@ export default function MinhaContaPage() {
                               Gerenciar Vagas
                             </Button>
                           </div>
+                          )}
                         </div>
 
                         {/* Rodapé: Ação de Cancelamento com destaque */}
@@ -531,7 +558,7 @@ export default function MinhaContaPage() {
               ) : (
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl divide-y divide-slate-800 overflow-hidden">
                   {historicoReservas.map((r) => {
-                    const quadra = QUADRAS.find((q) => q.id === r.quadraId);
+                    const quadra = quadrasCatalogo.find((q) => q.id === r.quadraId);
                     return (
                       <div key={r.id} className="p-4 flex items-center justify-between text-xs">
                         <div>
@@ -566,7 +593,7 @@ export default function MinhaContaPage() {
         )}
 
         {/* ABA: FIDELIDADE */}
-        {tabAtiva === "fidelidade" && (
+        {temFidelidade && tabAtiva === "fidelidade" && (
           <div className="max-w-4xl space-y-8">
             <CartelaFidelidadeTimeline
               progresso={progresso}
@@ -694,18 +721,18 @@ export default function MinhaContaPage() {
               <div className="p-4 rounded-2xl bg-slate-800/40 border border-slate-800 space-y-3 text-xs mb-6">
                 <div>
                   <span className="text-slate-500 block text-[10px] uppercase font-bold">Complexo</span>
-                  <p className="text-sm font-semibold text-white">{NOME_COMPLEXO}</p>
+                  <p className="text-sm font-semibold text-white">{arena.nome}</p>
                 </div>
                 <div>
                   <span className="text-slate-500 block text-[10px] uppercase font-bold">
                     WhatsApp de Atendimento
                   </span>
-                  <p className="text-sm font-semibold text-emerald-400">{TELEFONE_COMPLEXO}</p>
+                  <p className="text-sm font-semibold text-emerald-400">{arena.whatsapp || arena.telefone}</p>
                 </div>
               </div>
 
               <a
-                href={`https://wa.me/${TELEFONE_COMPLEXO.replace(/\D/g, "")}?text=Olá,%20sou%20${encodeURIComponent(user.nome)}%20e%20gostaria%20de%20tirar%20uma%20dúvida.`}
+                href={`https://wa.me/${whatsappArena}?text=Olá,%20sou%20${encodeURIComponent(user.nome)}%20e%20gostaria%20de%20tirar%20uma%20dúvida.`}
                 target="_blank"
                 rel="noreferrer"
                 className="block"
@@ -816,7 +843,7 @@ export default function MinhaContaPage() {
               <div className="flex justify-between text-slate-300">
                 <span className="text-slate-500">Quadra:</span>
                 <span className="font-semibold text-white">
-                  {QUADRAS.find((q) => q.id === reservaParaCancelar.quadraId)?.descricao || `Quadra ${reservaParaCancelar.quadraId}`}
+                  {quadrasCatalogo.find((q) => q.id === reservaParaCancelar.quadraId)?.descricao || `Quadra ${reservaParaCancelar.quadraId}`}
                 </span>
               </div>
               <div className="flex justify-between text-slate-300">

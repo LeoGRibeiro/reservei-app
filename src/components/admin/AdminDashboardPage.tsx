@@ -5,6 +5,7 @@
 
 "use client";
 
+import { useQuadrasCatalogo, useHorariosCatalogo } from "@/store/useCatalogoArenaStore";
 import { useMemo } from "react";
 import {
   CalendarCheck,
@@ -33,6 +34,8 @@ function hoje() {
 }
 
 export function AdminDashboardPage() {
+  const quadrasCatalogo = useQuadrasCatalogo();
+  const horariosCatalogo = useHorariosCatalogo();
   const { reservas } = useReservasService();
   const dataHoje = hoje();
 
@@ -79,8 +82,8 @@ export function AdminDashboardPage() {
 
     const totalReservas = reservasHoje.length;
 
-    // Taxa de ocupação das 3 quadras × 15 horários disponíveis
-    const totalSlots = 3 * 15;
+    // Taxa de ocupação: quadras da arena × horários de funcionamento
+    const totalSlots = quadrasCatalogo.length * horariosCatalogo.length;
     const slotsOcupados = reservasHoje.reduce(
       (acc, r) => acc + r.horarios.length,
       0
@@ -94,7 +97,7 @@ export function AdminDashboardPage() {
       totalPendenteNoLocal,
       taxaOcupacao,
     };
-  }, [reservasHoje]);
+  }, [reservasHoje, quadrasCatalogo.length, horariosCatalogo.length]);
 
   const cards = [
     {
