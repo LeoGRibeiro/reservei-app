@@ -42,7 +42,12 @@ export function quadrasParaCatalogo(quadras: Quadra[]): QuadraCatalogo[] {
   return [...quadras]
     .filter((q) => q.ativa !== false)
     .sort((a, b) => (a.ordem ?? a.numero) - (b.ordem ?? b.numero))
-    .map((q) => ({ id: q.id, numero: q.numero, descricao: q.nome || q.descricao || `Quadra ${q.numero}` }));
+    .map((q) => ({
+      id: q.id,
+      numero: q.numero,
+      descricao: q.nome || q.descricao || `Quadra ${q.numero}`,
+      esportes: q.esportes,
+    }));
 }
 
 export const useCatalogoArenaStore = create<CatalogoArenaState>((set) => ({

@@ -11,28 +11,58 @@
  * (ex.: instalar rede de vôlei, posicionar traves de futsal, etc.).
  */
 export type Esporte =
+  | "Beach Tennis"
+  | "Futevôlei"
+  | "Vôlei de Praia"
+  | "Futebol Society"
   | "Futsal"
   | "Vôlei"
   | "Basquete"
   | "Handebol"
+  | "Tênis"
+  | "Padel"
   | "Outro";
 
 export const ESPORTES: Esporte[] = [
+  "Beach Tennis",
+  "Futevôlei",
+  "Vôlei de Praia",
+  "Futebol Society",
   "Futsal",
   "Vôlei",
   "Basquete",
   "Handebol",
+  "Tênis",
+  "Padel",
   "Outro",
 ];
 
 /** Equipamentos que a administração monta por esporte */
 export const PREPARACAO_POR_ESPORTE: Record<Esporte, string> = {
+  "Beach Tennis": "Rede de beach tennis na altura oficial (1,70 m) e areia nivelada",
+  Futevôlei: "Rede de futevôlei na altura oficial (2,20 m) e areia nivelada",
+  "Vôlei de Praia": "Rede de vôlei de praia e areia nivelada",
+  "Futebol Society": "Traves de society posicionadas e gramado conferido",
   Futsal: "Posicionamento e fixação das traves de futsal",
   Vôlei: "Montagem da rede e marcação das linhas de vôlei",
   Basquete: "Posicionamento das tabelas de basquete",
   Handebol: "Posicionamento das traves de handebol",
+  Tênis: "Rede de tênis tensionada e linhas conferidas",
+  Padel: "Rede de padel tensionada e vidros limpos",
   Outro: "Preparação padrão (sem equipamento específico)",
 };
+
+/**
+ * Esportes oferecidos ao atleta para uma quadra: os da própria quadra (cadastrados no admin) ou,
+ * se ela não tiver nenhum cadastrado, a lista completa.
+ *
+ * @param esportesDaQuadra Esportes cadastrados na quadra
+ * @returns Lista na ordem do catálogo
+ */
+export function esportesDisponiveis(esportesDaQuadra?: string[] | null): Esporte[] {
+  const conhecidos = ESPORTES.filter((e) => esportesDaQuadra?.includes(e));
+  return conhecidos.length > 0 ? conhecidos : ESPORTES;
+}
 
 // ─── Quadras ──────────────────────────────────────────────────────────────────
 
@@ -40,6 +70,8 @@ export interface Quadra {
   id: string;
   numero: number;        // "Quadra 1", "Quadra 2", etc.
   descricao: string;
+  /** Esportes praticados nesta quadra (cadastrados pela arena) */
+  esportes?: Esporte[];
 }
 
 /**

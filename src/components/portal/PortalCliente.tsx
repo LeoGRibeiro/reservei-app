@@ -464,6 +464,14 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
           aria-labelledby={ID_TITULO_RESERVA}
           className="scroll-mt-20"
         >
+        {arena.modoPagamento === "simulado" && (
+          <div role="note" className="max-w-7xl mx-auto px-4 pt-4">
+            <p className="text-xs text-amber-200 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-2.5">
+              <strong>Demonstração.</strong> Este é um ambiente de apresentação do sistema de reservas
+              {arena.nome ? ` para a ${arena.nome}` : ""}. Nenhum pagamento é cobrado e as reservas não são reais.
+            </p>
+          </div>
+        )}
         <div className="max-w-7xl mx-auto px-4 py-6 md:grid md:grid-cols-[1fr_320px] lg:grid-cols-[1fr_360px] md:gap-6 lg:gap-8 md:items-start">
           {/* Coluna esquerda: seleção */}
           <main className="space-y-6 pb-10 md:pb-6">

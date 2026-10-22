@@ -92,11 +92,20 @@ export function SecaoEscolinhas() {
 
                   {/* Informações do Professor */}
                   <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 mb-5">
-                    <img
-                      src={escolinha.teacherImageUrl}
-                      alt={escolinha.teacherName}
-                      className="w-12 h-12 rounded-xl object-cover border border-slate-700/80 shadow flex-shrink-0"
-                    />
+                    {escolinha.teacherImageUrl ? (
+                      <img
+                        src={escolinha.teacherImageUrl}
+                        alt={escolinha.teacherName}
+                        className="w-12 h-12 rounded-xl object-cover border border-slate-700/80 shadow flex-shrink-0"
+                      />
+                    ) : (
+                      <span
+                        aria-hidden="true"
+                        className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-black flex items-center justify-center flex-shrink-0"
+                      >
+                        {escolinha.teacherName.slice(0, 2).toUpperCase()}
+                      </span>
+                    )}
                     <div className="min-w-0">
                       <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider block">
                         Responsável Técnico

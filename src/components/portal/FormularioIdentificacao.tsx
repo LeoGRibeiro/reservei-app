@@ -20,7 +20,7 @@ import {
   TOLERANCIA_CANCELAMENTO_HORAS,
   ENDERECO_COMPLEXO,
 } from "@/lib/constants";
-import { ESPORTES, type Esporte } from "@/lib/quadras";
+import { esportesDisponiveis, type Esporte } from "@/lib/quadras";
 import { useCatalogoArenaStore, useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { useEnderecoArena, usePercentualSinalArena } from "@/hooks/useConfiguracaoSiteArena";
 import { POLITICA_CANCELAMENTO_PADRAO } from "@/lib/legal/termos";
@@ -299,7 +299,7 @@ export function FormularioIdentificacao({
                   className="w-full h-10 px-3 rounded-md bg-slate-800/80 border border-slate-700 text-slate-200 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/20"
                 >
                   <option value="">Não informar</option>
-                  {ESPORTES.map((e) => (
+                  {esportesDisponiveis(quadra?.esportes).map((e) => (
                     <option key={e} value={e}>
                       {e}
                     </option>
