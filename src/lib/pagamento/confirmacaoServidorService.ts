@@ -15,6 +15,14 @@ import { consumirVouchersDaReserva } from "@/lib/fidelidade/fidelidadeServidorSe
 /** Tolerância de centavos ao comparar o valor pago com o total da reserva. */
 const TOLERANCIA_CENTAVOS = 0.01;
 
+/** Opções de escopo e autoria da confirmação. */
+export interface OpcoesConfirmacao {
+  /** Restringe a busca às reservas desta arena (webhooks por arena e confirmação pelo balcão) */
+  arenaId?: string;
+  /** Operador que confirmou manualmente (Pix manual) */
+  confirmadoPor?: string;
+}
+
 /** Resultado do processamento de uma confirmação. */
 export interface ResultadoConfirmacao {
   sucesso: boolean;
@@ -36,12 +44,14 @@ export interface ResultadoConfirmacao {
  * @param txid Identificador da cobrança informado pelo gateway
  * @param valorPago Valor liquidado
  * @param dataPagamento Data/hora da liquidação (ISO)
+ * @param opcoes Escopo por arena e autoria da confirmação manual
  * @returns Resultado do processamento
  */
 export async function processarConfirmacaoPagamento(
   txid: string,
   valorPago: number,
-  dataPagamento: string = new Date().toISOString()
+  dataPagamento: string = new Date().toISOString(),
+  opcoes: OpcoesConfirmacao = {}
 ): Promise<ResultadoConfirmacao> {
   if (!txid) {
     return { sucesso: false, erro: "Identificador txid não informado." };
@@ -55,12 +65,12 @@ export async function processarConfirmacaoPagamento(
   }
 
   try {
-    const { data: linha, error } = await supabaseAdmin
+    let consulta = supabaseAdmin
       .from("reservas")
       .select("*")
-      .or(`pix_txid.eq.${txid},gateway_transacao_id.eq.${txid},id.eq.${txid}`)
-      .limit(1)
-      .maybeSingle();
+      .or(`pix_txid.eq.${txid},gateway_transacao_id.eq.${txid},id.eq.${txid}`);
+    if (opcoes.arenaId) consulta = consulta.eq("arena_id", opcoes.arenaId);
+    const { data: linha, error } = await consulta.limit(1).maybeSingle();
     if (error) throw new Error(error.message);
 
     if (!linha) {
@@ -105,9 +115,10 @@ export async function processarConfirmacaoPagamento(
           valor_pendente: Math.max(0, Math.round((reserva.valorTotal - valorPago) * 100) / 100),
         };
 
+    const autoria = opcoes.confirmadoPor ? { pagamento_confirmado_por: opcoes.confirmadoPor } : {};
     const { data: atualizadas, error: erroUpdate } = await supabaseAdmin
       .from("reservas")
-      .update({ ...atualizacao, status_whatsapp: "enviado", pago_em: dataPagamento })
+      .update({ ...atualizacao, ...autoria, status_whatsapp: "enviado", pago_em: dataPagamento })
       .eq("id", reserva.id)
       .select("id");
 
@@ -132,7 +143,8 @@ export async function processarConfirmacaoPagamento(
 }
 
 /**
- * Cancela no banco os checkouts cujo lock expirou sem pagamento, liberando os horários.
+ * Cancela no banco os checkouts cujo lock expirou sem pagamento, liberando os horários. Reservas de Pix
+ * manual em que o atleta informou o pagamento não são canceladas: aguardam a decisão do balcão.
  *
  * @param agora Instante de referência
  * @returns Ids das reservas canceladas
@@ -145,6 +157,7 @@ export async function liberarLocksExpirados(agora: Date = new Date()): Promise<s
     .update({ status: "cancelada" })
     .eq("status", "em_processamento")
     .lt("expira_em", agora.toISOString())
+    .is("pagamento_informado_em", null)
     .select("id");
 
   if (error) {

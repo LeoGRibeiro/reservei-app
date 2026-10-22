@@ -180,6 +180,13 @@ export function construirUrlArena(
     return `${proto}://${slug}.localhost:3000`;
   }
 
+  // Sem domínio próprio, a arena raiz é servida no endereço de produção da Vercel (ex.: projeto.vercel.app)
+  if (!process.env.NEXT_PUBLIC_ROOT_DOMAIN && slug === SLUG_ARENA_RAIZ) {
+    const hostVercel =
+      process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    if (hostVercel) return `${proto}://${hostVercel}`;
+  }
+
   return `${proto}://${slug}.${DOMINIO_RAIZ_PADRAO}`;
 }
 

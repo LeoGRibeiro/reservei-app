@@ -6,6 +6,24 @@
 
 import type { Esporte } from "@/lib/quadras";
 import type { ModuloArena } from "./modulos";
+import type { TipoChavePix } from "@/lib/pagamento/brCode";
+
+/**
+ * Como a arena recebe o Pix das reservas online (SPEC/2026-10-22-mvp-go-live.md §3):
+ * - `asaas`: conta Asaas da própria arena, confirmação automática por webhook;
+ * - `manual`: chave Pix da arena, confirmação pelo balcão;
+ * - `simulado`: demonstrações (só quando PAGAMENTO_SIMULADO_HABILITADO=true);
+ * - `legado`: banco ainda sem a migração da Fase 8 (usa o gateway global do ambiente).
+ */
+export type ModoPagamentoArena = "asaas" | "manual" | "simulado" | "legado";
+
+/** Dados públicos do Pix manual da arena (aparecem para o atleta de qualquer forma). */
+export interface PixManualArena {
+  chave: string;
+  tipoChave: TipoChavePix;
+  nomeRecebedor: string;
+  cidadeRecebedor: string;
+}
 
 /**
  * Tipos de piso suportados pelos complexos esportivos.
@@ -65,6 +83,12 @@ export interface Arena {
   ativo: boolean;
   /** Módulos (Feature Flags) contratados pela arena; ver `arenas.modulos_ativos` */
   modulosAtivos: ModuloArena[];
+  /** Como a arena recebe o Pix das reservas online */
+  modoPagamento?: ModoPagamentoArena;
+  /** Chave Pix para o modo manual (ausente = não configurada) */
+  pixManual?: PixManualArena;
+  /** Política de cancelamento exibida no checkout (texto livre da arena) */
+  politicaCancelamento?: string;
   /** Data e hora de cadastro da arena no sistema (ISO 8601) */
   criadaEm: string;
   /** Data e hora da última modificação dos dados cadastrais (ISO 8601) */

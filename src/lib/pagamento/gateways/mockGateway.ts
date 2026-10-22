@@ -12,25 +12,33 @@ import type {
   StatusPagamentoPix,
   WebhookPagamentoPayload,
 } from "../types";
+import { gerarBrCodePix } from "../brCode";
+import { gerarQrCodeDataUrl } from "../qrCode";
+
+/** Chave Pix fictícia usada nas demonstrações (não pertence a ninguém). */
+export const CHAVE_PIX_DEMONSTRACAO = "00000000-0000-0000-0000-000000000000";
 
 export class MockGateway implements PaymentGateway {
   readonly provedor: ProvedorGateway = "mock";
 
   /**
-   * Emite uma cobrança Pix mockada com código Copia e Cola formatado
-   * e QR Code SVG inline codificado em base64.
+   * Emite uma cobrança Pix simulada com Copia e Cola no formato BR Code e QR Code PNG em data URL.
    */
   async gerarPix(requisicao: RequisicaoCobrancaPix): Promise<ResultadoCriacaoPix> {
     const txid = `TXMOCK${Date.now()}${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
     const transacaoId = `pay_${Date.now()}_mock`;
     const expiraEm = new Date(Date.now() + (requisicao.expiracaoMinutos || 10) * 60 * 1000).toISOString();
 
-    // Gera um código Pix Copia e Cola simulado no padrão BR Code do Banco Central
-    const copiaECola = `00020126580014br.gov.bcb.pix0136${txid}520400005303986540${requisicao.valor.toFixed(2)}5802BR5915${requisicao.arena.nome.substring(0, 15)}6005BELEM62070503***6304${Math.floor(1000 + Math.random() * 9000)}`;
-
-    // QR Code visual SVG em Base64 para exibição direta em tag <img> sem requisições externas
-    const svgQrCode = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200"><rect width="100" height="100" fill="#ffffff"/><rect x="10" y="10" width="25" height="25" fill="#020617"/><rect x="15" y="15" width="15" height="15" fill="#ffffff"/><rect x="18" y="18" width="9" height="9" fill="#020617"/><rect x="65" y="10" width="25" height="25" fill="#020617"/><rect x="70" y="15" width="15" height="15" fill="#ffffff"/><rect x="73" y="18" width="9" height="9" fill="#020617"/><rect x="10" y="65" width="25" height="25" fill="#020617"/><rect x="15" y="70" width="15" height="15" fill="#ffffff"/><rect x="18" y="73" width="9" height="9" fill="#020617"/><rect x="45" y="20" width="10" height="10" fill="#10b981"/><rect x="40" y="45" width="20" height="20" fill="#10b981"/><rect x="65" y="65" width="15" height="15" fill="#020617"/><rect x="50" y="75" width="10" height="10" fill="#10b981"/></svg>`;
-    const qrCodeUrl = `data:image/svg+xml;base64,${btoa(svgQrCode)}`;
+    // BR Code em formato real (chave fictícia): o QR é escaneável, mas nenhum banco aceita pagar nele
+    const copiaECola = gerarBrCodePix({
+      chave: CHAVE_PIX_DEMONSTRACAO,
+      tipoChave: "aleatoria",
+      nomeRecebedor: requisicao.arena.nome || "Arena Demo",
+      cidadeRecebedor: requisicao.arena.cidade || "Belem",
+      valor: requisicao.valor,
+      txid,
+    });
+    const qrCodeUrl = await gerarQrCodeDataUrl(copiaECola);
 
     return {
       sucesso: true,

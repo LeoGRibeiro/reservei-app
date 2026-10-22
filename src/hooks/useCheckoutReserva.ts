@@ -20,6 +20,7 @@ import {
   cancelarCheckout,
   consultarStatusCheckout,
   criarCheckout,
+  informarPagamentoManual,
   simularPagamentoCheckout,
   type PedidoCheckout,
 } from "@/lib/reservas/reservasApi";
@@ -250,5 +251,19 @@ export function useCheckoutReserva() {
     }
   }, []);
 
-  return { iniciar, gerarPix, aguardarConfirmacao, simularPagamento, cancelar };
+  /**
+   * Pix manual: avisa a arena que o atleta pagou. O acompanhamento continua ativo para mostrar a
+   * confirmação assim que o balcão conferir.
+   */
+  const informarPagamento = useCallback(
+    async (checkout: CheckoutAtivo): Promise<{ ok: boolean; erro?: string }> => {
+      const res = await informarPagamentoManual(checkout.reservaId, checkout.checkoutToken);
+      if (!res.ok || !res.dados) return { ok: false, erro: res.erro };
+      useReservasStore.getState().atualizarReserva(checkout.reservaId, { expiraEm: res.dados.expiraEm });
+      return { ok: true };
+    },
+    []
+  );
+
+  return { iniciar, gerarPix, aguardarConfirmacao, simularPagamento, cancelar, informarPagamento };
 }

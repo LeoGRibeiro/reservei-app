@@ -6,7 +6,7 @@
  * por código client-side.
  */
 
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase/adminClient";
 import { MODULOS_PADRAO, isModuloArena, type ModuloArena } from "@/lib/arena/modulos";
 import {
@@ -47,9 +47,25 @@ export const MSG_ARENA_JA_CONFIGURADA = "Esta arena já possui administrador ati
  */
 function tokensConferem(informado: string, esperado: string | null | undefined): boolean {
   if (!informado || !esperado) return false;
-  const a = Buffer.from(informado);
+  // Convites gravados antes da Fase 8 ainda podem estar em texto puro
+  const comparavel = esperado.length === TAMANHO_HASH_CONVITE ? hashTokenConvite(informado) : informado;
+  const a = Buffer.from(comparavel);
   const b = Buffer.from(esperado);
   return a.length === b.length && timingSafeEqual(a, b);
+}
+
+/** Tamanho do hash SHA-256 em hexadecimal. */
+const TAMANHO_HASH_CONVITE = 64;
+
+/**
+ * Hash SHA-256 (hex) do token de convite. O banco guarda só o hash: a linha de `arenas` é legível
+ * publicamente (portal), e o token puro permitiria a qualquer visitante assumir uma arena recém-criada.
+ *
+ * @param token Token de convite em texto puro
+ * @returns Hash hexadecimal de 64 caracteres
+ */
+export function hashTokenConvite(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }
 
 /**
@@ -199,7 +215,7 @@ export async function criarPrimeiroAdministrador(
     .from("arenas")
     .update({ token_convite: null, setup_concluido_em: new Date().toISOString() })
     .eq("id", arena.id)
-    .eq("token_convite", input.token)
+    .eq("token_convite", arena.tokenConvite)
     .select("id");
 
   if (erroConsumo) throw new Error(erroConsumo.message);
@@ -211,7 +227,7 @@ export async function criarPrimeiroAdministrador(
   const restaurarConvite = async () => {
     await supabaseAdmin
       .from("arenas")
-      .update({ token_convite: input.token, setup_concluido_em: null })
+      .update({ token_convite: arena.tokenConvite, setup_concluido_em: null })
       .eq("id", arena.id);
   };
 
@@ -341,7 +357,7 @@ export async function criarArena(
     estado: input.estado,
     ativo: true,
     modulos_ativos: input.modulos,
-    token_convite: tokenConvite,
+    token_convite: hashTokenConvite(tokenConvite),
   });
 
   if (erroArena) {

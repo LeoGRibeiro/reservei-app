@@ -76,6 +76,7 @@ import {
   consultarEstadoSetup,
   criarArena,
   criarPrimeiroAdministrador,
+  hashTokenConvite,
   montarUrlConvite,
   validarNovaArena,
   validarSetupAdmin,
@@ -146,6 +147,16 @@ describe("consultarEstadoSetup / criarPrimeiroAdministrador", () => {
   it("precisa de setup mas token inválido quando o token é ausente ou diferente", async () => {
     expect(await consultarEstadoSetup("central")).toEqual({ precisaSetup: true, tokenValido: false });
     expect(await consultarEstadoSetup("central", "outro-token")).toEqual({
+      precisaSetup: true,
+      tokenValido: false,
+    });
+  });
+
+  it("aceita o token puro quando o banco guarda apenas o hash (Fase 8)", async () => {
+    mocks.arena = { data: { id: "arena-1", token_convite: hashTokenConvite(TOKEN) }, error: null };
+    expect(await consultarEstadoSetup("central", TOKEN)).toEqual({ precisaSetup: true, tokenValido: true });
+    // Informar o próprio hash (lido da tabela pública) não abre o setup
+    expect(await consultarEstadoSetup("central", hashTokenConvite(TOKEN))).toEqual({
       precisaSetup: true,
       tokenValido: false,
     });
@@ -353,8 +364,10 @@ describe("criarArena", () => {
       slug: "central",
       modulos_ativos: ["agendamento_core", "fidelidade"],
       ativo: true,
-      token_convite: r.tokenConvite,
+      token_convite: hashTokenConvite(r.tokenConvite),
     });
+    // O banco nunca recebe o token puro (a linha de arenas é legível publicamente)
+    expect(arena.token_convite).not.toBe(r.tokenConvite);
     const quadras = mocks.inserts.find((i) => i.tabela === "quadras")?.linhas as Record<string, unknown>[];
     expect(quadras).toHaveLength(2);
     expect(quadras[0]).toMatchObject({ arena_id: r.arenaId, numero: 1, nome: "Quadra 1" });

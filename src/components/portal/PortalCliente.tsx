@@ -101,7 +101,8 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
   // ── Services ────────────────────────────────────────────────────────────
   const { getHorariosOcupados, recarregarReservas } = useReservasService();
   const { getAvisosEscolinha } = useContratosService();
-  const { iniciar, gerarPix, aguardarConfirmacao, simularPagamento, cancelar } = useCheckoutReserva();
+  const { iniciar, gerarPix, aguardarConfirmacao, simularPagamento, cancelar, informarPagamento } =
+    useCheckoutReserva();
 
   // Mantém a grade atualizada com reservas de outras pessoas
   useEffect(() => {
@@ -403,6 +404,20 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
     [checkout, simularPagamento]
   );
 
+  /** Pix manual: o atleta avisa que pagou na chave da arena. */
+  const handleInformarPagamento = useCallback(async () => {
+    if (!checkout) return { ok: false, erro: "Reserva não encontrada." };
+    return informarPagamento(checkout);
+  }, [checkout, informarPagamento]);
+
+  /** Pix manual já informado: fecha a tela sem cancelar (a arena confirma depois). */
+  const handleFecharAguardandoArena = useCallback(() => {
+    toast.success("Pagamento informado à arena", {
+      description: "A arena vai conferir o Pix e confirmar. Acompanhe em Minha conta.",
+    });
+    resetarCheckout();
+  }, [resetarCheckout]);
+
   /** Cancela o checkout e libera o lock. */
   const handleCancelarCheckout = useCallback(() => {
     if (checkout) void cancelar(checkout);
@@ -615,6 +630,9 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
         onPagamentoConfirmado={handlePagamentoConfirmado}
         onVoltar={handleVoltarParaFormulario}
         onCancelar={handleCancelarCheckout}
+        onInformarPagamento={handleInformarPagamento}
+        onFecharAguardando={handleFecharAguardandoArena}
+        nomeRecebedor={arena.pixManual?.nomeRecebedor}
       />
 
       {/* Modal: Convite de criação de conta pós-reserva para visitantes */}

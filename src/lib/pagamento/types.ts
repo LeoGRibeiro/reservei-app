@@ -10,7 +10,7 @@ import type { Arena } from "@/lib/arena/types";
 /**
  * Provedores de gateway de pagamentos suportados pela plataforma.
  */
-export type ProvedorGateway = "asaas" | "mercadopago" | "efi" | "mock";
+export type ProvedorGateway = "asaas" | "mercadopago" | "efi" | "mock" | "manual";
 
 /**
  * Status transacionais de uma cobrança Pix.

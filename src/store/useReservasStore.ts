@@ -81,6 +81,10 @@ export interface Reserva {
   pagoEm?: string;
   gatewayProvedor?: string;
   gatewayTransacaoId?: string;
+  /** Pix manual: quando o atleta avisou que pagou (aguarda conferência do balcão) */
+  pagamentoInformadoEm?: string;
+  /** Valor efetivamente cobrado no Pix (sinal ou integral) */
+  pixValor?: number;
 }
 
 // ─── State & Actions ──────────────────────────────────────────────────────────

@@ -380,6 +380,8 @@ export async function carregarReservaDoCheckout(
 export async function cancelarLockDoCheckout(reservaId: string, checkoutToken: string): Promise<boolean> {
   const reserva = await carregarReservaDoCheckout(reservaId, checkoutToken);
   if (reserva.status !== "em_processamento") return false;
+  // Pix manual já informado como pago: só o balcão decide (o atleta pode ter pago e fechado a tela)
+  if ((reserva as { pagamento_informado_em?: string | null }).pagamento_informado_em) return false;
 
   const { data, error } = await supabaseAdmin
     .from("reservas")

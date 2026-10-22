@@ -6,7 +6,8 @@
  */
 
 import { supabase, isSupabaseConfigured } from "@/lib/supabase/client";
-import type { Arena, Quadra, QuadraPreco, ArenaUsuario } from "./types";
+import type { Arena, ArenaUsuario, ModoPagamentoArena, PixManualArena, Quadra, QuadraPreco } from "./types";
+import type { TipoChavePix } from "@/lib/pagamento/brCode";
 import {
   ARENA_PADRAO,
   ARENA_PADRAO_ID,
@@ -22,6 +23,34 @@ import { normalizarModulosAtivos } from "./modulos";
  * @param row Objeto retornado pela query do banco de dados
  * @returns Instância estruturada de Arena
  */
+/**
+ * Normaliza `arenas.modo_pagamento`. Coluna ausente (banco sem a Fase 8) vira `legado`.
+ *
+ * @param bruto Valor do banco
+ * @returns Modo de pagamento
+ */
+export function normalizarModoPagamento(bruto: unknown): ModoPagamentoArena {
+  return bruto === "asaas" || bruto === "manual" || bruto === "simulado" ? bruto : "legado";
+}
+
+/**
+ * Extrai a configuração de Pix manual de uma linha de `arenas`.
+ *
+ * @param row Linha bruta
+ * @returns Dados do Pix manual, ou undefined se incompletos
+ */
+export function mapearPixManual(row: Record<string, unknown>): PixManualArena | undefined {
+  const tipos: TipoChavePix[] = ["cpf", "cnpj", "email", "telefone", "aleatoria"];
+  const tipo = row.pix_tipo_chave as TipoChavePix;
+  if (!row.pix_chave || !tipos.includes(tipo)) return undefined;
+  return {
+    chave: String(row.pix_chave),
+    tipoChave: tipo,
+    nomeRecebedor: String(row.pix_nome_recebedor || row.nome || ""),
+    cidadeRecebedor: String(row.pix_cidade_recebedor || row.cidade || ""),
+  };
+}
+
 export function mapearLinhaParaArena(row: Record<string, unknown>): Arena {
   return {
     id: String(row.id || ""),
@@ -43,6 +72,9 @@ export function mapearLinhaParaArena(row: Record<string, unknown>): Arena {
     antecedenciaMinimaMinutos: Number(row.antecedencia_minima_minutos || 60),
     ativo: Boolean(row.ativo ?? true),
     modulosAtivos: normalizarModulosAtivos(row.modulos_ativos),
+    modoPagamento: normalizarModoPagamento(row.modo_pagamento),
+    pixManual: mapearPixManual(row),
+    politicaCancelamento: row.politica_cancelamento ? String(row.politica_cancelamento) : undefined,
     criadaEm: String(row.criado_em || new Date().toISOString()),
     atualizadaEm: row.atualizado_em ? String(row.atualizado_em) : undefined,
   };

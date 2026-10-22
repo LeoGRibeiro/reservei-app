@@ -83,6 +83,23 @@ export function cancelarCheckout(
 }
 
 /**
+ * Pix manual: avisa a arena que o atleta pagou (segura o horário até a conferência do balcão).
+ *
+ * @param reservaId Reserva
+ * @param checkoutToken Token do checkout
+ * @returns Novo prazo do lock
+ */
+export function informarPagamentoManual(
+  reservaId: string,
+  checkoutToken: string
+): Promise<RespostaApi<{ expiraEm: string }>> {
+  return chamarApi(`/api/reservas/${encodeURIComponent(reservaId)}/pagamento-informado`, {
+    method: "POST",
+    corpo: { checkoutToken },
+  });
+}
+
+/**
  * Confirma o Pix no gateway simulado (apenas desenvolvimento/demonstração).
  *
  * @param reservaId Reserva

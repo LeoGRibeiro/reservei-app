@@ -24,24 +24,11 @@ import { AdminInstitucionalPage } from "./AdminInstitucionalPage";
 import { AdminQuadrasPage } from "./AdminQuadrasPage";
 import { AdminConfiguracoesPage } from "./AdminConfiguracoesPage";
 import { AdminEquipePage } from "./AdminEquipePage";
+import { AdminPagamentosPage } from "./AdminPagamentosPage";
+import { PainelPagamentosAConfirmar } from "./PainelPagamentosAConfirmar";
 import { AdminTrocaSenhaObrigatoria } from "./AdminTrocaSenhaObrigatoria";
 import { precisaTrocarSenha } from "@/lib/supabase/adminAuthService";
 import { podeExecutar } from "@/lib/admin/permissoes";
-
-// Placeholder pages para futuras specs
-function PlaceholderPage({ titulo }: { titulo: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-center animate-fade-in">
-      <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mb-5">
-        <span className="text-3xl">🚧</span>
-      </div>
-      <h2 className="text-xl font-bold text-white mb-2">{titulo}</h2>
-      <p className="text-slate-400 text-sm max-w-xs">
-        Esta seção está planejada e será implementada na próxima especificação.
-      </p>
-    </div>
-  );
-}
 
 interface Props {
   initialView?: AdminView;
@@ -146,6 +133,9 @@ export function AdminShell({ initialView = "dashboard" }: Props) {
       {/* Conteúdo principal */}
       <main className="flex-1 min-w-0 lg:pt-0 pt-[57px]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {(viewEfetiva === "dashboard" || viewEfetiva === "agenda") && (
+            <PainelPagamentosAConfirmar arenaSlug={arenaSlug} />
+          )}
           {viewEfetiva === "dashboard" && <AdminDashboardPage exibirReceita={podeExecutar(role, "ver_receita")} />}
           {viewEfetiva === "agenda" && <AdminAgendaPage />}
           {viewEfetiva === "quadras" && <AdminQuadrasPage />}
@@ -155,7 +145,7 @@ export function AdminShell({ initialView = "dashboard" }: Props) {
           {viewEfetiva === "grupos" && <AdminGruposPage />}
           {viewEfetiva === "fidelidade" && <AdminFidelidadePage />}
           {viewEfetiva === "financeiro" && <AdminFinanceiroPage />}
-          {viewEfetiva === "pagamentos" && <PlaceholderPage titulo="Pagamentos" />}
+          {viewEfetiva === "pagamentos" && <AdminPagamentosPage arenaSlug={arenaSlug} />}
           {viewEfetiva === "equipe" && <AdminEquipePage arenaSlug={arenaSlug} usuarioId={user?.id ?? null} />}
           {viewEfetiva === "configuracoes" && <AdminConfiguracoesPage />}
         </div>

@@ -4,6 +4,10 @@
  * Exibe o QR Code gerado pelo gateway, código Copia e Cola, botão com cópia para
  * área de transferência, contagem regressiva de expiração do lock e listener
  * reativo para confirmação automática via Webhook em tempo real.
+ *
+ * No Pix manual (chave da própria arena) não há webhook: o atleta toca em "Já fiz o Pix", o horário fica
+ * segurado e a tela passa a aguardar a conferência do balcão. A partir daí, fechar o modal não cancela
+ * a reserva.
  */
 
 "use client";
@@ -20,6 +24,7 @@ import { Separator } from "@/components/ui/separator";
 import { formatarMoeda } from "@/lib/constants";
 import {
   CheckCircle2,
+  Hourglass,
   X,
   ArrowLeft,
   Copy,
@@ -125,6 +130,12 @@ export interface ModalPixProps {
   onVoltar: () => void;
   /** Callback ao cancelar a reserva */
   onCancelar: () => void;
+  /** Pix manual: avisa a arena que o atleta pagou. Retorna erro amigável se falhar. */
+  onInformarPagamento?: () => Promise<{ ok: boolean; erro?: string }>;
+  /** Pix manual: fecha a tela depois do aviso, sem cancelar a reserva */
+  onFecharAguardando?: () => void;
+  /** Pix manual: titular da conta que recebe (mostrado para o atleta conferir no app do banco) */
+  nomeRecebedor?: string;
 }
 
 export function ModalPix({
@@ -140,9 +151,15 @@ export function ModalPix({
   onPagamentoConfirmado,
   onVoltar,
   onCancelar,
+  onInformarPagamento,
+  onFecharAguardando,
+  nomeRecebedor,
 }: ModalPixProps) {
   const [copiado, setCopiado] = useState(false);
   const [simulando, setSimulando] = useState(false);
+  const [informando, setInformando] = useState(false);
+  const [informado, setInformado] = useState(false);
+  const pixManual = cobrancaPix?.provedor === "manual";
   const gatewaySimulado = !cobrancaPix || cobrancaPix.provedor === "mock";
   const [segundosRestantes, setSegundosRestantes] = useState<number>(10 * 60);
 
@@ -174,12 +191,36 @@ export function ModalPix({
     void Promise.resolve(onSimularPagamento(tipoPagamento)).finally(() => setSimulando(false));
   }, [onSimularPagamento, tipoPagamento]);
 
+  const handleInformar = useCallback(async () => {
+    if (!onInformarPagamento) return;
+    setInformando(true);
+    const r = await onInformarPagamento();
+    setInformando(false);
+    if (r.ok) {
+      setInformado(true);
+    } else {
+      toast.error("Não foi possível avisar a arena", { description: r.erro });
+    }
+  }, [onInformarPagamento]);
+
+  // Fechar depois de informar o pagamento não cancela a reserva (só o balcão decide)
+  const handleFechar = useCallback(() => {
+    if (informado) {
+      (onFecharAguardando ?? onVoltar)();
+    } else {
+      onCancelar();
+    }
+  }, [informado, onFecharAguardando, onVoltar, onCancelar]);
+
   // Contagem regressiva precisa baseada na data de expiração do lock
   useEffect(() => {
     if (!open) {
       setCopiado(false);
+      setInformado(false);
       return;
     }
+    // Pagamento informado: o horário fica segurado até a decisão da arena, sem contagem
+    if (informado) return;
 
     const expiraEm = cobrancaPix?.expiraEm;
     const duracaoInicial = expiraEm
@@ -203,7 +244,7 @@ export function ModalPix({
     }, 1000);
 
     return () => clearInterval(intervalo);
-  }, [open, cobrancaPix?.expiraEm, onCancelar]);
+  }, [open, informado, cobrancaPix?.expiraEm, onCancelar]);
 
   // Copia o código Copia e Cola para a área de transferência
   const handleCopiarPix = useCallback(async () => {
@@ -240,7 +281,7 @@ export function ModalPix({
   const estaQuaseExpirando = segundosRestantes <= 60;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onCancelar()}>
+    <Dialog open={open} onOpenChange={(v) => !v && handleFechar()}>
       <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-sm mx-auto shadow-2xl">
         <DialogHeader>
           <div className="flex items-center justify-between">
@@ -262,6 +303,32 @@ export function ModalPix({
             <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
             <p className="text-sm text-slate-300 font-medium">Gerando cobrança Pix segura...</p>
             <p className="text-xs text-slate-500">Garantindo a trava temporária da quadra</p>
+          </div>
+        ) : informado ? (
+          <div className="flex flex-col items-center gap-4 py-4 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+              <Hourglass className="w-7 h-7 text-amber-400" />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-lg font-bold">Pagamento informado</p>
+              <p className="text-sm text-slate-300">
+                Seu horário está segurado. A arena vai conferir o Pix de{" "}
+                <strong>{formatarMoeda(valorCobrado)}</strong> e confirmar a reserva.
+              </p>
+              <p className="text-xs text-slate-500">
+                Esta tela atualiza sozinha. Se fechar, acompanhe em <strong>Minha conta</strong>.
+              </p>
+            </div>
+            <div className="w-full flex items-center justify-center gap-2 text-xs text-slate-400">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+              Aguardando a conferência da arena...
+            </div>
+            <Button
+              onClick={handleFechar}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 h-11 rounded-xl text-sm"
+            >
+              Fechar
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-4 pt-1">
@@ -305,7 +372,11 @@ export function ModalPix({
               <div className="flex items-center justify-between text-xs text-slate-400 px-1">
                 <span>Pix Copia e Cola:</span>
                 <span className="text-[11px] font-mono text-slate-500">
-                  {cobrancaPix?.provedor ? `Via ${cobrancaPix.provedor.toUpperCase()}` : "Banco Central"}
+                  {pixManual
+                    ? "Direto para a arena"
+                    : cobrancaPix?.provedor && cobrancaPix.provedor !== "mock"
+                    ? `Via ${cobrancaPix.provedor.toUpperCase()}`
+                    : "Banco Central"}
                 </span>
               </div>
 
@@ -369,7 +440,21 @@ export function ModalPix({
               </div>
             </div>
 
-            {gatewaySimulado ? (
+            {pixManual && nomeRecebedor && (
+              <div className="w-full bg-slate-800/50 border border-slate-700/40 rounded-xl p-3 text-sm">
+                <div className="flex justify-between items-center gap-3">
+                  <span className="text-slate-400 text-xs">Recebedor</span>
+                  <span className="text-slate-200 font-semibold text-sm text-right">{nomeRecebedor}</span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1">Confira este nome no app do banco antes de pagar.</p>
+              </div>
+            )}
+
+            {pixManual ? (
+              <p className="w-full text-[11px] text-slate-400 text-center leading-relaxed">
+                Depois de pagar no app do banco, toque em <strong>Já fiz o Pix</strong> para a arena conferir.
+              </p>
+            ) : gatewaySimulado ? (
               <div className="w-full bg-amber-500/10 border border-amber-500/20 rounded-xl p-2.5">
                 <p className="text-[11px] text-amber-400 text-center leading-relaxed">
                   🛠️ <strong>Ambiente de demonstração.</strong> Clique abaixo para simular a liquidação bancária.
@@ -384,7 +469,17 @@ export function ModalPix({
 
             {/* Botões de Ação */}
             <div className="w-full space-y-2">
-              {gatewaySimulado && (
+              {pixManual && (
+                <Button
+                  onClick={handleInformar}
+                  disabled={informando}
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold h-12 rounded-xl gap-2 shadow-lg shadow-emerald-500/20 text-sm"
+                >
+                  {informando ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+                  Já fiz o Pix
+                </Button>
+              )}
+              {gatewaySimulado && !pixManual && (
                 <Button
                   onClick={handleSimular}
                   disabled={simulando}

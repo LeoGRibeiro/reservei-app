@@ -8,7 +8,6 @@
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { obterPaymentGateway } from "@/lib/pagamento/paymentGateway";
 import { pagamentoSimuladoHabilitado } from "@/lib/pagamento/simulacao";
 import { processarConfirmacaoPagamento } from "@/lib/pagamento/confirmacaoServidorService";
 import { carregarReservaDoCheckout } from "@/lib/reservas/checkoutServidorService";
@@ -20,7 +19,7 @@ export const dynamic = "force-dynamic";
  * Simula a liquidação do Pix da reserva do checkout.
  */
 export async function POST(request: NextRequest) {
-  if (obterPaymentGateway().provedor !== "mock" || !pagamentoSimuladoHabilitado()) {
+  if (!pagamentoSimuladoHabilitado()) {
     return NextResponse.json({ sucesso: false, erro: "Pagamento simulado indisponível." }, { status: 403 });
   }
   const indisponivel = exigirClienteAdministrativo();
@@ -32,6 +31,10 @@ export async function POST(request: NextRequest) {
     const token = typeof corpo?.checkoutToken === "string" ? corpo.checkoutToken : "";
     const reserva = await carregarReservaDoCheckout(reservaId, token);
 
+    // Só cobranças emitidas pelo gateway simulado podem ser "pagas" por aqui (nunca Asaas ou Pix manual)
+    if (reserva.gateway_provedor !== "mock") {
+      return NextResponse.json({ sucesso: false, erro: "Pagamento simulado indisponível." }, { status: 403 });
+    }
     if (!reserva.pix_txid) {
       return NextResponse.json({ sucesso: false, erro: "Gere o Pix antes de simular o pagamento." }, { status: 409 });
     }

@@ -17,9 +17,12 @@ export class AsaasGateway implements PaymentGateway {
   readonly provedor: ProvedorGateway = "asaas";
   private readonly apiKey: string;
   private readonly baseUrl: string;
+  /** Token esperado no cabeçalho `asaas-access-token` (por arena); sem ele vale ASAAS_WEBHOOK_SECRET */
+  private readonly webhookToken?: string;
 
-  constructor(apiKey?: string, isSandbox = false) {
+  constructor(apiKey?: string, isSandbox = false, webhookToken?: string) {
     this.apiKey = apiKey || process.env.ASAAS_API_KEY || "";
+    this.webhookToken = webhookToken;
     this.baseUrl = isSandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
@@ -186,7 +189,7 @@ export class AsaasGateway implements PaymentGateway {
     if (!body || typeof body !== "object") return null;
 
     // Valida token de webhook se configurado
-    const segredoEsperado = process.env.ASAAS_WEBHOOK_SECRET;
+    const segredoEsperado = this.webhookToken ?? process.env.ASAAS_WEBHOOK_SECRET;
     if (segredoEsperado) {
       const tokenRecebido = headers.get("asaas-access-token");
       if (tokenRecebido !== segredoEsperado) {

@@ -11,7 +11,7 @@ import { supabaseAdmin } from "@/lib/supabase/adminClient";
 import { mapearLinhaParaArena } from "@/lib/arena/arenaRepository";
 import { ARENA_PADRAO, ARENA_PADRAO_ID } from "@/lib/arena/defaultArena";
 import type { Arena } from "@/lib/arena/types";
-import { obterPaymentGateway } from "./paymentGateway";
+import { ErroPagamentoIndisponivel, obterGatewayDaArena } from "./gatewayDaArena";
 import type { PixCobranca, ProvedorGateway } from "./types";
 
 /**
@@ -163,14 +163,23 @@ export async function emitirPixParaReserva(
   const nomeCliente = String(reserva.nome_cliente || "") || solicitacao.nomeCliente;
   const whatsappCliente = String(reserva.whatsapp_cliente || "") || solicitacao.whatsappCliente;
 
-  const resultado = await obterPaymentGateway().gerarPix({
+  let gateway;
+  try {
+    gateway = await obterGatewayDaArena(arena);
+  } catch (err) {
+    if (err instanceof ErroPagamentoIndisponivel) throw new ErroPixServidor(err.message, err.status);
+    throw err;
+  }
+
+  const dataReserva = String(reserva.data).split("T")[0].split("-").reverse().join("/");
+  const resultado = await gateway.gerarPix({
     reservaId: String(reserva.id),
     arena,
     nomeCliente,
     whatsappCliente,
     cpfCliente: reserva.cpf_cliente ? String(reserva.cpf_cliente) : undefined,
     valor,
-    descricao: `Reserva ${arena.nome} - Quadra #${reserva.quadra_id} (${String(reserva.data).split("T")[0]})`,
+    descricao: `Reserva ${arena.nome} - ${dataReserva} ${String(reserva.hora_inicio ?? "")}`.trim(),
     expiracaoMinutos: solicitacao.expiracaoMinutos,
   });
 
@@ -188,6 +197,9 @@ export async function emitirPixParaReserva(
     gateway_provedor: cobranca.provedor,
     gateway_transacao_id: cobranca.transacaoId,
   };
+  // Valor efetivamente cobrado (sinal ou integral): base da confirmação manual pelo balcão.
+  // Só existe em bancos com a Fase 8 (modo de pagamento conhecido); no modo legado a coluna não existe.
+  if (arena.modoPagamento && arena.modoPagamento !== "legado") atualizacao.pix_valor = cobranca.valor;
   if (!reserva.nome_cliente && nomeCliente) atualizacao.nome_cliente = nomeCliente;
   if (!reserva.whatsapp_cliente && whatsappCliente) atualizacao.whatsapp_cliente = whatsappCliente;
 

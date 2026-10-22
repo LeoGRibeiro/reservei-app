@@ -67,6 +67,8 @@ export interface ReservaDbRow {
   gatewayProvedor?: string | null;
   gateway_transacao_id?: string | null;
   gatewayTransacaoId?: string | null;
+  pagamento_informado_em?: string | null;
+  pix_valor?: number | string | null;
 }
 
 /**
@@ -195,6 +197,8 @@ export function rowToReserva(row: ReservaDbRow): Reserva {
     pagoEm: row.pago_em ?? row.pagoEm ?? undefined,
     gatewayProvedor: row.gateway_provedor ?? row.gatewayProvedor ?? undefined,
     gatewayTransacaoId: row.gateway_transacao_id ?? row.gatewayTransacaoId ?? undefined,
+    pagamentoInformadoEm: row.pagamento_informado_em ?? undefined,
+    pixValor: row.pix_valor !== null && row.pix_valor !== undefined ? Number(row.pix_valor) : undefined,
   };
 }
 
