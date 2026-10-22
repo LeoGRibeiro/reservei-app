@@ -53,6 +53,7 @@ import {
   mascaraWhatsApp,
 } from "@/lib/constants";
 import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
+import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
 import type { Reserva } from "@/store/useReservasStore";
 import {
   Dialog,
@@ -67,6 +68,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function AdminUsuariosPage() {
+  const nomeArena = useConfiguracaoSiteArena().nomePlataforma;
   const quadrasCatalogo = useQuadrasCatalogo();
   const { reservas, recarregarReservas } = useReservasService();
   const [usuarios, setUsuarios] = useState<UserProfile[]>([]);
@@ -273,7 +275,7 @@ export function AdminUsuariosPage() {
   const gerarLinkWhatsApp = (u: UserProfile) => {
     const digits = u.telefone.replace(/\D/g, "");
     const msg = encodeURIComponent(
-      `Olá ${u.nome}, aqui é do Complexo Esportivo Reservei! Como podemos te ajudar?`
+      `Olá ${u.nome}, aqui é da ${nomeArena}! Como podemos te ajudar?`
     );
     return `https://wa.me/55${digits}?text=${msg}`;
   };

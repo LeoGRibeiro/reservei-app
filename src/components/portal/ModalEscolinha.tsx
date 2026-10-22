@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { mascaraWhatsApp } from "@/lib/constants";
+import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
 import { montarLinkWhatsApp, type AvisoEscolinha } from "@/lib/recorrencia/agenda";
 import { DIAS_SEMANA } from "@/lib/recorrencia/types";
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function ModalEscolinha({ aviso, onClose }: Props) {
+  const nomeArena = useConfiguracaoSiteArena().nomePlataforma;
   const dias = aviso?.diasSemana
     ? DIAS_SEMANA.filter((d) => aviso.diasSemana?.includes(d.valor))
         .map((d) => d.longo)
@@ -29,7 +31,7 @@ export function ModalEscolinha({ aviso, onClose }: Props) {
     : null;
 
   const mensagem = aviso
-    ? `Olá! Vi a escolinha ${aviso.nome}${aviso.esporte ? ` de ${aviso.esporte}` : ""} no Reservei e gostaria de informações sobre a matrícula.`
+    ? `Olá! Vi a escolinha ${aviso.nome}${aviso.esporte ? ` de ${aviso.esporte}` : ""} na ${nomeArena} e gostaria de informações sobre a matrícula.`
     : "";
 
   return (

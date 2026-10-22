@@ -30,6 +30,61 @@ export const DOMINIO_RAIZ_PADRAO =
   process.env.NEXT_PUBLIC_ROOT_DOMAIN || "reservei.com";
 
 /**
+ * Slug da arena servida quando o host não tem subdomínio de arena (domínio raiz, `localhost` puro ou
+ * `*.vercel.app`). Permite operar uma arena inteira (portal e admin) num host sem domínio próprio.
+ * Padrão: a arena de demonstração.
+ */
+export const SLUG_ARENA_RAIZ = process.env.NEXT_PUBLIC_ARENA_RAIZ_SLUG || "arena-demo";
+
+/**
+ * Resolve o slug da arena atendida por um host: o subdomínio, se houver, ou {@link SLUG_ARENA_RAIZ}.
+ * Fonte única dessa regra para o navegador (portal, admin e serviços).
+ *
+ * @param hostValue Cabeçalho Host / `window.location.host`
+ * @returns Slug da arena
+ *
+ * @example
+ * ```ts
+ * resolverSlugArenaDoHost("central.reservei.com"); // "central"
+ * resolverSlugArenaDoHost("reserveei.vercel.app"); // SLUG_ARENA_RAIZ
+ * ```
+ */
+export function resolverSlugArenaDoHost(hostValue?: string | null): string {
+  return extrairSubdominio(hostValue) ?? SLUG_ARENA_RAIZ;
+}
+
+/**
+ * Slug da arena da aba atual do navegador (no servidor, {@link SLUG_ARENA_RAIZ}).
+ *
+ * @returns Slug da arena ativa
+ */
+export function obterSlugArenaDoNavegador(): string {
+  if (typeof window === "undefined") return SLUG_ARENA_RAIZ;
+  return resolverSlugArenaDoHost(window.location.host);
+}
+
+/**
+ * Indica se o host é o domínio raiz configurado (ou `localhost`), onde rotas `/{slug}` podem ser
+ * redirecionadas para o subdomínio da arena. Em outros hosts (ex.: `*.vercel.app` sem domínio próprio)
+ * o redirecionamento levaria a um domínio que não é da plataforma.
+ *
+ * @param hostValue Cabeçalho Host
+ * @returns `true` se o host aceita subdomínios de arena
+ *
+ * @example
+ * ```ts
+ * hostEhDominioRaiz("reservei.com"); // true (com NEXT_PUBLIC_ROOT_DOMAIN=reservei.com)
+ * hostEhDominioRaiz("reserveei.vercel.app"); // false
+ * ```
+ */
+export function hostEhDominioRaiz(hostValue?: string | null): boolean {
+  if (!hostValue) return false;
+  const host = hostValue.split(":")[0].toLowerCase().trim();
+  if (host === "localhost") return true;
+  return host === DOMINIO_RAIZ_PADRAO || host === `www.${DOMINIO_RAIZ_PADRAO}`;
+}
+
+/**
  * Extrai o subdomínio / slug da arena a partir do cabeçalho Host da requisição HTTP.
  * 
  * Suporta:

@@ -21,19 +21,20 @@ import { DIAS_SEMANA } from "@/lib/recorrencia/types";
  * direto com o professor da escolinha, conforme requisito 2.2 da especificação.
  *
  * @param escolinha Dados da escolinha e professor
+ * @param nomeArena Nome da arena citado na mensagem
  * @returns URL completa para abertura do WhatsApp web ou app
  *
  * @example
- * const link = gerarLinkWhatsAppEscolinha(escolinha);
+ * const link = gerarLinkWhatsAppEscolinha(escolinha, "Arena Central");
  * // "https://wa.me/5511988887777?text=..."
  */
-export function gerarLinkWhatsAppEscolinha(escolinha: EscolinhaItem): string {
+export function gerarLinkWhatsAppEscolinha(escolinha: EscolinhaItem, nomeArena = "arena"): string {
   const digitos = escolinha.whatsappNumber.replace(/\D/g, "");
   // Adiciona DDI 55 do Brasil se não estiver presente
   const numeroCompleto = digitos.startsWith("55") ? digitos : `55${digitos}`;
 
   const mensagem =
-    `Olá ${escolinha.teacherName}! Tenho interesse na escolinha de *${escolinha.sportName}* no Reservei ` +
+    `Olá ${escolinha.teacherName}! Tenho interesse na escolinha de *${escolinha.sportName}* na ${nomeArena} ` +
     `e gostaria de saber sobre horários disponíveis e agendar uma aula experimental.`;
 
   return `https://wa.me/${numeroCompleto}?text=${encodeURIComponent(mensagem)}`;

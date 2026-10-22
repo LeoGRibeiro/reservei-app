@@ -8,6 +8,7 @@ import { useUserAuth } from "@/hooks/useUserAuth";
 import { mascaraWhatsApp } from "@/lib/constants";
 import { useArena } from "@/hooks/useArena";
 import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
+import { NOME_PRODUTO } from "@/lib/marca";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,7 +72,7 @@ export default function LoginPage() {
 
           <Link href="/" className="flex items-center gap-2">
             <span className="text-xl">🏟️</span>
-            <span className="font-black text-white text-base tracking-tight">Reservei</span>
+            <span className="font-black text-white text-base tracking-tight">{configArena.nomePlataforma}</span>
           </Link>
         </div>
       </header>
@@ -187,7 +188,7 @@ export default function LoginPage() {
 
       {/* Rodapé simples */}
       <footer className="border-t border-slate-900 py-4 text-center text-xs text-slate-600">
-        Reservei © {new Date().getFullYear()} · Complexo Esportivo
+        {configArena.nomePlataforma} © {new Date().getFullYear()} · Reservas online por {NOME_PRODUTO}
       </footer>
     </div>
   );

@@ -8,6 +8,8 @@
 
 import { useState } from "react";
 import { temModuloAtivo, type ModuloArena } from "@/lib/arena/modulos";
+import { NOME_PRODUTO } from "@/lib/marca";
+import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -103,6 +105,8 @@ export function AdminSidebar({
     viewDisponivel(item.id, modulosAtivos)
   );
 
+  const nomeArena = useConfiguracaoSiteArena().nomePlataforma;
+
   function handleNav(view: AdminView) {
     onChangeView(view);
     setMobileOpen(false);
@@ -117,8 +121,8 @@ export function AdminSidebar({
             <Shield className="w-5 h-5 text-emerald-400" />
           </div>
           <div>
-            <p className="font-bold text-white text-sm leading-none">Reservei</p>
-            <p className="text-slate-500 text-xs mt-0.5">Painel Admin</p>
+            <p className="font-bold text-white text-sm leading-none">{nomeArena}</p>
+            <p className="text-slate-500 text-xs mt-0.5">Painel · {NOME_PRODUTO}</p>
           </div>
         </div>
       </div>
@@ -182,7 +186,7 @@ export function AdminSidebar({
           <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
             <Shield className="w-4 h-4 text-emerald-400" />
           </div>
-          <span className="font-bold text-white text-sm">Reservei Admin</span>
+          <span className="font-bold text-white text-sm">{nomeArena}</span>
         </div>
         <button
           id="admin-menu-hamburguer"

@@ -1,10 +1,11 @@
+import { NOME_PRODUTO } from "@/lib/marca";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArenaRepository } from "@/lib/arena/arenaRepository";
 
 export const metadata: Metadata = {
-  title: "Reservei · Admin",
+  title: `${NOME_PRODUTO} · Admin`,
   description: "Painel administrativo do Complexo Esportivo.",
 };
 

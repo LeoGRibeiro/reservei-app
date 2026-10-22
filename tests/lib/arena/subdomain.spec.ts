@@ -4,7 +4,13 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { extrairSubdominio, construirUrlArena } from "@/lib/arena/subdomain";
+import {
+  extrairSubdominio,
+  construirUrlArena,
+  hostEhDominioRaiz,
+  resolverSlugArenaDoHost,
+  SLUG_ARENA_RAIZ,
+} from "@/lib/arena/subdomain";
 
 describe("Subdomain Parser - extrairSubdominio", () => {
   it("deve extrair o slug de subdomínios padrão de produção (.reservei.com)", () => {
@@ -55,5 +61,32 @@ describe("Subdomain Builder - construirUrlArena", () => {
   it("deve gerar URL completa para a arena", () => {
     const url = construirUrlArena("central", "https");
     expect(url).toContain("central");
+  });
+});
+
+describe("resolverSlugArenaDoHost", () => {
+  it("usa o subdomínio quando existe", () => {
+    expect(resolverSlugArenaDoHost("central.reservei.com")).toBe("central");
+    expect(resolverSlugArenaDoHost("central.localhost:3000")).toBe("central");
+  });
+
+  it("usa a arena raiz em hosts sem subdomínio de arena", () => {
+    expect(resolverSlugArenaDoHost("reserveei.vercel.app")).toBe(SLUG_ARENA_RAIZ);
+    expect(resolverSlugArenaDoHost("localhost:3000")).toBe(SLUG_ARENA_RAIZ);
+    expect(resolverSlugArenaDoHost(null)).toBe(SLUG_ARENA_RAIZ);
+  });
+});
+
+describe("hostEhDominioRaiz", () => {
+  it("aceita o domínio raiz configurado, o www e localhost", () => {
+    expect(hostEhDominioRaiz("reservei.com")).toBe(true);
+    expect(hostEhDominioRaiz("www.reservei.com:443")).toBe(true);
+    expect(hostEhDominioRaiz("localhost:3000")).toBe(true);
+  });
+
+  it("recusa hosts que não são o domínio da plataforma", () => {
+    expect(hostEhDominioRaiz("reserveei.vercel.app")).toBe(false);
+    expect(hostEhDominioRaiz("central.reservei.com")).toBe(false);
+    expect(hostEhDominioRaiz("")).toBe(false);
   });
 });

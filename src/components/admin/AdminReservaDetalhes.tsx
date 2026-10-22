@@ -38,6 +38,9 @@ import { useReservasStore } from "@/store/useReservasStore";
 import { useReservasService } from "@/hooks/useReservasService";
 import { toast } from "sonner";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { descreverQuadra } from "@/store/useCatalogoArenaStore";
+import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
+import { NOME_PRODUTO } from "@/lib/marca";
 import { formatarMoeda, formatarDataExibicao } from "@/lib/constants";
 import { PREPARACAO_POR_ESPORTE } from "@/lib/quadras";
 import type { Reserva } from "@/store/useReservasStore";
@@ -146,7 +149,8 @@ function BotoesWhatsApp({
   reserva: Reserva;
   tipoPagamento: "sinal" | "integral";
 }) {
-  const quadraNum = reserva.quadraId.replace("q", "");
+  const nomeQuadra = descreverQuadra(reserva.quadraId);
+  const nomeArena = useConfiguracaoSiteArena().nomePlataforma;
   const dataFormatada = formatarDataExibicao(reserva.data, {
     weekday: "long",
     day: "numeric",
@@ -182,9 +186,9 @@ function BotoesWhatsApp({
 
   const msgConfirmacao =
     `Olá, *${reserva.nomeCliente}*! 👋\n\n` +
-    `✅ Sua reserva no *Complexo Esportivo Reservei* está confirmada!\n\n` +
+    `✅ Sua reserva no *${nomeArena}* está confirmada!\n\n` +
     `📋 *Detalhes da reserva:*\n` +
-    `• Quadra ${quadraNum} — ${dataFormatada}\n` +
+    `• ${nomeQuadra} — ${dataFormatada}\n` +
     `• Horário: *${reserva.horaInicio} – ${reserva.horaFim}*\n` +
     (reserva.esporte ? `• Esporte: *${reserva.esporte}*\n` : ``) +
     `\n💰 *Pagamento:* ${textoPagamentoConfirmacao}\n` +
@@ -195,9 +199,9 @@ function BotoesWhatsApp({
 
   const msgPendente =
     `Olá, *${reserva.nomeCliente}*! 👋\n\n` +
-    `🔔 Lembrete da sua reserva no *Complexo Esportivo Reservei*:\n\n` +
+    `🔔 Lembrete da sua reserva no *${nomeArena}*:\n\n` +
     `📋 *Detalhes:*\n` +
-    `• Quadra ${quadraNum} — ${dataFormatada}\n` +
+    `• ${nomeQuadra} — ${dataFormatada}\n` +
     `• Horário: *${reserva.horaInicio} – ${reserva.horaFim}*\n\n` +
     `💳 *Pagamento pendente no local:*\n` +
     `• Sinal pago: *${formatarMoeda(reserva.valorSinal)}* ✅\n` +
@@ -205,7 +209,7 @@ function BotoesWhatsApp({
     `Por favor, chegue com o valor em mãos (dinheiro ou Pix). Até logo! 🏟️`;
 
   const msgCustom =
-    `Olá, *${reserva.nomeCliente}*! Entrando em contato sobre sua reserva na Quadra ${quadraNum} no dia ${dataFormatada} (${reserva.horaInicio}–${reserva.horaFim}). `;
+    `Olá, *${reserva.nomeCliente}*! Entrando em contato sobre sua reserva na ${nomeQuadra} no dia ${dataFormatada} (${reserva.horaInicio}–${reserva.horaFim}). `;
 
   const botoes = [
     {
@@ -324,7 +328,7 @@ export function AdminReservaDetalhes({ reservaId }: { reservaId: string }) {
 
   const statusCfg = STATUS_CONFIG[reserva.status] ?? STATUS_CONFIG.pendente;
   const StatusIcon = statusCfg.icon;
-  const quadraNum = reserva.quadraId.replace("q", "");
+  const nomeQuadra = descreverQuadra(reserva.quadraId);
   const tipoPagamento: "sinal" | "integral" =
     reserva.valorPendente === 0 ? "integral" : "sinal";
 
@@ -377,7 +381,7 @@ export function AdminReservaDetalhes({ reservaId }: { reservaId: string }) {
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-emerald-400" />
               <span className="text-sm font-medium text-slate-400">
-                Reservei Admin
+                {NOME_PRODUTO} Admin
               </span>
               <span className="text-slate-700">/</span>
               <span className="text-sm text-white font-mono">
@@ -408,7 +412,7 @@ export function AdminReservaDetalhes({ reservaId }: { reservaId: string }) {
           {/* Chips de resumo */}
           <div className="flex flex-wrap gap-2 mt-4">
             <span className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-sm text-slate-300">
-              Quadra {quadraNum}
+              {nomeQuadra}
             </span>
             <span className="px-3 py-1 bg-slate-800 border border-slate-700 rounded-full text-sm font-mono text-slate-300">
               {reserva.horaInicio} – {reserva.horaFim}
@@ -528,7 +532,7 @@ export function AdminReservaDetalhes({ reservaId }: { reservaId: string }) {
               <DetalheRow
                 icon={Layers}
                 label="Quadra"
-                value={`Quadra ${quadraNum} — poliesportiva coberta`}
+                value={nomeQuadra}
               />
               {reserva.esporte && (
                 <DetalheRow

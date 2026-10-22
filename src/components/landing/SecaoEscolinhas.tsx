@@ -22,10 +22,12 @@ import {
 } from "lucide-react";
 import { SECAO_IDS } from "@/lib/landingPage/secoes";
 import { gerarLinkWhatsAppEscolinha } from "@/lib/institucional/institucionalHelpers";
+import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
 import { useInstitucionalService } from "@/hooks/useInstitucionalService";
 
 export function SecaoEscolinhas() {
   const { escolinhasAtivas } = useInstitucionalService();
+  const nomeArena = useConfiguracaoSiteArena().nomePlataforma;
 
   return (
     <section
@@ -63,7 +65,7 @@ export function SecaoEscolinhas() {
         {/* Grid de Cards por Modalidade */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {escolinhasAtivas.map((escolinha) => {
-            const linkWhatsApp = gerarLinkWhatsAppEscolinha(escolinha);
+            const linkWhatsApp = gerarLinkWhatsAppEscolinha(escolinha, nomeArena);
 
             return (
               <article

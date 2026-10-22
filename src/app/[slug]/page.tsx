@@ -5,6 +5,7 @@
  * Ex: 'arena-belem.reservei.com' -> '/arena-belem'
  */
 
+import { NOME_PRODUTO } from "@/lib/marca";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PortalCliente } from "@/components/portal/PortalCliente";
@@ -27,7 +28,7 @@ export async function generateMetadata({
 
   if (!arena) {
     return {
-      title: "Arena não encontrada · Reservei",
+      title: `Arena não encontrada · ${NOME_PRODUTO}`,
       description: "O complexo esportivo solicitado não foi localizado na plataforma.",
     };
   }

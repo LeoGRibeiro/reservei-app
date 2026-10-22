@@ -25,7 +25,6 @@ export const DIAS_AGENDAMENTO_FUTURO = 7;
 
 // ─── Complexo ─────────────────────────────────────────────────────────────────
 
-export const NOME_COMPLEXO = "Complexo Esportivo Reservei";
 export const ENDERECO_COMPLEXO = "Rua das Quadras, 100 – Centro";
 export const TELEFONE_COMPLEXO = "(11) 99999-0000";
 

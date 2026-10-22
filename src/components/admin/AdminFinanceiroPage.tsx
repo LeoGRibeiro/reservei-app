@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { useReservasService } from "@/hooks/useReservasService";
+import { descreverQuadra } from "@/store/useCatalogoArenaStore";
 import { formatarMoeda, formatarDataExibicao } from "@/lib/constants";
 import { getTelefonesCadastradosLocal } from "@/lib/supabase/authService";
 import type { Reserva } from "@/store/useReservasStore";
@@ -372,7 +373,7 @@ export function AdminFinanceiroPage() {
           ) : (
             <div className="space-y-4">
               {reservasPorQuadra.map(([quadraId, vals]) => {
-                const quadraNum = quadraId.replace("q", "");
+                const nomeQuadra = descreverQuadra(quadraId);
                 return (
                   <div
                     key={quadraId}
@@ -380,7 +381,7 @@ export function AdminFinanceiroPage() {
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-white">
-                        Quadra {quadraNum}
+                        {nomeQuadra}
                       </span>
                       <span className="text-sm font-bold text-emerald-400">
                         {formatarMoeda(vals.liquido)}
@@ -580,7 +581,7 @@ export function AdminFinanceiroPage() {
                       {/* Agendamento */}
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <p className="font-medium text-slate-200">
-                          Quadra {r.quadraId.replace("q", "")} · {formatarDiaMes(r.data)}
+                          {descreverQuadra(r.quadraId)} · {formatarDiaMes(r.data)}
                         </p>
                         <p className="text-[11px] font-mono text-slate-400">
                           {r.horaInicio} – {r.horaFim}

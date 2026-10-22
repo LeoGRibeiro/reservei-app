@@ -5,6 +5,7 @@
 
 import Link from "next/link";
 import { DOMINIO_RAIZ_PADRAO } from "@/lib/arena/subdomain";
+import { NOME_PRODUTO } from "@/lib/marca";
 
 export default function NaoEncontrado() {
   return (
@@ -15,14 +16,14 @@ export default function NaoEncontrado() {
         </p>
         <h1 className="text-2xl font-black">Arena não encontrada</h1>
         <p className="text-sm text-slate-400 leading-relaxed">
-          O endereço acessado não corresponde a nenhuma arena ativa no Reservei. Confira o link enviado
+          O endereço acessado não corresponde a nenhuma arena ativa no {NOME_PRODUTO}. Confira o link enviado
           pela arena ou fale com ela pelo WhatsApp.
         </p>
         <Link
           href={`https://${DOMINIO_RAIZ_PADRAO}`}
           className="inline-block px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm"
         >
-          Conhecer o Reservei
+          Conhecer o {NOME_PRODUTO}
         </Link>
       </div>
     </main>

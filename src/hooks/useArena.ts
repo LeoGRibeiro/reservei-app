@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Arena, Quadra, QuadraPreco } from "@/lib/arena/types";
 import { ArenaRepository } from "@/lib/arena/arenaRepository";
-import { extrairSubdominio } from "@/lib/arena/subdomain";
+import { obterSlugArenaDoNavegador, SLUG_ARENA_RAIZ } from "@/lib/arena/subdomain";
 import { useCatalogoArenaStore } from "@/store/useCatalogoArenaStore";
 import {
   ARENA_PADRAO,
@@ -21,16 +21,15 @@ import {
 
 /**
  * Resolve o slug da arena ativa. Se não informado, usa o subdomínio do host atual
- * (ex: 'central.reservei.com' -> 'central'); no domínio raiz ou em localhost puro, usa a
- * arena de demonstração (fallback de desenvolvimento).
+ * (ex: 'central.reservei.com' -> 'central'); sem subdomínio, usa a arena raiz configurada
+ * (`NEXT_PUBLIC_ARENA_RAIZ_SLUG`, padrão: demo).
  *
  * @param slugOrId Slug/ID explícito (opcional)
  * @returns Slug/ID efetivo
  */
 export function resolverSlugAtivo(slugOrId?: string): string {
   if (slugOrId) return slugOrId;
-  if (typeof window === "undefined") return ARENA_PADRAO_SLUG;
-  return extrairSubdominio(window.location.host) ?? ARENA_PADRAO_SLUG;
+  return obterSlugArenaDoNavegador();
 }
 
 export interface UseArenaRetorno {
@@ -62,9 +61,11 @@ export interface UseArenaRetorno {
  */
 export function useArena(slugOrIdParam?: string): UseArenaRetorno {
   // Com slug explícito de outra arena, começa neutro: a demo nunca deve "piscar" no portal de um cliente
-  const outraArena = Boolean(slugOrIdParam) && slugOrIdParam !== ARENA_PADRAO_SLUG && slugOrIdParam !== ARENA_PADRAO_ID;
+  // Sem slug explícito vale a arena raiz do host (subdomínios sempre chegam com slug explícito do servidor)
+  const slugInicial = slugOrIdParam ?? SLUG_ARENA_RAIZ;
+  const outraArena = slugInicial !== ARENA_PADRAO_SLUG && slugInicial !== ARENA_PADRAO_ID;
   const [arena, setArena] = useState<Arena>(() =>
-    outraArena ? { ...ARENA_PADRAO, id: "", slug: slugOrIdParam ?? "", nome: "" } : ARENA_PADRAO
+    outraArena ? { ...ARENA_PADRAO, id: "", slug: slugInicial, nome: "" } : ARENA_PADRAO
   );
   const [quadras, setQuadras] = useState<Quadra[]>(() => (outraArena ? [] : QUADRAS_PADRAO));
   const [precos, setPrecos] = useState<QuadraPreco[]>(() => (outraArena ? [] : PRECOS_PADRAO));

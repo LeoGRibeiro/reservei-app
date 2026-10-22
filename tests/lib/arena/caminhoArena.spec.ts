@@ -125,4 +125,11 @@ describe("proxy - subdomínios estritos", () => {
     expect(res.status).toBe(200);
     expect(res.headers.get("location")).toBeNull();
   });
+
+  it("não redireciona /{slug} em hosts sem domínio próprio (ex.: *.vercel.app)", () => {
+    const res = proxy(req("https://reserveei.vercel.app/arena-belem", "reserveei.vercel.app"));
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("location")).toBeNull();
+  });
 });

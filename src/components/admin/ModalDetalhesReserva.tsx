@@ -34,6 +34,8 @@ import {
   Ticket,
 } from "lucide-react";
 import type { Reserva } from "@/store/useReservasStore";
+import { descreverQuadra } from "@/store/useCatalogoArenaStore";
+import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
 import { formatarMoeda, formatarDataExibicao } from "@/lib/constants";
 import { PREPARACAO_POR_ESPORTE } from "@/lib/quadras";
 import { getTelefonesCadastradosLocal } from "@/lib/supabase/authService";
@@ -116,7 +118,8 @@ function gerarUrlWA(numero: string, texto: string): string {
 }
 
 function BotoesWhatsApp({ reserva, tipoPagamento }: BotoesWhatsAppProps) {
-  const quadraNum = reserva.quadraId.replace("q", "");
+  const nomeQuadra = descreverQuadra(reserva.quadraId);
+  const nomeArena = useConfiguracaoSiteArena().nomePlataforma;
   const dataFormatada = formatarDataExibicao(reserva.data, {
     weekday: "long",
     day: "numeric",
@@ -154,9 +157,9 @@ function BotoesWhatsApp({ reserva, tipoPagamento }: BotoesWhatsAppProps) {
 
   const msgConfirmacao =
     `Olá, *${reserva.nomeCliente}*! 👋\n\n` +
-    `✅ Sua reserva no *Complexo Esportivo Reservei* está confirmada!\n\n` +
+    `✅ Sua reserva no *${nomeArena}* está confirmada!\n\n` +
     `📋 *Detalhes da reserva:*\n` +
-    `• Quadra ${quadraNum} — ${dataFormatada}\n` +
+    `• ${nomeQuadra} — ${dataFormatada}\n` +
     `• Horário: *${reserva.horaInicio} – ${reserva.horaFim}*\n` +
     (reserva.esporte ? `• Esporte: *${reserva.esporte}*\n` : ``) +
     `\n💰 *Pagamento:* ${textoPagamentoConfirmacao}\n` +
@@ -167,9 +170,9 @@ function BotoesWhatsApp({ reserva, tipoPagamento }: BotoesWhatsAppProps) {
 
   const msgPendente =
     `Olá, *${reserva.nomeCliente}*! 👋\n\n` +
-    `🔔 Lembrete da sua reserva no *Complexo Esportivo Reservei*:\n\n` +
+    `🔔 Lembrete da sua reserva no *${nomeArena}*:\n\n` +
     `📋 *Detalhes:*\n` +
-    `• Quadra ${quadraNum} — ${dataFormatada}\n` +
+    `• ${nomeQuadra} — ${dataFormatada}\n` +
     `• Horário: *${reserva.horaInicio} – ${reserva.horaFim}*\n\n` +
     `💳 *Pagamento pendente no local:*\n` +
     `• Sinal pago: *${formatarMoeda(reserva.valorSinal)}* ✅\n` +
@@ -178,7 +181,7 @@ function BotoesWhatsApp({ reserva, tipoPagamento }: BotoesWhatsAppProps) {
 
   const msgCustom =
     `Olá, *${reserva.nomeCliente}*! ` +
-    `Entrando em contato sobre sua reserva na Quadra ${quadraNum} no dia ${dataFormatada} (${reserva.horaInicio}–${reserva.horaFim}). `;
+    `Entrando em contato sobre sua reserva na ${nomeQuadra} no dia ${dataFormatada} (${reserva.horaInicio}–${reserva.horaFim}). `;
 
   const botoes: Array<{
     id: string;
@@ -298,7 +301,7 @@ export function ModalDetalhesReserva({ reserva, onFechar }: Props) {
     STATUS_CONFIG[reserva.status] ?? STATUS_CONFIG.pendente;
   const StatusIcon = statusCfg.icon;
 
-  const quadraNum = reserva.quadraId.replace("q", "");
+  const nomeQuadra = descreverQuadra(reserva.quadraId);
   const tipoPagamento = reserva.valorPendente === 0 ? "integral" : "sinal";
 
   const isRecorrente = Boolean(
@@ -389,7 +392,7 @@ export function ModalDetalhesReserva({ reserva, onFechar }: Props) {
                     : `🎁 Desconto Fidelidade (-${formatarMoeda(reserva.descontoFidelidade || 0)})`}
                 </p>
                 <p className="text-[11px] text-purple-300/80 mt-0.5">
-                  Benefício concedido pelo programa de fidelidade do Reservei.
+                  Benefício concedido pelo programa de fidelidade da arena.
                 </p>
               </div>
             </div>
@@ -480,7 +483,7 @@ export function ModalDetalhesReserva({ reserva, onFechar }: Props) {
               <DetalheRow
                 icon={Layers}
                 label="Quadra"
-                value={`Quadra ${quadraNum} — poliesportiva coberta`}
+                value={nomeQuadra}
               />
               {reserva.esporte && (
                 <DetalheRow

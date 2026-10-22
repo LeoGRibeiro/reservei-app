@@ -8,8 +8,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { extrairSubdominio } from "@/lib/arena/subdomain";
-import { ARENA_PADRAO_SLUG } from "@/lib/arena/defaultArena";
+import { obterSlugArenaDoNavegador } from "@/lib/arena/subdomain";
 import type { ArenaUserRole } from "@/lib/arena/types";
 import {
   autenticarAdministrador,
@@ -51,15 +50,6 @@ export interface UseAdminAuthRetorno {
 }
 
 /**
- * Resolve o slug da arena acessada: subdomínio do host atual ou, no domínio raiz /
- * `localhost`, a arena padrão de demonstração.
- */
-function resolverArenaSlugAtual(): string {
-  if (typeof window === "undefined") return ARENA_PADRAO_SLUG;
-  return extrairSubdominio(window.location.host) ?? ARENA_PADRAO_SLUG;
-}
-
-/**
  * Hook de autenticação administrativa.
  *
  * @param arenaSlugForcado Slug da arena a validar (opcional; por padrão, o do subdomínio)
@@ -74,7 +64,7 @@ function resolverArenaSlugAtual(): string {
  */
 export function useAdminAuth(arenaSlugForcado?: string): UseAdminAuthRetorno {
   const arenaSlug = useMemo(
-    () => arenaSlugForcado ?? resolverArenaSlugAtual(),
+    () => arenaSlugForcado ?? obterSlugArenaDoNavegador(),
     [arenaSlugForcado]
   );
   const [sessao, setSessao] = useState<SessaoAdmin | null>(null);

@@ -6,6 +6,7 @@
 
 "use client";
 
+import { NOME_PRODUTO } from "@/lib/marca";
 import { useState } from "react";
 import { useArena } from "@/hooks/useArena";
 import type { ResultadoLogin } from "@/hooks/useAdminAuth";
@@ -100,7 +101,7 @@ export function AdminSetupWizard({ arenaSlug, onSetupConcluido, token, tokenVali
           <h1 className="text-lg font-bold text-white">Acesso Restrito · {nomeArena}</h1>
           <p className="text-slate-400 text-sm">
             Para realizar a configuração inicial desta arena, utilize o link de convite exclusivo
-            enviado pelo administrador do Reservei.
+            enviado pela equipe {NOME_PRODUTO}.
           </p>
         </div>
       </div>

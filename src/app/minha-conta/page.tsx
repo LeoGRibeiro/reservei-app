@@ -242,7 +242,7 @@ export default function MinhaContaPage() {
 
           <div className="flex items-center gap-2">
             <span className="text-xl">🏟️</span>
-            <span className="font-black text-white text-base tracking-tight">Reservei</span>
+            <span className="font-black text-white text-base tracking-tight">{arena.nome}</span>
             <span className="text-xs text-slate-500 hidden md:inline">· Portal do Cliente</span>
           </div>
 

@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useUserAuth } from "@/hooks/useUserAuth";
+import { useArena } from "@/hooks/useArena";
+import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
+import { NOME_PRODUTO } from "@/lib/marca";
 import { mascaraWhatsApp, validarSenhaForte } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +28,8 @@ import {
 export default function CadastroPage() {
   const router = useRouter();
   const { cadastrar, loading } = useUserAuth();
+  useArena();
+  const configArena = useConfiguracaoSiteArena();
 
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -103,7 +108,7 @@ export default function CadastroPage() {
 
           <Link href="/" className="flex items-center gap-2">
             <span className="text-xl">🏟️</span>
-            <span className="font-black text-white text-base tracking-tight">Reservei</span>
+            <span className="font-black text-white text-base tracking-tight">{configArena.nomePlataforma}</span>
           </Link>
         </div>
       </header>
@@ -303,7 +308,7 @@ export default function CadastroPage() {
 
       {/* Rodapé */}
       <footer className="border-t border-slate-900 py-4 text-center text-xs text-slate-600">
-        Reservei © {new Date().getFullYear()} · Complexo Esportivo
+        {configArena.nomePlataforma} © {new Date().getFullYear()} · Reservas online por {NOME_PRODUTO}
       </footer>
     </div>
   );

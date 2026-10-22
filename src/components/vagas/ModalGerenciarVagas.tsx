@@ -34,6 +34,7 @@ import { useVagasService } from "@/hooks/useVagasService";
 import { TERMO_RESPONSABILIDADE_ORGANIZADOR } from "@/lib/vagas/types";
 import { formatarDataExibicao, mascaraWhatsApp } from "@/lib/constants";
 import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
+import { useConfiguracaoSiteArena } from "@/hooks/useConfiguracaoSiteArena";
 
 interface ModalGerenciarVagasProps {
   open: boolean;
@@ -55,6 +56,7 @@ export function ModalGerenciarVagas({
     atualizarStatusInteresse,
   } = useVagasService();
 
+  const nomeArena = useConfiguracaoSiteArena().nomePlataforma;
   const [quantidadeVagas, setQuantidadeVagas] = useState<number>(
     reserva.vagasAbertas && reserva.vagasAbertas > 0 ? reserva.vagasAbertas : 2
   );
@@ -294,7 +296,7 @@ export function ModalGerenciarVagas({
                 {interessados.map((item) => {
                   const digits = item.telefoneUsuario.replace(/\D/g, "");
                   const msgWhatsapp = encodeURIComponent(
-                    `Olá ${item.nomeUsuario}, vi que você tem interesse na vaga da partida de ${reserva.esporte || "futebol"} no Reservei (${formatarDataExibicao(reserva.data)} às ${reserva.horaInicio}). Tudo bem?`
+                    `Olá ${item.nomeUsuario}, vi que você tem interesse na vaga da partida de ${reserva.esporte || "futebol"} na ${nomeArena} (${formatarDataExibicao(reserva.data)} às ${reserva.horaInicio}). Tudo bem?`
                   );
                   return (
                     <div

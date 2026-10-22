@@ -6,17 +6,17 @@
  * módulo para filtrar leituras e preencher gravações com o `arena_id` correto. Sem isso, um operador
  * vinculado a duas arenas veria dados misturados, e o RLS rejeitaria gravações com `arena_id` nulo.
  *
- * Sem subdomínio (localhost puro ou domínio raiz), usa a arena demo (ambiente de desenvolvimento).
+ * Sem subdomínio (localhost puro, domínio raiz ou `*.vercel.app`), usa a arena raiz configurada.
  */
 
 import { ArenaRepository } from "./arenaRepository";
 import { ARENA_PADRAO_ID, ARENA_PADRAO_SLUG } from "./defaultArena";
-import { extrairSubdominio } from "./subdomain";
+import { obterSlugArenaDoNavegador } from "./subdomain";
 
 let promessaArenaAtiva: Promise<string | null> | null = null;
 
 /**
- * Slug da arena do host atual (subdomínio) ou o slug da demo quando não houver subdomínio.
+ * Slug da arena do host atual (subdomínio) ou, sem subdomínio, a arena raiz (`NEXT_PUBLIC_ARENA_RAIZ_SLUG`).
  *
  * @returns Slug da arena ativa
  *
@@ -27,8 +27,7 @@ let promessaArenaAtiva: Promise<string | null> | null = null;
  * ```
  */
 export function obterSlugArenaAtiva(): string {
-  if (typeof window === "undefined") return ARENA_PADRAO_SLUG;
-  return extrairSubdominio(window.location.host) ?? ARENA_PADRAO_SLUG;
+  return obterSlugArenaDoNavegador();
 }
 
 /**

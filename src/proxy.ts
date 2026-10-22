@@ -15,6 +15,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   extrairSubdominio,
+  hostEhDominioRaiz,
   resolverRedirecionamentoPorCaminho,
 } from "@/lib/arena/subdomain";
 
@@ -42,8 +43,9 @@ export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
   // 1. Acesso por caminho no domínio raiz (ex: 'reservei.com/arena-central'):
-  // redireciona 301 para o subdomínio oficial da arena.
-  if (!subdominio) {
+  // redireciona 301 para o subdomínio oficial da arena. Só no domínio raiz configurado: em outros hosts
+  // (ex.: 'projeto.vercel.app' sem domínio próprio) o destino seria um domínio que não é da plataforma.
+  if (!subdominio && hostEhDominioRaiz(host)) {
     const destino = resolverRedirecionamentoPorCaminho(pathname, search);
     if (destino) {
       return NextResponse.redirect(destino, 301);

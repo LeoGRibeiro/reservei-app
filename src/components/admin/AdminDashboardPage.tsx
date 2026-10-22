@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useQuadrasCatalogo, useHorariosCatalogo } from "@/store/useCatalogoArenaStore";
+import { useQuadrasCatalogo, useHorariosCatalogo, descreverQuadra } from "@/store/useCatalogoArenaStore";
 import { useMemo } from "react";
 import {
   CalendarCheck,
@@ -302,7 +302,7 @@ function SecaoReservasAvulsas({ reservas }: { reservas: Reserva[] }) {
           <div className="divide-y divide-slate-700/30">
             {reservas.map((r) => {
               const cfg = STATUS_CONFIG[r.status] ?? STATUS_CONFIG.pendente;
-              const quadraNum = r.quadraId.replace("q", "");
+              const nomeQuadra = descreverQuadra(r.quadraId);
               const telDigits = r.whatsappCliente ? r.whatsappCliente.replace(/\D/g, "") : "";
               const isMembro = Boolean(
                 r.userId || (telDigits && getTelefonesCadastradosLocal().has(telDigits))
@@ -355,7 +355,7 @@ function SecaoReservasAvulsas({ reservas }: { reservas: Reserva[] }) {
 
                   <div className="text-center">
                     <span className="text-xs font-medium text-slate-300 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
-                      Quadra {quadraNum}
+                      {nomeQuadra}
                     </span>
                   </div>
 
@@ -431,7 +431,7 @@ function SecaoAulasEscolinhas({ reservas }: { reservas: Reserva[] }) {
 
           <div className="divide-y divide-slate-700/30">
             {reservas.map((r) => {
-              const quadraNum = r.quadraId.replace("q", "");
+              const nomeQuadra = descreverQuadra(r.quadraId);
 
               return (
                 <a
@@ -455,7 +455,7 @@ function SecaoAulasEscolinhas({ reservas }: { reservas: Reserva[] }) {
 
                   <div className="text-center">
                     <span className="text-xs font-medium text-slate-300 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
-                      Quadra {quadraNum}
+                      {nomeQuadra}
                     </span>
                   </div>
 
@@ -525,7 +525,7 @@ function SecaoGruposMensalistas({ reservas }: { reservas: Reserva[] }) {
 
           <div className="divide-y divide-slate-700/30">
             {reservas.map((r) => {
-              const quadraNum = r.quadraId.replace("q", "");
+              const nomeQuadra = descreverQuadra(r.quadraId);
 
               return (
                 <a
@@ -554,7 +554,7 @@ function SecaoGruposMensalistas({ reservas }: { reservas: Reserva[] }) {
 
                   <div className="text-center">
                     <span className="text-xs font-medium text-slate-300 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
-                      Quadra {quadraNum}
+                      {nomeQuadra}
                     </span>
                   </div>
 
@@ -615,7 +615,7 @@ function SecaoBloqueiosManutencao({ reservas }: { reservas: Reserva[] }) {
 
         <div className="divide-y divide-slate-700/30">
           {reservas.map((r) => {
-            const quadraNum = r.quadraId.replace("q", "");
+            const nomeQuadra = descreverQuadra(r.quadraId);
 
             return (
               <div
@@ -638,7 +638,7 @@ function SecaoBloqueiosManutencao({ reservas }: { reservas: Reserva[] }) {
 
                 <div className="text-center">
                   <span className="text-xs font-medium text-slate-300 bg-slate-800 border border-slate-700 px-2.5 py-1 rounded-lg">
-                    Quadra {quadraNum}
+                    {nomeQuadra}
                   </span>
                 </div>
 

@@ -4,6 +4,7 @@
  * (via cabeçalho 'x-arena-slug' injetado pelo middleware) ou do domínio central padrão.
  */
 
+import { NOME_PRODUTO, SLOGAN_PRODUTO } from "@/lib/marca";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { PortalCliente } from "@/components/portal/PortalCliente";
@@ -29,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
   }
 
   return {
-    title: "Reservei · Plataforma Multi-Arena de Agendamento Esportivo",
+    title: `${NOME_PRODUTO} · ${SLOGAN_PRODUTO}`,
     description:
       "Agende sua quadra esportiva online de forma rápida e segura. Beach Tennis, Futsal, Society, Vôlei e mais.",
   };

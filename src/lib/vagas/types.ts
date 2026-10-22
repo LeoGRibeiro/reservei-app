@@ -4,6 +4,7 @@
  * e que interessados solicitem participação com total isenção de responsabilidade da arena.
  */
 
+import { NOME_PRODUTO } from "@/lib/marca";
 import type { Esporte } from "@/lib/quadras";
 
 /**
@@ -102,7 +103,7 @@ export const TERMO_RESPONSABILIDADE_ORGANIZADOR =
   "Ao abrir vagas para sua reserva, você declara estar ciente de que a organização, " +
   "seleção de participantes, cobrança de valores (rateio) e qualquer conduta ou dano " +
   "causado pelos convidados são de sua inteira e exclusiva responsabilidade. " +
-  "A Arena e a plataforma Reservei não intermedeiam pagamentos de rateio, não realizam " +
+  `A Arena e a plataforma ${NOME_PRODUTO} não intermedeiam pagamentos de rateio, não realizam ` +
   "triagem de jogadores e não se responsabilizam por faltas, calotes, lesões, brigas ou qualquer " +
   "outro incidente decorrente deste convite. O gerenciamento destas vagas é de sua total responsabilidade.";
 
@@ -114,5 +115,5 @@ export const TERMO_RESPONSABILIDADE_INTERESSADO =
   "Ao demonstrar interesse nesta vaga, seu número de telefone/WhatsApp será compartilhado " +
   "com o organizador da partida, que poderá entrar em contato com você. O rateio de valores " +
   "e as regras do jogo são combinados diretamente com o organizador. A Arena e a plataforma " +
-  "Reservei não têm qualquer envolvimento ou responsabilidade sobre cobranças, qualidade do jogo, " +
+  `${NOME_PRODUTO} não têm qualquer envolvimento ou responsabilidade sobre cobranças, qualidade do jogo, ` +
   "cancelamentos por parte do organizador ou eventuais incidentes. O acordo é feito exclusivamente entre você e o organizador.";

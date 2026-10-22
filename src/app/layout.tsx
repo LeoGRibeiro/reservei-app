@@ -1,3 +1,4 @@
+import { NOME_PRODUTO } from "@/lib/marca";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
@@ -10,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Reservei · Complexo Esportivo",
+  title: `${NOME_PRODUTO} · Reservas de quadras`,
   description: "Plataforma de gestão e agendamento de quadras esportivas.",
 };
 

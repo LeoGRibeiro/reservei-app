@@ -6,6 +6,7 @@
 
 "use client";
 
+import { NOME_PRODUTO } from "@/lib/marca";
 import { useState } from "react";
 import { Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
 import { useArena } from "@/hooks/useArena";
@@ -187,7 +188,7 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
         </div>
 
         <p className="text-center text-slate-600 text-xs mt-6">
-          Reservei · Painel Administrativo
+          {NOME_PRODUTO} · Painel Administrativo
         </p>
       </div>
     </div>

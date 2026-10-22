@@ -19,7 +19,7 @@ import type {
  */
 export const CAMPANHA_PADRAO: CampanhaFidelidade = {
   id: "campanha_padrao",
-  nome: "Fidelidade Campeão Reservei",
+  nome: "Clube de Fidelidade",
   horasNecessarias: 12,
   mesesValidade: 3,
   diasValidadeVoucher: 60,

@@ -65,7 +65,7 @@ O **Reservei** tem dois objetivos centrais inegociáveis:
 
 **Regra Crítica de Memória:**
 O contexto do chat é volátil entre sessões. Para garantir que nenhuma diretriz, regra de negócio ou decisão estratégica seja esquecida ou distorcida:
-1. **Documentação Viva em `docs/`:** Manter atualizados os arquivos `docs/PRODUCT_BLUEPRINT.md` (visão geral, regras de produto e módulos) e `docs/ARCHITECTURE_DECISIONS.md` (registros de decisões arquiteturais - ADRs).
+1. **Documentação Viva em `docs/`:** Manter atualizados os arquivos `docs/OBJETIVO_MVP.md` (estrela-guia, critérios de produto e prontidão para venda a arenas reais), `docs/PRODUCT_BLUEPRINT.md` (visão geral, regras de produto e módulos) e `docs/ARCHITECTURE_DECISIONS.md` (registros de decisões arquiteturais - ADRs).
 2. **Especificações Técnicas em `SPEC/`:** Toda funcionalidade ou refatoração profunda deve ser especificada em detalhes na pasta `SPEC/` antes de qualquer implementação pelo Claude.
 3. **Erradicação de Resquícios Acadêmicos:** O projeto não é mais um trabalho de faculdade. Questione e elimine metas arbitrárias acadêmicas (como "100 mil linhas de código"). O foco é código enxuto, manutenível, seguro e rentável.
 
