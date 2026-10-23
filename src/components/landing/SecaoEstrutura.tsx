@@ -92,8 +92,7 @@ export function SecaoEstrutura() {
           </h2>
 
           <p className="mt-3 text-slate-400 text-sm sm:text-base leading-relaxed">
-            Estrutura profissional com quadras de saibro niveladas diariamente,
-            iluminação LED de alta potência, vestiários climatizados e sports bar.
+            Conheça as quadras e os ambientes da arena antes de vir jogar.
           </p>
 
           {/* Abas de filtro por categoria */}

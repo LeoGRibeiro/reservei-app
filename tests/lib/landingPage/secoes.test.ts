@@ -4,6 +4,7 @@ import {
   SECAO_IDS,
   SECOES_LANDING_PAGE,
   SPECS_LANDING_PAGE,
+  secoesDoPortal,
 } from "@/lib/landingPage/secoes";
 import { SITE_CONFIG } from "@/lib/landingPage/siteConfig";
 
@@ -82,5 +83,21 @@ describe("landingPage/siteConfig", () => {
 
   it("armazena o WhatsApp apenas com dígitos", () => {
     expect(SITE_CONFIG.whatsappNumero).toMatch(/^\d{10,15}$/);
+  });
+});
+
+describe("secoesDoPortal", () => {
+  it("nunca inclui seções sem conteúdo real (fidelidade, eventos, avaliações, Instagram e FAQ)", () => {
+    const ids = secoesDoPortal({ escolinhas: true, estrutura: true }).map((s) => s.id);
+    expect(ids).toEqual(["inicio", "estrutura", "escolinhas", "contato"]);
+  });
+
+  it("oculta Escolinhas sem o módulo e Estrutura sem fotos", () => {
+    expect(secoesDoPortal({ escolinhas: false, estrutura: false }).map((s) => s.id)).toEqual(["inicio", "contato"]);
+    expect(secoesDoPortal({ escolinhas: false, estrutura: true }).map((s) => s.id)).toEqual([
+      "inicio",
+      "estrutura",
+      "contato",
+    ]);
   });
 });

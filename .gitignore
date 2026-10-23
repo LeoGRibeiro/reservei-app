@@ -23,3 +23,8 @@ Thumbs.db
 
 # Antigravity e Arquivos Locais
 BACKLOG.md
+.vercel
+.env*
+
+# Artefatos do Playwright MCP
+.playwright-mcp/

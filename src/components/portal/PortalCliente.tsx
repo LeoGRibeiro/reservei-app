@@ -13,7 +13,9 @@ import { ModalPosReservaCadastro } from "./ModalPosReservaCadastro";
 import { MuralVagasAbertas } from "@/components/vagas/MuralVagasAbertas";
 import { LandingHeader } from "@/components/landing/LandingHeader";
 import { LandingFooter } from "@/components/landing/LandingFooter";
-import { LandingSecoesPlaceholder } from "@/components/landing/LandingSecoesPlaceholder";
+import { SecaoContato } from "@/components/landing/SecaoContato";
+import { secoesDoPortal } from "@/lib/landingPage/secoes";
+import { useInstitucionalService } from "@/hooks/useInstitucionalService";
 import { SecaoEstrutura } from "@/components/landing/SecaoEstrutura";
 import { SecaoEscolinhas } from "@/components/landing/SecaoEscolinhas";
 import { CabecalhoReserva, ID_TITULO_RESERVA } from "@/components/landing/CabecalhoReserva";
@@ -66,6 +68,13 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
   const temVagas = temModuloAtivo(arena.modulosAtivos, "vagas");
   const temFidelidade = temModuloAtivo(arena.modulosAtivos, "fidelidade");
   const temEscolinhas = temModuloAtivo(arena.modulosAtivos, "escolinhas");
+  // Seções sem conteúdo real nunca aparecem: a Estrutura só existe depois que a arena sobe fotos
+  const { galeria } = useInstitucionalService();
+  const temFotosEstrutura = galeria.some((foto) => foto.isActive !== false);
+  const secoesVisiveis = useMemo(
+    () => secoesDoPortal({ escolinhas: temEscolinhas, estrutura: temFotosEstrutura }),
+    [temEscolinhas, temFotosEstrutura]
+  );
 
   // ── Estado de seleção ──────────────────────────────────────────────────
   const dias = useMemo(() => gerarDiasDisponiveis(), []);
@@ -456,7 +465,7 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
     <SmoothScrollProvider>
       <div className="min-h-screen bg-slate-950">
         {/* ── Header (navegação da Landing Page) ────────────────────────── */}
-        <LandingHeader />
+        <LandingHeader secoes={secoesVisiveis} />
 
         {/* ── Seção Início: fluxo de reserva SEMPRE em primeiro lugar ────── */}
         <section
@@ -571,16 +580,16 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
         </section>
 
         {/* ── Seção: O Local e Estrutura (Galeria e Apresentação) ──────── */}
-        <SecaoEstrutura />
+        {temFotosEstrutura && <SecaoEstrutura />}
 
         {/* ── Seção: Escolinhas e Aulas Esportivas ─────────────────────── */}
         {temEscolinhas && <SecaoEscolinhas />}
 
-        {/* ── Seções institucionais futuras (placeholders das próximas specs) ── */}
-        <LandingSecoesPlaceholder />
+        {/* ── Seção: Localização e Contato (dados do cadastro da arena) ── */}
+        <SecaoContato />
 
         {/* ── Rodapé ─────────────────────────────────────────────────── */}
-        <LandingFooter />
+        <LandingFooter secoes={secoesVisiveis} />
 
         {/* Botão flutuante carrinho (mobile) */}
         <BotaoCarrinhoMobile

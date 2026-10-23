@@ -180,3 +180,49 @@ export const PLACEHOLDERS_SECOES: readonly PlaceholderSecao[] = [
     ],
   },
 ];
+
+/**
+ * Seções da Landing Page que ainda não têm conteúdo real e, portanto, nunca devem aparecer no portal do
+ * atleta (nem como bloco "Em construção", nem como link do menu).
+ */
+export const SECOES_SEM_CONTEUDO: ReadonlySet<SecaoLandingId> = new Set<SecaoLandingId>([
+  SECAO_IDS.FIDELIDADE,
+  SECAO_IDS.EVENTOS,
+  SECAO_IDS.AVALIACOES,
+  SECAO_IDS.INSTAGRAM,
+  SECAO_IDS.FAQ,
+]);
+
+/** Condições do portal que decidem quais seções existem. */
+export interface CondicoesSecoesPortal {
+  /** A arena contratou o módulo Escolinhas */
+  escolinhas: boolean;
+  /** A arena já cadastrou ao menos uma foto da estrutura */
+  estrutura: boolean;
+}
+
+/**
+ * Seções (e links de menu) realmente exibidas no portal do atleta: só as que têm conteúdo real e, quando
+ * dependem de módulo ou de cadastro, só se a arena os tem.
+ *
+ * @param condicoes Módulos e cadastros da arena
+ * @param secoes Catálogo completo (padrão: {@link SECOES_LANDING_PAGE})
+ * @returns Seções visíveis, na ordem do catálogo
+ *
+ * @example
+ * ```ts
+ * secoesDoPortal({ escolinhas: false, estrutura: false }).map((s) => s.id); // ["inicio", "contato"]
+ * ```
+ */
+export function secoesDoPortal(
+  condicoes: CondicoesSecoesPortal,
+  secoes: readonly SecaoLandingPage[] = SECOES_LANDING_PAGE
+): SecaoLandingPage[] {
+  return secoes.filter((secao) => {
+    if (SECOES_SEM_CONTEUDO.has(secao.id)) return false;
+    if (secao.id === SECAO_IDS.ESCOLINHAS) return condicoes.escolinhas;
+    if (secao.id === SECAO_IDS.ESTRUTURA) return condicoes.estrutura;
+    return true;
+  });
+}
+

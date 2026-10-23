@@ -9,7 +9,8 @@ import {
   PERCENTUAL_SINAL,
   ENDERECO_COMPLEXO,
 } from "@/lib/constants";
-import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
+import { useCatalogoArenaStore, useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
+import { POLITICA_CANCELAMENTO_PADRAO } from "@/lib/legal/termos";
 import { useEnderecoArena, usePercentualSinalArena } from "@/hooks/useConfiguracaoSiteArena";
 import { ShoppingCart, MapPin, Calendar, Clock, Trash2, Gift, Ticket, Check, X } from "lucide-react";
 import type { VoucherFidelidade } from "@/lib/fidelidade/types";
@@ -58,6 +59,8 @@ export function CarrinhoLateral({
   onSelecionarVoucher,
 }: Props) {
   const quadrasCatalogo = useQuadrasCatalogo();
+  const politicaCancelamento =
+    useCatalogoArenaStore((s) => s.arena?.politicaCancelamento)?.trim() || POLITICA_CANCELAMENTO_PADRAO;
   const percentualSinal = usePercentualSinalArena(PERCENTUAL_SINAL);
   const enderecoArena = useEnderecoArena(ENDERECO_COMPLEXO);
   const quadra = quadrasCatalogo.find((q) => q.id === quadraId);
@@ -131,7 +134,7 @@ export function CarrinhoLateral({
               <Calendar className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="text-xs text-slate-500 font-medium">Data</p>
-                <p className="text-sm text-slate-200 capitalize">
+                <p className="text-sm text-slate-200 first-letter:uppercase">
                   {formatarDataExibicao(data, {
                     weekday: "long",
                     day: "numeric",
@@ -331,11 +334,10 @@ export function CarrinhoLateral({
               </div>
             </div>
 
-            {/* Aviso cancelamento */}
+            {/* Política de cancelamento da arena */}
             <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
               <p className="text-[11px] text-amber-400 leading-relaxed">
-                ⚠️ Cancelamentos com menos de 24h de antecedência não são
-                reembolsados.
+                <strong>Cancelamento:</strong> {politicaCancelamento}
               </p>
             </div>
           </div>

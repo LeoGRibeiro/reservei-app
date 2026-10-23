@@ -67,14 +67,8 @@ INSERT INTO public.fidelidade_campanha (id, arena_id, nome, horas_necessarias, m
 VALUES ('campanha-arena-belem', 'arena-belem', 'Clube Arena Belém', 10, 3, 60, true)
 ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, ativo = true;
 
--- 5. Escolinhas (vitrine do portal)
-INSERT INTO public.landing_page_schools (id, arena_id, sport_name, teacher_name, teacher_image_url, schedule_info, whatsapp_number, descricao, faixa_etaria, is_active)
-VALUES
-  ('arena-belem-escolinha-futebol', 'arena-belem', 'Futebol', 'CT Falcão12', '', 'Consulte as turmas pelo WhatsApp', '91984982865',
-   'Escolinha de futebol licenciada do CT Falcão12.', 'Infantil e juvenil', true),
-  ('arena-belem-escolinha-beach', 'arena-belem', 'Beach Tennis', 'Equipe Arena Belém', '', 'Aulas para iniciantes e intermediários', '91984982865',
-   'Aulas em grupo e particulares na areia.', 'A partir de 12 anos', true)
-ON CONFLICT (id) DO UPDATE SET is_active = true, schedule_info = EXCLUDED.schedule_info;
+-- 5. Escolinhas: não entram no seed. No portal elas vêm de contratos recorrentes (que reservam horários
+--    fixos); cadastre uma ao vivo em Admin -> Escolinhas durante a demonstração.
 
 -- 6. Reservas de exemplo nas próximas 2 semanas (ocupação maior à noite e no fim de semana)
 DELETE FROM public.reservas WHERE arena_id = 'arena-belem' AND id LIKE 'demo-belem-%';

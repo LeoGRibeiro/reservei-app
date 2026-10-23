@@ -17,7 +17,6 @@ import {
   formatarMoeda,
   formatarDataExibicao,
   PERCENTUAL_SINAL,
-  TOLERANCIA_CANCELAMENTO_HORAS,
   ENDERECO_COMPLEXO,
 } from "@/lib/constants";
 import { esportesDisponiveis, type Esporte } from "@/lib/quadras";
@@ -32,7 +31,6 @@ import {
   Calendar,
   Clock,
   Check,
-  ShieldCheck,
   Sparkles,
   Gift,
   X,
@@ -325,21 +323,6 @@ export function FormularioIdentificacao({
                 />
               </div>
 
-              {/* Termos e Aviso WhatsApp */}
-              <div className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/50 space-y-2">
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  <strong className="text-slate-300">Política de cancelamento:</strong>{" "}
-                  Cancelamentos com mais de{" "}
-                  <strong className="text-white">
-                    {TOLERANCIA_CANCELAMENTO_HORAS}h de antecedência
-                  </strong>{" "}
-                  são reembolsados integralmente.
-                </p>
-                <p className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 flex-shrink-0" />
-                  A confirmação da sua reserva será enviada pelo WhatsApp.
-                </p>
-              </div>
             </div>
           </div>
 
@@ -371,7 +354,7 @@ export function FormularioIdentificacao({
                   <Calendar className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
                   <div>
                     <p className="text-xs text-slate-500">Data</p>
-                    <p className="text-slate-200 font-medium capitalize">
+                    <p className="text-slate-200 font-medium first-letter:uppercase">
                       {data ? formatarDataExibicao(data, { weekday: "long", day: "numeric", month: "long" }) : "—"}
                     </p>
                   </div>

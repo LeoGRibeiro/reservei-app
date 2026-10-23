@@ -15,7 +15,7 @@
 
 - Av. Roberto Camelier, 580, Jurunas. (91) 98498-2865. Instagram @arenabelem, com cerca de 10 mil seguidores.
 - 3 quadras de areia + 1 society. Beach tennis, futevôlei, vôlei de praia e futebol.
-- Escolinha de futebol licenciada do CT Falcão12.
+- Escolinha de futebol licenciada do CT Falcão12 (não vem no seed: cadastre ao vivo, veja o passo 6 do balcão).
 - Estacionamento, espaço de eventos, churrasqueiras, vestiários, bar e lanchonete.
 - **Hoje usam o AgendeiQuadras** (link da bio do Instagram). Os argumentos estão no fim deste roteiro.
 
@@ -45,9 +45,10 @@ Pergunte, não afirme:
 3. Abra a **Agenda**: visão do dia por quadra, com a reserva feita no celular já lá.
 4. Faça uma **reserva manual** de balcão para um cliente que ligou.
 5. **Bloqueie** um horário para manutenção da areia ou para um torneio.
-6. **Equipe**: crie um acesso de *operador de balcão* e explique que ele não vê o financeiro.
-7. **Pagamentos**: mostre as duas opções. A chave Pix da arena não tem taxa. A conta Asaas confirma sozinha. Nos dois casos **o dinheiro cai na conta da arena**.
-8. **Financeiro**: sinais recebidos e valores a receber no local.
+6. **Escolinhas**: cadastre uma turma ao vivo (ex.: futebol, terça e quinta às 17h). Ela já aparece no portal e reserva os horários fixos sozinha.
+7. **Equipe**: crie um acesso de *operador de balcão* e explique que ele não vê o financeiro.
+8. **Pagamentos**: mostre as duas opções. A chave Pix da arena não tem taxa. A conta Asaas confirma sozinha. Nos dois casos **o dinheiro cai na conta da arena**.
+9. **Financeiro**: sinais recebidos e valores a receber no local.
 
 ## 4. Diferenciais frente ao AgendeiQuadras (2 min)
 
