@@ -69,11 +69,12 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
   const temFidelidade = temModuloAtivo(arena.modulosAtivos, "fidelidade");
   const temEscolinhas = temModuloAtivo(arena.modulosAtivos, "escolinhas");
   // Seções sem conteúdo real nunca aparecem: a Estrutura só existe depois que a arena sobe fotos
-  const { galeria } = useInstitucionalService();
+  const { galeria, escolinhasAtivas } = useInstitucionalService();
   const temFotosEstrutura = galeria.some((foto) => foto.isActive !== false);
+  const exibirEscolinhas = temEscolinhas && escolinhasAtivas.length > 0;
   const secoesVisiveis = useMemo(
-    () => secoesDoPortal({ escolinhas: temEscolinhas, estrutura: temFotosEstrutura }),
-    [temEscolinhas, temFotosEstrutura]
+    () => secoesDoPortal({ escolinhas: exibirEscolinhas, estrutura: temFotosEstrutura }),
+    [exibirEscolinhas, temFotosEstrutura]
   );
 
   // ── Estado de seleção ──────────────────────────────────────────────────
@@ -583,7 +584,7 @@ export function PortalCliente({ arenaSlug }: PortalClienteProps = {}) {
         {temFotosEstrutura && <SecaoEstrutura />}
 
         {/* ── Seção: Escolinhas e Aulas Esportivas ─────────────────────── */}
-        {temEscolinhas && <SecaoEscolinhas />}
+        {exibirEscolinhas && <SecaoEscolinhas />}
 
         {/* ── Seção: Localização e Contato (dados do cadastro da arena) ── */}
         <SecaoContato />
