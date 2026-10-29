@@ -22,9 +22,15 @@ Thumbs.db
 *.exe
 
 # Antigravity e Arquivos Locais
-BACKLOG.md
+BACKLOG.md
 .vercel
 .env*
 
 # Artefatos do Playwright MCP
 .playwright-mcp/
+
+# Skills/agentes locais de IA (instalação por máquina, não versionar)
+.claude/
+.agents/
+.codex/
+skills-lock.json
