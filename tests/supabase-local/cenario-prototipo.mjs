@@ -1,15 +1,17 @@
 /**
  * @file cenario-prototipo.mjs
- * @description Dados do Supabase local para a comparação visual: o seed oficial da Arena Belém
- * (mesmos dados do protótipo aprovado) e o atleta de demonstração Rafael, que o protótipo usa no
- * modo "Cliente logado".
+ * @description Dados do Supabase local para a comparação visual: a Arena Belém com os mesmos dados
+ * do protótipo aprovado (`cenario-arena-belem.sql`, que vira o seed oficial na Fase 6) e o atleta de
+ * demonstração Rafael, que o protótipo usa no modo "Cliente logado".
  */
 
-import { join } from "node:path";
-import { RAIZ_SRC } from "./banco.mjs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const AQUI = dirname(fileURLToPath(import.meta.url));
 
 /** Seeds aplicados depois do schema e das migrações. */
-export const seeds = [join(RAIZ_SRC, "lib", "supabase", "seed-arena-belem.sql")];
+export const seeds = [join(AQUI, "cenario-arena-belem.sql")];
 
 /**
  * Dados extras do cenário (o atleta do protótipo entra aqui a partir da Fase 4).

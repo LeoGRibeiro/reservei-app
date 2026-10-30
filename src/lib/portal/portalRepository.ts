@@ -24,7 +24,10 @@ import {
   mapearPost,
   mapearQuadraPortal,
 } from "./mapeadores";
+import { DIAS_A_FRENTE, hojeNoFusoArena, mapearLinhaGrade } from "./agenda";
+import { somarDias } from "./formatos";
 import type { DadosPortal } from "./types";
+import { FUSO_PADRAO_ARENA } from "@/lib/datas/fusoHorario";
 
 type Linha = Record<string, unknown>;
 
@@ -100,7 +103,8 @@ export async function carregarDadosPortal(slug: string, agora: Date = new Date()
   const id = arena.id;
   const linkInstagram = arena.instagram ? `https://www.instagram.com/${arena.instagram}/` : "";
 
-  const [quadras, precos, conteudo, escolinhas, eventos, galeria, posts, perfil, campanha] = await Promise.all([
+  const hoje = hojeNoFusoArena(agora, FUSO_PADRAO_ARENA);
+  const [quadras, precos, conteudo, escolinhas, eventos, galeria, posts, perfil, campanha, grade] = await Promise.all([
     ler<Linha[]>("quadras", db.from("quadras").select("*").eq("arena_id", id).eq("ativa", true).order("ordem"), []),
     ler<Linha[]>("preços", db.from("quadras_precos").select("*").eq("arena_id", id).eq("ativo", true), []),
     ler<Linha | null>("conteúdo", db.from("arena_conteudo").select("*").eq("arena_id", id).maybeSingle(), null),
@@ -139,6 +143,11 @@ export async function carregarDadosPortal(slug: string, agora: Date = new Date()
     ),
     ler<Linha | null>("perfil do instagram", db.from("instagram_perfil").select("*").eq("arena_id", id).maybeSingle(), null),
     ler<Linha[]>("clube", db.from("fidelidade_campanha").select("*").eq("arena_id", id).eq("ativo", true).limit(1), []),
+    ler<Linha[]>(
+      "grade",
+      db.rpc("grade_publica", { p_arena_id: id, p_data_inicio: hoje, p_data_fim: somarDias(hoje, DIAS_A_FRENTE) }),
+      []
+    ),
   ]);
 
   return {
@@ -152,6 +161,7 @@ export async function carregarDadosPortal(slug: string, agora: Date = new Date()
     galeria: galeria.map(mapearFotoEstrutura),
     instagram: { perfil: mapearPerfilInstagram(perfil), posts: posts.map((p) => mapearPost(p, linkInstagram)) },
     clube: mapearClube(campanha[0]),
+    grade: grade.map(mapearLinhaGrade),
     agoraIso: agora.toISOString(),
   };
 }

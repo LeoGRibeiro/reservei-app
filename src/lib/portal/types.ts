@@ -203,6 +203,25 @@ export interface ClubeArena {
   valorTeto: number | null;
 }
 
+/** Linha da grade pública (`grade_publica`). */
+export interface LinhaGrade {
+  id: string;
+  quadraId: string;
+  data: string;
+  horas: number[];
+  status: string;
+  tipoReserva: string;
+  esporte?: string;
+  escolinhaId?: string;
+  expiraEm?: string;
+  permiteVagas: boolean;
+  vagasAbertas: number;
+  /** Organizador da partida (só quando há vagas abertas) */
+  userId?: string;
+  /** Primeiro nome do organizador (só quando há vagas abertas) */
+  organizador?: string;
+}
+
 /** Tudo o que o portal precisa do servidor para o primeiro desenho da página. */
 export interface DadosPortal {
   arena: ArenaPortal;
@@ -215,6 +234,8 @@ export interface DadosPortal {
   galeria: FotoEstrutura[];
   instagram: { perfil: PerfilInstagram | null; posts: PostInstagram[] };
   clube: ClubeArena | null;
+  /** Ocupação dos próximos 31 dias (grade pública, sem dados pessoais) */
+  grade: LinhaGrade[];
   /** Instante do servidor no primeiro desenho (o navegador atualiza depois de montar) */
   agoraIso: string;
 }
