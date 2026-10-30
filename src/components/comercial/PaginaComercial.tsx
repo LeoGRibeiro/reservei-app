@@ -111,6 +111,7 @@ export function PaginaComercial() {
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
           {/* <a> comum: o portal tem CSS próprio e precisa de recarga completa (ver app/(plataforma)/layout.tsx) */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- recarga completa de propósito */}
           <a
             href="/"
             className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold"
@@ -204,6 +205,7 @@ export function PaginaComercial() {
             <MessageCircle className="w-4 h-4" /> Chamar no WhatsApp
           </a>
         ) : (
+          // eslint-disable-next-line @next/next/no-html-link-for-pages -- recarga completa: o portal tem CSS próprio
           <a href="/" className="inline-block px-6 py-3 rounded-xl bg-emerald-500 text-slate-950 font-bold">
             Ver demonstração
           </a>

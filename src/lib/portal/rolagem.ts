@@ -65,3 +65,19 @@ export function liberarRolagem(): void {
   dialogosAbertos = Math.max(0, dialogosAbertos - 1);
   if (dialogosAbertos === 0) window.__lenis?.start();
 }
+
+/** Tempo do contorno amarelo de destaque. */
+export const DURACAO_DESTAQUE_MS = 2600;
+
+/**
+ * Rola até um elemento e o destaca por 2,6 s (horário de aula → turma, "Ver no mural", reserva na conta).
+ *
+ * @param id Id do elemento
+ */
+export function destacar(id: string): void {
+  const el = document.getElementById(id);
+  if (!el) return;
+  rolarAte(el, 28);
+  el.classList.add("destaque");
+  setTimeout(() => el.classList.remove("destaque"), DURACAO_DESTAQUE_MS);
+}

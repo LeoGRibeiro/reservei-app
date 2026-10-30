@@ -21,6 +21,8 @@ export interface PedidoCheckout {
   voucherIds: string[];
   /** O atleta aceitou os Termos de Uso e a Política de Privacidade */
   aceiteTermos: boolean;
+  /** O atleta aceitou a política de cancelamento (portal da arena; vale como condição para reservar) */
+  aceitePolitica?: boolean;
 }
 
 /** Reserva criada pelo servidor no checkout. */

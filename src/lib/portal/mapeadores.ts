@@ -192,7 +192,7 @@ export function mapearEvento(row: Linha): EventoArena {
     dados: lista(row.dados, (o) => {
       const rotulo = texto(o.rotulo);
       const valor = texto(o.valor);
-      return rotulo && valor ? { rotulo, valor } : null;
+      return rotulo && valor ? { rotulo, valor, numerico: o.numerico === true } : null;
     }),
     inscricaoTipo: TIPOS_INSCRICAO.includes(tipo) ? tipo : undefined,
     inscricaoUrl: texto(row.inscricao_url),

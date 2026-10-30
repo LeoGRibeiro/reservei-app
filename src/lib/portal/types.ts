@@ -142,7 +142,8 @@ export interface EventoArena {
   dataFim?: string;
   horario?: string;
   status: StatusEvento;
-  dados: { rotulo: string; valor: string }[];
+  /** Linhas "rótulo: valor"; `numerico` usa algarismos tabulares (preços, vagas, prazos) */
+  dados: { rotulo: string; valor: string; numerico: boolean }[];
   inscricaoTipo?: TipoInscricao;
   inscricaoUrl?: string;
   mensagemWhatsapp?: string;

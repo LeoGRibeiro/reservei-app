@@ -10,6 +10,7 @@
  */
 
 import { expect, type Page, type TestInfo } from "@playwright/test";
+import { writeFileSync } from "node:fs";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
 
@@ -41,6 +42,16 @@ export async function instrumentar(page: Page): Promise<void> {
     if (m.type() === "error") erros.push(m.text());
   });
   page.on("pageerror", (e) => erros.push(String(e)));
+}
+
+/**
+ * Esconde (visibility: hidden) partes geradas na hora, como QR e cronômetro. Funciona também dentro
+ * de um <dialog> aberto, onde a máscara do Playwright fica atrás da camada superior.
+ */
+export async function ocultar(page: Page, seletores: string[]): Promise<void> {
+  await page.evaluate((lista) => {
+    for (const s of lista) document.querySelectorAll<HTMLElement>(s).forEach((el) => (el.style.visibility = "hidden"));
+  }, seletores);
 }
 
 /** Espera fontes, imagens (inclusive as preguiçosas) e a rolagem suave se acomodarem. */
@@ -92,19 +103,48 @@ export async function compararCapturas(
   const b = PNG.sync.read(obtido);
   await teste.attach(`${nome}-prototipo.png`, { body: esperado, contentType: "image/png" });
   await teste.attach(`${nome}-implementacao.png`, { body: obtido, contentType: "image/png" });
+  writeFileSync(teste.outputPath(`${nome}-prototipo.png`), esperado);
+  writeFileSync(teste.outputPath(`${nome}-implementacao.png`), obtido);
   expect(`${b.width}x${b.height}`, `${nome}: tamanho da página`).toBe(`${a.width}x${a.height}`);
   const diff = new PNG({ width: a.width, height: a.height });
   const diferentes = pixelmatch(a.data, b.data, diff.data, a.width, a.height, { threshold: 0.1, includeAA: false });
   if (diferentes > 0) await teste.attach(`${nome}-diferenca.png`, { body: PNG.sync.write(diff), contentType: "image/png" });
   const fracao = diferentes / (a.width * a.height);
+  // Cópia da diferença em disco para inspeção (tests/visual/.resultados/<teste>/)
+  writeFileSync(teste.outputPath(`${nome}-diferenca.png`), PNG.sync.write(diff));
+  console.log(`[comparação] ${nome}: ${diferentes} pixels diferentes (${(fracao * 100).toFixed(3)}%)`);
   expect(fracao, `${nome}: ${diferentes} pixels diferentes`).toBeLessThanOrEqual(limite);
 }
 
 /**
- * Checagens automáticas por tela (§7.2): console limpo, sem rolagem lateral, nada fora da tela,
- * imagens carregadas, texto sem corte e alvos de toque com 44 px no celular.
+ * Alvos de toque abaixo do mínimo do WCAG 2.2 (2.5.8, 24 px), por texto. Links dentro de frase
+ * (display inline) são isentos pelo próprio critério.
  */
-export async function checarTela(page: Page, nome: string, celular = false): Promise<void> {
+export async function alvosPequenos(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const visivel = (el: Element) => {
+      const s = getComputedStyle(el);
+      const box = el.getBoundingClientRect();
+      return s.visibility !== "hidden" && s.display !== "none" && box.width > 0 && box.height > 0;
+    };
+    return Array.from(document.querySelectorAll("button, a[href], summary, input[type=checkbox], [role=tab]"))
+      .filter((el) => visivel(el) && !el.closest("dialog:not([open]), .proto") && getComputedStyle(el).display !== "inline")
+      .filter((el) => {
+        const b = el.getBoundingClientRect();
+        return b.height < 24 || b.width < 24;
+      })
+      .map((el) => (el.textContent ?? el.getAttribute("aria-label") ?? "").trim().slice(0, 30));
+  });
+}
+
+/**
+ * Checagens automáticas por tela (§7.2): console limpo, sem rolagem lateral, nada fora da tela,
+ * imagens carregadas, texto sem corte e alvos de toque no celular.
+ *
+ * @param permitidos Alvos pequenos que já existem no protótipo aprovado (a comparação de pixels
+ *   garante que são os mesmos); qualquer outro reprova.
+ */
+export async function checarTela(page: Page, nome: string, celular = false, permitidos: string[] = []): Promise<void> {
   const erros = errosPorPagina.get(page) ?? [];
   expect(erros, `${nome}: erros de console`).toEqual([]);
   const r = await page.evaluate((ehCelular) => {
@@ -128,29 +168,17 @@ export async function checarTela(page: Page, nome: string, celular = false): Pro
         && !getComputedStyle(el).webkitLineClamp?.match(/\d/) && el.scrollWidth > el.clientWidth + 1)
       .map((el) => (el.textContent ?? "").trim().slice(0, 40))
       .slice(0, 5);
-    // Mínimo do WCAG 2.2 (2.5.8, 24 px). O protótipo aprovado tem alguns alvos entre 24 e 44 px
-    // (logo do topo, links de texto do rodapé); a comparação de pixels garante que ficam iguais.
-    const pequenos = ehCelular
-      ? Array.from(document.querySelectorAll("button, a[href], summary, input[type=checkbox], [role=tab]"))
-          .filter((el) => visivel(el) && !el.closest("dialog:not([open])") && getComputedStyle(el).display !== "inline")
-          .filter((el) => {
-            const b = el.getBoundingClientRect();
-            return b.height < 24 || b.width < 24;
-          })
-          .map((el) => (el.textContent ?? el.getAttribute("aria-label") ?? "").trim().slice(0, 30))
-          .slice(0, 5)
-      : [];
     return {
       rolagemLateral: document.documentElement.scrollWidth > largura,
       foraDaTela,
       quebradas,
       cortados,
-      pequenos,
     };
   }, celular);
+  const pequenos = celular ? (await alvosPequenos(page)).filter((t) => !permitidos.includes(t)) : [];
   expect(r.rolagemLateral, `${nome}: rolagem lateral`).toBe(false);
   expect(r.foraDaTela, `${nome}: elementos fora da tela`).toEqual([]);
   expect(r.quebradas, `${nome}: imagens quebradas`).toEqual([]);
   expect(r.cortados, `${nome}: texto cortado`).toEqual([]);
-  expect(r.pequenos, `${nome}: alvos de toque pequenos`).toEqual([]);
+  expect(pequenos, `${nome}: alvos de toque pequenos`).toEqual([]);
 }

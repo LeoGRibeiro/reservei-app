@@ -20,6 +20,7 @@ export function DocumentoLegal({ titulo, nomeArena, secoes }: Props) {
       <article className="max-w-2xl mx-auto space-y-6">
         <header className="space-y-1">
           {/* <a> comum: o portal tem CSS próprio e precisa de recarga completa (ver app/(plataforma)/layout.tsx) */}
+          {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- recarga completa de propósito */}
           <a href="/" className="text-xs text-emerald-400 hover:text-emerald-300">
             ← Voltar para as reservas
           </a>

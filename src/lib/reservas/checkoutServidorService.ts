@@ -56,6 +56,8 @@ export interface SolicitacaoCheckout {
   observacoes?: string;
   tipoPagamento: "sinal" | "integral";
   voucherIds: string[];
+  /** Aceitou os Termos de Uso e a Política de Privacidade (só então o aceite é registrado) */
+  aceiteTermos: boolean;
 }
 
 /** Resumo devolvido ao navegador (sem dados internos como o txid do gateway). */
@@ -102,9 +104,11 @@ export function validarSolicitacaoCheckout(input: unknown): SolicitacaoCheckout 
   const nomeCliente = texto(bruto.nomeCliente, 120);
   if (nomeCliente.length < 2) throw new ErroHttp("Informe seu nome.", 400);
 
-  // LGPD: o aceite dos termos e da política de privacidade é condição para reservar
-  if (bruto.aceiteTermos !== true) {
-    throw new ErroHttp("Para reservar, aceite os Termos de Uso e a Política de Privacidade.", 400);
+  // Condição para reservar: aceitar a política de cancelamento (portal da arena) ou os Termos de Uso e
+  // a Política de Privacidade (fluxo antigo). O aceite dos termos só é registrado quando foi dado.
+  const aceiteTermos = bruto.aceiteTermos === true;
+  if (!aceiteTermos && bruto.aceitePolitica !== true) {
+    throw new ErroHttp("Para reservar, aceite a política de cancelamento.", 400);
   }
 
   const whatsappCliente = typeof bruto.whatsappCliente === "string" ? bruto.whatsappCliente.replace(/\D/g, "") : "";
@@ -130,6 +134,7 @@ export function validarSolicitacaoCheckout(input: unknown): SolicitacaoCheckout 
     observacoes,
     tipoPagamento,
     voucherIds,
+    aceiteTermos,
   };
 }
 
@@ -321,7 +326,7 @@ export async function criarReservaCheckout(
     checkout_token: checkoutToken,
     criada_em: agoraIso,
     // Registro do aceite (colunas da Fase 8; bancos sem a migração operam em modo legado)
-    ...(arena.modoPagamento && arena.modoPagamento !== "legado"
+    ...(dados.aceiteTermos && arena.modoPagamento && arena.modoPagamento !== "legado"
       ? { termos_aceitos_em: agoraIso, termos_versao: VERSAO_TERMOS }
       : {}),
   };

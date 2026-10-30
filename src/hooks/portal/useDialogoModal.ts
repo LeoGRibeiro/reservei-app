@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { liberarRolagem, travarRolagem } from "@/lib/portal/rolagem";
 
 /**
@@ -23,8 +23,10 @@ import { liberarRolagem, travarRolagem } from "@/lib/portal/rolagem";
  */
 export function useDialogoModal(aberto: boolean, aoFechar: () => void) {
   const ref = useRef<HTMLDialogElement>(null);
-  const aoFecharRef = useRef(aoFechar);
-  aoFecharRef.current = aoFechar;
+  const fechou = useEffectEvent(() => {
+    liberarRolagem();
+    aoFechar();
+  });
 
   useEffect(() => {
     const dialogo = ref.current;
@@ -42,18 +44,15 @@ export function useDialogoModal(aberto: boolean, aoFechar: () => void) {
   useEffect(() => {
     const dialogo = ref.current;
     if (!dialogo) return;
-    const fechou = () => {
-      liberarRolagem();
-      aoFecharRef.current();
-    };
     // Clique no fundo escuro: o alvo é o próprio <dialog>, fora do conteúdo
     const clicou = (e: MouseEvent) => {
       if (e.target === dialogo) dialogo.close();
     };
-    dialogo.addEventListener("close", fechou);
+    const aoFecharDialogo = () => fechou();
+    dialogo.addEventListener("close", aoFecharDialogo);
     dialogo.addEventListener("click", clicou);
     return () => {
-      dialogo.removeEventListener("close", fechou);
+      dialogo.removeEventListener("close", aoFecharDialogo);
       dialogo.removeEventListener("click", clicou);
       if (dialogo.open) liberarRolagem();
     };
