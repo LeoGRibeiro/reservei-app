@@ -34,3 +34,6 @@ BACKLOG.md
 .agents/
 .codex/
 skills-lock.json
+
+# Skill local de design (não versionar)
+.taste-skill/
