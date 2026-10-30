@@ -9,6 +9,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Build do servidor de testes ponta a ponta (playwright.config.ts)
+    ".next-teste/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

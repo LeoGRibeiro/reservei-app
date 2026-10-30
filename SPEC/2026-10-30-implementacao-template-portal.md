@@ -325,7 +325,7 @@ Cada fase termina com `npm test`, `npm run typecheck`, `npm run build` e a verif
 
 | Fase | Situação | Commit | Observações |
 |---|---|---|---|
-| 0. Preparação | pendente | | |
+| 0. Preparação | concluída | ver git log (`chore(portal): fase 0`) | Auditoria: 9 policies `USING (true)` num banco novo (não só as 2 previstas) → `migracoes/2026-10-30-a-auditoria-rls.sql`. Supabase local de teste (`tests/supabase-local`: PGlite + REST + Auth + Realtime, RLS real). Comparação visual em `tests/visual` (`npm run test:visual`). Fotos em `public/arenas/arena-belem`, imagens neutras em `public/arenas/exemplo`. |
 | 1. Fundação do template | pendente | | |
 | 2. Dados | pendente | | |
 | 3. Portal público | pendente | | |

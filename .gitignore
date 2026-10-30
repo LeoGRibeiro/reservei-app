@@ -37,3 +37,7 @@ skills-lock.json
 
 # Skill local de design (não versionar)
 .taste-skill/
+
+# Build do servidor de testes ponta a ponta e resultados do Playwright
+src/.next-teste/
+tests/visual/.resultados/
