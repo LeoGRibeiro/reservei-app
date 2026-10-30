@@ -65,10 +65,7 @@ export async function criarBanco(opcoes = {}) {
   for (const seed of opcoes.seeds ?? []) {
     await db.exec(lerSql(seed));
   }
-  // Tabelas e funções criadas depois dos default privileges também ficam acessíveis aos papéis da API
-  await db.exec(`
-    GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-    GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
-  `);
+  // Os privilégios vêm só dos default privileges dos stubs (como no Supabase): um REVOKE feito por
+  // uma migração continua valendo aqui também.
   return db;
 }

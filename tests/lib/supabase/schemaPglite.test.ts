@@ -15,6 +15,7 @@ type Linha = Record<string, unknown>;
 interface Banco {
   query: (sql: string, params?: unknown[]) => Promise<{ rows: Linha[] }>;
   transaction: <T>(fn: (tx: Banco) => Promise<T>) => Promise<T>;
+  exec: (sql: string) => Promise<unknown>;
 }
 
 let db: Banco;
@@ -77,5 +78,67 @@ describe("schema + migrações no Postgres real (PGlite)", () => {
   it("visitante não lê a tabela de reservas diretamente", async () => {
     const { rows } = await comoPapel("anon", "SELECT count(*)::int AS n FROM public.reservas");
     expect(rows[0].n).toBe(0);
+  });
+});
+
+describe("tabelas do portal (migração 2026-10-30-b)", () => {
+  beforeAll(async () => {
+    await db.exec(`
+      INSERT INTO public.eventos (id, arena_id, titulo, data_inicio, ativo) VALUES
+        ('ev-ativo', 'arena-belem', 'Open', CURRENT_DATE + 20, true),
+        ('ev-rascunho', 'arena-belem', 'Rascunho', CURRENT_DATE + 30, false)
+      ON CONFLICT (id) DO NOTHING;
+      INSERT INTO public.instagram_posts (id, arena_id, imagem_url, ativo) VALUES
+        ('post-1', 'arena-belem', '/a.jpg', true), ('post-oculto', 'arena-belem', '/b.jpg', false)
+      ON CONFLICT (id) DO NOTHING;
+      INSERT INTO public.codigos_acesso (telefone, codigo_hash, provedor, expira_em)
+        VALUES ('91999990000', 'x', 'demonstracao', NOW() + interval '10 minutes');`);
+  });
+
+  it("visitante lê só eventos e posts ativos", async () => {
+    const eventos = await comoPapel("anon", "SELECT id FROM public.eventos ORDER BY id");
+    expect(eventos.rows.map((r) => r.id)).toEqual(["ev-ativo"]);
+    const posts = await comoPapel("anon", "SELECT id FROM public.instagram_posts ORDER BY id");
+    expect(posts.rows.map((r) => r.id)).toEqual(["post-1"]);
+  });
+
+  it("visitante não altera conteúdo, eventos nem posts", async () => {
+    for (const sql of [
+      "UPDATE public.eventos SET titulo = 'x'",
+      "DELETE FROM public.instagram_posts",
+      "UPDATE public.arena_conteudo SET intro_reserva = 'x'",
+    ]) {
+      const { rows } = await comoPapel("anon", `WITH m AS (${sql} RETURNING 1) SELECT count(*)::int AS n FROM m`);
+      expect(rows[0].n, sql).toBe(0);
+    }
+  });
+
+  it("códigos de acesso são invisíveis para visitante e atleta (só o servidor)", async () => {
+    await expect(comoPapel("anon", "SELECT * FROM public.codigos_acesso")).rejects.toThrow(/permission denied/);
+    await expect(
+      comoPapel("authenticated", "SELECT * FROM public.codigos_acesso", [], "00000000-0000-0000-0000-000000000001")
+    ).rejects.toThrow(/permission denied/);
+  });
+
+  it("posição da foto só aceita porcentagens (nada de CSS livre)", async () => {
+    await expect(
+      db.query("UPDATE public.quadras SET foto_posicao = '50%; background:url(x)' WHERE id = 'arena-belem-q1'")
+    ).rejects.toThrow(/quadras_foto_posicao_check/);
+    await db.query("UPDATE public.quadras SET foto_posicao = '50% 62%' WHERE id = 'arena-belem-q1'");
+  });
+
+  it("reembolso só aceita os estados previstos", async () => {
+    await expect(
+      db.query("UPDATE public.reservas SET reembolso_status = 'qualquer' WHERE arena_id = 'arena-belem'")
+    ).rejects.toThrow(/reservas_reembolso_status_check/);
+  });
+
+  it("pedidos de vaga e Clube entram na publicação do tempo real", async () => {
+    const { rows } = await db.query(
+      "SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime' ORDER BY tablename"
+    );
+    expect(rows.map((r) => r.tablename)).toEqual(
+      expect.arrayContaining(["reservas", "interesses_vagas", "fidelidade_selos", "fidelidade_vouchers"])
+    );
   });
 });
