@@ -326,7 +326,7 @@ Cada fase termina com `npm test`, `npm run typecheck`, `npm run build` e a verif
 | Fase | Situação | Commit | Observações |
 |---|---|---|---|
 | 0. Preparação | concluída | ver git log (`chore(portal): fase 0`) | Auditoria: 9 policies `USING (true)` num banco novo (não só as 2 previstas) → `migracoes/2026-10-30-a-auditoria-rls.sql`. Supabase local de teste (`tests/supabase-local`: PGlite + REST + Auth + Realtime, RLS real). Comparação visual em `tests/visual` (`npm run test:visual`). Fotos em `public/arenas/arena-belem`, imagens neutras em `public/arenas/exemplo`. |
-| 1. Fundação do template | pendente | | |
+| 1. Fundação do template | concluída | ver git log (`feat(portal): fase 1`) | `portal-arena.css` e `portal-regras.css` gerados do protótipo (escopo `.pa`/`.pa-regras`, 7 cores de papel). Rotas em grupos: `app/(plataforma)` com Tailwind e `app/(portal)` sem ele, para o preflight não alterar o portal. Ícones com os traçados do protótipo (o `lucide-react` 1.49 mudou presente e troféu). Componentes-base em `components/portal-arena/base`. A comparação visual de páginas começa na Fase 3, quando o portal existe. |
 | 2. Dados | pendente | | |
 | 3. Portal público | pendente | | |
 | 4. Área do atleta | pendente | | |

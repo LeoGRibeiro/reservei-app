@@ -19,9 +19,10 @@ export function DocumentoLegal({ titulo, nomeArena, secoes }: Props) {
     <main className="min-h-screen bg-slate-950 text-slate-200 px-4 py-10">
       <article className="max-w-2xl mx-auto space-y-6">
         <header className="space-y-1">
-          <Link href="/" className="text-xs text-emerald-400 hover:text-emerald-300">
+          {/* <a> comum: o portal tem CSS próprio e precisa de recarga completa (ver app/(plataforma)/layout.tsx) */}
+          <a href="/" className="text-xs text-emerald-400 hover:text-emerald-300">
             ← Voltar para as reservas
-          </Link>
+          </a>
           <h1 className="text-2xl font-black text-white">{titulo}</h1>
           <p className="text-xs text-slate-500">
             {nomeArena} · versão de {versao}

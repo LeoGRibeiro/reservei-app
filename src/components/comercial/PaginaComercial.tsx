@@ -4,7 +4,6 @@
  * Servida em `/para-arenas` em qualquer host e na raiz do domínio da plataforma quando houver domínio próprio.
  */
 
-import Link from "next/link";
 import {
   CalendarCheck,
   Wallet,
@@ -111,12 +110,13 @@ export function PaginaComercial() {
           O atleta reserva e paga o sinal sozinho. O balcão só acompanha.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-          <Link
+          {/* <a> comum: o portal tem CSS próprio e precisa de recarga completa (ver app/(plataforma)/layout.tsx) */}
+          <a
             href="/"
             className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold"
           >
             Ver demonstração
-          </Link>
+          </a>
           {contato && (
             <a
               href={contato}
@@ -204,9 +204,9 @@ export function PaginaComercial() {
             <MessageCircle className="w-4 h-4" /> Chamar no WhatsApp
           </a>
         ) : (
-          <Link href="/" className="inline-block px-6 py-3 rounded-xl bg-emerald-500 text-slate-950 font-bold">
+          <a href="/" className="inline-block px-6 py-3 rounded-xl bg-emerald-500 text-slate-950 font-bold">
             Ver demonstração
-          </Link>
+          </a>
         )}
       </section>
 

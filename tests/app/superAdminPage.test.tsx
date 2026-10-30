@@ -6,7 +6,7 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import SuperAdminPage from "@/app/super-admin/page";
+import SuperAdminPage from "@/app/(plataforma)/super-admin/page";
 
 const LINK = "https://central.reservei.com/admin?token=tok-123";
 
