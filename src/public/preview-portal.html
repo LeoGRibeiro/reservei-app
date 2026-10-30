@@ -1,0 +1,3215 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Arena Belém · Reservas</title>
+<meta name="description" content="Protótipo do portal de reservas da Arena Belém: quadras de areia e society no Jurunas, Belém/PA.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1e2d6b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<style>
+/* lenis.css 1.3.26 (o mesmo que o site atual importa em globals.css) */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis [data-lenis-prevent], .lenis [data-lenis-prevent-wheel], .lenis [data-lenis-prevent-touch],
+.lenis [data-lenis-prevent-vertical], .lenis [data-lenis-prevent-horizontal] { overscroll-behavior: contain; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+.lenis.lenis-autoToggle { transition-property: overflow; transition-duration: 1ms; transition-behavior: allow-discrete; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+</style>
+<style>
+/* ==========================================================
+   Arena Belém · protótipo do portal (rodada 3)
+   Escolhas do dono: topo azul (ideia 6), cards com foto (ideia 4)
+   mostrando todos os horários e preços, datas em fichas (ideia 5)
+   com 1 mês à frente, ticket de papel no checkout e a mesma
+   rolagem suave (Lenis) do site atual.
+   ========================================================== */
+:root {
+  --navy: #1e2d6b;
+  --navy-deep: #131d47;
+  --ink: #161c3a;
+  --navy-tint: #e7eaf5;
+  --yellow: #f4b41a;
+  --yellow-press: #e3a20c;
+  --red: #c8282a;
+  --ground: #ffffff;
+  --sand: #f4f1ea;
+  --chip: #efebe2;
+  --chip-hover: #e5e0d4;
+  --line: #d9d2c2;
+  --muted: #5a6078;
+  --off: #5f6476;
+  --ink-2: #3d4360;
+  --on-navy: #c9d0ee;
+  --on-navy-2: #dfe4f7;
+  --paper: #fffdf8;
+  --header-h: 68px;
+  --gutter: clamp(16px, 3.4vw, 48px);
+  --font: "Archivo", system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; scrollbar-color: #c3bba9 var(--sand); }
+body {
+  margin: 0; background: var(--ground); color: var(--ink);
+  font-family: var(--font); font-size: 16px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+img { display: block; max-width: 100%; height: auto; }
+h1, h2, h3, h4, p, dl, dd, figure, fieldset { margin: 0; }
+fieldset { border: 0; padding: 0; min-width: 0; }
+legend { padding: 0; }
+ul, ol { margin: 0; padding: 0; list-style: none; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; border: 0; background: none; padding: 0; text-align: inherit; }
+a { color: inherit; text-underline-offset: 3px; }
+input { caret-color: var(--navy); }
+::selection { background: var(--yellow); color: var(--navy-deep); }
+:focus-visible { outline: 3px solid var(--navy); outline-offset: 2px; }
+.topo :focus-visible, .ticket :focus-visible, .ck-resumo :focus-visible, .barra :focus-visible,
+.escolinhas :focus-visible, .rodape :focus-visible, .proto :focus-visible, .na-arena :focus-visible,
+.ev-agora :focus-visible, .ca-stub :focus-visible { outline-color: var(--yellow); }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+.ico { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.wrap { width: min(100% - 2 * var(--gutter), 1344px); margin-inline: auto; }
+
+/* ── Botões ─────────────────────────────────────────────── */
+.btn-amarelo, .btn-navy, .btn-borda, .btn-borda-claro {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 20px; border-radius: 12px; font-weight: 700; text-decoration: none;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.btn-amarelo { background: var(--yellow); color: var(--navy-deep); }
+.btn-amarelo:hover { background: var(--yellow-press); }
+.btn-navy { background: var(--navy); color: #fff; }
+.btn-navy:hover { background: var(--navy-deep); }
+.btn-borda { border: 1.5px solid var(--navy); color: var(--navy); }
+.btn-borda:hover { background: var(--navy-tint); }
+.btn-borda-claro { border: 1.5px solid rgba(255, 255, 255, 0.5); color: #fff; }
+.btn-borda-claro:hover { background: rgba(255, 255, 255, 0.1); }
+.btn-amarelo:active, .btn-navy:active, .btn-borda:active, .btn-borda-claro:active,
+.slot:active, .dia:active, .seta:active { transform: scale(0.97); }
+.btn-amarelo:disabled { background: rgba(255, 255, 255, 0.14); color: var(--on-navy); cursor: not-allowed; transform: none; }
+.link { font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ── Faixa do protótipo ─────────────────────────────────── */
+.proto { background: #0d1433; color: var(--on-navy); font-size: 13.5px; }
+.proto-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 42px; }
+.proto b { color: #fff; }
+.proto-modos { display: flex; gap: 2px; padding: 3px; border-radius: 9px; background: rgba(255, 255, 255, 0.08); }
+.proto-modos button { padding: 4px 10px; border-radius: 7px; white-space: nowrap; }
+.proto-modos button[aria-pressed="true"] { background: #fff; color: var(--navy-deep); font-weight: 600; }
+
+/* ── Topo azul ──────────────────────────────────────────── */
+.topo { position: sticky; top: 0; z-index: 40; background: var(--navy); color: #fff; transition: box-shadow 300ms ease; }
+.topo[data-rolado="true"] { box-shadow: 0 6px 18px rgba(13, 20, 51, 0.24); }
+.topo-in { display: flex; align-items: center; gap: 16px; height: var(--header-h); }
+.marca { display: flex; align-items: center; gap: 12px; text-decoration: none; flex: none; }
+.marca img { width: 46px; }
+.marca b { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+.nav { margin-left: auto; display: flex; gap: 2px; }
+.nav a { padding: 8px 12px; border-radius: 8px; color: #d3d9f3; text-decoration: none; font-weight: 500; transition: color 150ms ease, background-color 150ms ease; }
+.nav a:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+.nav a[aria-current] { color: #fff; text-decoration: underline 2px var(--yellow); text-underline-offset: 9px; }
+.conta { position: relative; display: flex; align-items: center; margin-left: 8px; }
+.conta-vis, .conta-log { display: flex; align-items: center; gap: 6px; }
+.entrar { padding: 8px 12px; border-radius: 8px; font-weight: 700; }
+.entrar:hover { background: rgba(255, 255, 255, 0.08); }
+.criar { padding: 7px 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, 0.5); font-weight: 600; white-space: nowrap; }
+.criar:hover { background: rgba(255, 255, 255, 0.1); }
+.minhas { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; text-decoration: none; font-weight: 600; white-space: nowrap; }
+.minhas:hover { background: rgba(255, 255, 255, 0.08); }
+.minhas .ico { color: var(--yellow); }
+.perfil { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 4px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); font-weight: 600; }
+.perfil:hover, .perfil[aria-expanded="true"] { background: rgba(255, 255, 255, 0.18); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--yellow); color: var(--navy-deep); display: grid; place-items: center; font-weight: 800; flex: none; }
+.burger { display: none; width: 44px; height: 44px; border-radius: 10px; place-items: center; margin-left: 4px; }
+.burger:hover { background: rgba(255, 255, 255, 0.1); }
+.burger .ico { width: 22px; height: 22px; }
+
+/* Menu do perfil: dados, cartão do Clube e atalhos da conta */
+.menu-perfil {
+  position: absolute; right: 0; top: calc(100% + 12px); width: 330px; z-index: 50;
+  background: #fff; color: var(--ink); border-radius: 16px; padding: 8px;
+  box-shadow: 0 2px 6px rgba(13, 20, 51, 0.1), 0 18px 44px rgba(13, 20, 51, 0.22);
+}
+.mp-quem { display: flex; align-items: center; gap: 12px; padding: 12px; }
+.mp-quem b { display: block; }
+.mp-quem span.num { color: var(--muted); font-size: 14px; }
+.avatar-g { width: 42px; height: 42px; font-size: 18px; }
+.mp-clube { margin: 2px 4px 6px; padding: 14px; border-radius: 12px; background: var(--sand); }
+.mp-clube-tit { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.mp-clube-tit span { color: var(--muted); }
+.mp-nota { margin-top: 10px; font-size: 13.5px; color: var(--muted); }
+.carimbos { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; margin-top: 10px; }
+.carimbos li { aspect-ratio: 1; border-radius: 50%; border: 1.5px dashed #b4ac9a; }
+.carimbos li.on { border: 0; background: var(--navy); }
+.carimbos li.novo { border: 0; background: var(--yellow); }
+.mp-links { display: grid; padding: 4px 0 2px; }
+.mp-links a, .mp-links button { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: 10px; text-decoration: none; font-weight: 500; }
+.mp-links a:hover, .mp-links button:hover { background: var(--sand); }
+.mp-links .ico { color: var(--muted); }
+.mp-cont { margin-left: auto; font-size: 13px; color: var(--muted); }
+
+/* Menu do celular */
+.menu-mobile { background: var(--navy-deep); border-top: 1px solid rgba(255, 255, 255, 0.12); }
+.mm-nav { display: grid; padding: 8px 0; }
+.mm-nav a { padding: 13px 4px; color: #fff; text-decoration: none; font-size: 18px; font-weight: 600; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.mm-nav a[aria-current] { color: var(--yellow); }
+.mm-conta { padding: 8px 0 20px; }
+.mm-conta { display: grid; gap: 8px; }
+.mm-conta > * { width: 100%; }
+
+/* ── Reservar ───────────────────────────────────────────── */
+.reservar { padding: 32px 0 56px; }
+.r-intro h1 { font-size: clamp(34px, 3.4vw, 44px); font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; }
+.r-intro p { margin-top: 8px; color: var(--ink-2); font-size: 18px; max-width: 64ch; }
+.r-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 32px; margin-top: 26px; align-items: start; }
+.r-main { min-width: 0; }
+
+/* Datas: fichas de um mês, com marcador de mês */
+.datas { display: flex; align-items: center; gap: 8px; }
+.trilho { display: flex; align-items: center; gap: 8px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding: 4px 2px; min-width: 0; flex: 1; }
+.trilho::-webkit-scrollbar { display: none; }
+.dia {
+  flex: none; width: 64px; height: 64px; border-radius: 12px; background: var(--chip);
+  display: grid; align-content: center; justify-items: center; line-height: 1.15; scroll-snap-align: start;
+  transition: background-color 120ms ease;
+}
+.dia span { font-size: 13px; color: var(--muted); }
+.dia b { font-size: 21px; font-weight: 700; }
+.dia.fds span { color: var(--red); }
+.dia:hover { background: var(--chip-hover); }
+.dia[aria-pressed="true"] { background: var(--yellow); color: var(--navy-deep); }
+.dia[aria-pressed="true"] span { color: var(--navy-deep); font-weight: 600; }
+.mes {
+  scroll-snap-align: start;
+  flex: none; writing-mode: vertical-rl; transform: rotate(180deg);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+.seta { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: #fff; display: grid; place-items: center; }
+.seta:hover:not(:disabled) { border-color: var(--navy); }
+.seta:disabled { opacity: 0.35; cursor: default; }
+
+.dia-linha { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 24px; flex-wrap: wrap; margin: 24px 0 14px; }
+.dia-linha h2 { font-size: 23px; font-weight: 700; letter-spacing: -0.015em; line-height: 1.2; }
+.dia-nota { margin-top: 4px; font-size: 14px; color: var(--muted); }
+.legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+.legenda li { display: flex; align-items: center; gap: 6px; }
+.legenda i { width: 14px; height: 14px; border-radius: 4px; border: 1px solid transparent; }
+.lg-livre { background: #fff; border-color: var(--line) !important; }
+.lg-sel { background: var(--yellow); }
+.lg-ocup { background: #e7e4dc; }
+.lg-aula { background: var(--navy-tint); border-color: #cdd3ea !important; }
+.lg-vaga { background: #fff; border-color: var(--red) !important; }
+
+/* Cards de quadra: foto + todos os horários com preço */
+.quadras { display: grid; gap: 14px; }
+.quadra { display: grid; grid-template-columns: 216px minmax(0, 1fr); background: var(--sand); border-radius: 18px; overflow: hidden; }
+.q-foto { position: relative; min-height: 200px; background: #e2ddd1; }
+.q-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.q-corpo { padding: 18px 20px 20px; min-width: 0; }
+.q-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px 16px; margin-bottom: 14px; }
+.q-topo h3 { font-size: 20px; font-weight: 750; line-height: 1.2; letter-spacing: -0.01em; }
+.q-esportes { margin-top: 2px; font-size: 14px; color: var(--muted); }
+.q-preco { font-size: 14px; color: var(--muted); white-space: nowrap; padding-top: 2px; }
+.q-preco b { color: var(--ink); font-size: 16px; }
+.q-sem { color: var(--muted); }
+.periodos { display: grid; gap: 8px; }
+.periodo { display: grid; grid-template-columns: 50px minmax(0, 1fr); gap: 10px; align-items: center; }
+.p-nome { font-size: 13px; color: var(--muted); }
+.slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.slot {
+  position: relative; display: grid; align-content: center; justify-items: center; gap: 1px;
+  min-height: 54px; padding: 6px 4px; border-radius: 10px; border: 1px solid transparent; line-height: 1.15;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.slot b { font-size: 16px; font-weight: 700; }
+.slot > span { font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+.slot .ico { width: 12px; height: 12px; }
+.slot.livre { background: #fff; border-color: var(--line); color: var(--ink); }
+.slot.livre > span { color: var(--muted); }
+.slot.livre:hover { border-color: var(--navy); }
+.slot.sel { background: var(--yellow); border-color: var(--yellow); color: var(--navy-deep); }
+.slot.sel > span { color: var(--navy-deep); font-weight: 600; }
+.slot .slot-ok { width: 11px; height: 11px; stroke-width: 3.5; display: none; }
+.slot.sel .slot-ok { display: inline-block; }
+.slot.ocupado { background: rgba(22, 28, 58, 0.05); color: var(--off); cursor: default; }
+.slot.ocupado b { font-weight: 600; }
+.slot.aula { background: var(--navy-tint); border-color: #cdd3ea; color: var(--navy); }
+.slot.aula > span { font-weight: 600; }
+.slot.aula:hover { border-color: var(--navy); }
+.slot.vaga { background: #fff; border-color: #ecbcbc; color: var(--ink); }
+.slot.vaga > span { color: var(--red); font-weight: 700; }
+.slot.vaga:hover { border-color: var(--red); }
+.slot.meu { background: var(--navy); color: #fff; cursor: default; }
+.slot.meu > span { color: var(--on-navy); }
+
+/* Ticket de papel: picote e recortes nas laterais */
+.r-ticket { position: sticky; top: calc(var(--header-h) + 20px); }
+.ticket { background: var(--navy); color: #fff; border-radius: 18px; }
+.t-top { padding: 22px 24px 20px; }
+.t-cab, .ck-cab { display: flex; align-items: center; gap: 12px; }
+.t-cab img { width: 38px; }
+.t-cab b, .ck-cab b { display: block; font-size: 19px; line-height: 1.2; }
+.t-cab span, .ck-cab span { font-size: 13.5px; color: var(--on-navy); }
+.t-linhas { display: grid; gap: 9px; margin-top: 18px; }
+.t-linhas div { display: flex; justify-content: space-between; gap: 16px; }
+.t-linhas dt { color: var(--on-navy); font-size: 14px; }
+.t-linhas dd { font-weight: 600; text-align: right; }
+.t-linhas .t-traco { color: var(--on-navy); font-weight: 400; }
+.t-itens { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.16); display: grid; gap: 6px; font-size: 14px; }
+.t-itens li { display: flex; justify-content: space-between; gap: 12px; }
+.t-itens .t-desc { color: var(--yellow); }
+.t-voucher { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.08); font-size: 14px; cursor: pointer; }
+.t-voucher input { width: 18px; height: 18px; accent-color: var(--yellow); flex: none; }
+.t-voucher small { display: block; color: var(--on-navy); font-size: 13px; }
+.t-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 14px; font-size: 15px; }
+.t-total b { font-size: 20px; }
+.t-vazio { margin-top: 16px; color: var(--on-navy-2); }
+.t-stub { position: relative; padding: 20px 24px 22px; border-top: 4px dotted var(--ground); }
+.t-stub::before, .t-stub::after { content: ""; position: absolute; top: -15px; width: 26px; height: 26px; border-radius: 50%; background: var(--ground); }
+.t-stub::before { left: -13px; }
+.t-stub::after { right: -13px; }
+.t-rot { font-size: 14px; color: var(--on-navy); }
+.t-sinal { font-size: 36px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; margin-top: 2px; }
+.t-resto { font-size: 14px; color: var(--on-navy-2); margin-top: 4px; }
+.t-stub .btn-amarelo { width: 100%; margin-top: 16px; }
+.t-clube { margin-top: 12px; font-size: 14px; color: var(--on-navy); }
+.t-limpar { margin-top: 10px; font-size: 14px; color: var(--on-navy-2); }
+.t-obs { margin-top: 14px; font-size: 14px; color: var(--muted); }
+.t-obs b { color: var(--ink); }
+
+/* ── Seções ─────────────────────────────────────────────── */
+.secao { padding: 80px 0; }
+.sec-topo { max-width: 62ch; margin-bottom: 30px; }
+.sec-topo h2 { font-size: clamp(30px, 3.2vw, 42px); font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; }
+.sec-topo p { margin-top: 10px; color: var(--ink-2); font-size: 18px; }
+
+/* Partidas com vaga */
+.partidas { background: var(--sand); }
+.mural { display: grid; gap: 10px; }
+.partida {
+  display: grid; grid-template-columns: 190px minmax(0, 1fr) 210px 230px; gap: 12px 24px; align-items: center;
+  background: #fff; border-radius: 16px; padding: 18px 22px;
+}
+.v-quando b { display: block; font-size: 19px; font-weight: 750; }
+.v-quando span { color: var(--muted); }
+.v-oque h3 { font-size: 18px; font-weight: 700; }
+.v-oque p { color: var(--muted); }
+.v-faltam b { display: block; color: var(--red); font-size: 18px; }
+.v-faltam span { color: var(--muted); font-size: 14px; }
+.v-acao { justify-self: end; display: grid; justify-items: end; gap: 6px; text-align: right; }
+.v-msg { font-size: 14px; color: var(--muted); max-width: 30ch; }
+.v-msg:empty { display: none; }
+.v-ok { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--navy); min-height: 48px; }
+.destaque { outline: 3px solid var(--yellow) !important; outline-offset: 4px; }
+
+/* Estrutura: bento com as fotos reais */
+.bento { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-template-rows: 400px 280px; gap: 12px; }
+.foto { position: relative; border-radius: 16px; overflow: hidden; background: var(--sand); }
+.foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.foto figcaption {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 48px 18px 14px; color: #fff; font-weight: 600;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0));
+}
+.f-a { grid-column: 1 / 5; }
+.f-b { grid-column: 5 / 7; }
+.f-c { grid-column: 1 / 3; }
+.f-d { grid-column: 3 / 5; }
+.na-arena { grid-column: 5 / 7; background: var(--navy); color: #fff; border-radius: 16px; padding: 22px 24px; }
+.na-arena h3 { font-size: 20px; font-weight: 750; }
+.na-arena ul { margin-top: 8px; }
+.na-arena li { display: flex; align-items: center; gap: 12px; padding: 7px 0; color: var(--on-navy-2); }
+.na-arena li + li { border-top: 1px solid rgba(255, 255, 255, 0.12); }
+.na-arena li b { color: #fff; font-weight: 650; }
+.na-arena li .ico { width: 22px; height: 22px; padding: 4px; border-radius: 50%; background: var(--yellow); color: var(--navy-deep); stroke-width: 3; flex: none; }
+
+/* Escolinhas: fundo azul, como as artes da arena */
+.escolinhas { background: var(--navy); color: #fff; }
+.escolinhas .sec-topo p { color: var(--on-navy); }
+.esc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 64px; }
+.esc-grid > div { display: contents; }
+.esc-grid .sec-topo { grid-column: 1 / -1; }
+.esc-cab { display: grid; grid-template-columns: 104px minmax(0, 1fr); grid-template-rows: auto auto 1fr; column-gap: 20px; align-items: start; }
+.esc-desc { margin-top: 10px; max-width: 44ch; color: #fff; line-height: 1.5; }
+.esc-rosto { grid-row: span 3; width: 104px; height: 130px; border-radius: 12px; object-fit: cover; border: 1.5px solid var(--yellow); }
+.esc {
+  display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr auto; grid-template-areas: "cab" "turmas" "cta";
+  gap: 16px; padding: 32px 0; border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.esc-cab { grid-area: cab; }
+.esc h3 { font-size: 27px; font-weight: 800; line-height: 1.15; letter-spacing: -0.015em; }
+.esc-prof { margin-top: 2px; color: var(--on-navy); }
+.esc-cta { grid-area: cta; justify-self: start; }
+.turmas { grid-area: turmas; display: grid; gap: 8px; align-content: start; }
+.turma { display: grid; grid-template-columns: 100px 150px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.turma dt { font-weight: 700; }
+.turma .horas { color: var(--yellow); font-weight: 700; }
+.turma .nivel { color: var(--on-navy); }
+.esc-consulta { color: var(--on-navy-2); }
+.escolinhas .destaque { outline-offset: 10px; border-radius: 6px; }
+
+/* Contato */
+.ct-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 48px; align-items: stretch; }
+.ct-mapa { position: relative; min-height: 440px; border-radius: 18px; overflow: hidden; background: #e9e6de; }
+.ct-mapa img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1) contrast(0.92) brightness(1.05); }
+.pino { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -92%); }
+.pino .ico { width: 46px; height: 46px; fill: var(--navy); stroke: #fff; stroke-width: 1.4; }
+.pino-nome {
+  position: absolute; left: 50%; top: 50%; transform: translate(18px, -64px);
+  background: var(--navy); color: #fff; font-weight: 700; font-size: 14px; padding: 6px 10px; border-radius: 8px; white-space: nowrap;
+}
+.ct-info h2 { font-size: clamp(30px, 3.2vw, 42px); font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; }
+.ct-end { margin-top: 14px; font-size: 19px; line-height: 1.45; }
+.ct-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.ct-dados { display: grid; gap: 0; margin-top: 28px; }
+.ct-dados div { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid #e6e1d6; }
+.ct-dados dt { color: var(--muted); }
+.ct-dados dd a { font-weight: 600; }
+.ct-politica { margin-top: 4px; border-top: 1px solid #e6e1d6; padding-top: 12px; }
+.ct-politica summary { cursor: pointer; font-weight: 600; }
+.ct-politica p { margin-top: 8px; color: var(--muted); max-width: 60ch; }
+.ct-whats { margin-top: 24px; }
+
+/* Rodapé */
+.rodape { background: var(--navy-deep); color: var(--on-navy); padding: 48px 0 28px; }
+.rp-topo { display: grid; grid-template-columns: minmax(0, 1.3fr) repeat(3, minmax(0, 1fr)); gap: 32px; align-items: start; }
+.rp-marca { display: flex; align-items: center; gap: 16px; text-decoration: none; }
+.rp-marca img { width: 72px; }
+.rp-marca b { display: block; color: #fff; font-size: 20px; }
+.rp-nav { display: grid; gap: 6px; }
+.rp-tit { color: var(--on-navy); font-size: 13.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 2px; }
+.rp-nav a, .rp-contato a { text-decoration: none; color: #fff; }
+.rp-nav a:hover, .rp-contato a:hover { text-decoration: underline; }
+.rp-contato { display: grid; gap: 6px; }
+.rp-base { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 36px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.12); font-size: 13.5px; }
+
+/* ── Barra do ticket no celular, voltar ao topo e aviso ── */
+.barra {
+  position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 45;
+  display: flex; align-items: center; gap: 12px; padding: 10px 10px 10px 16px;
+  background: var(--navy); color: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(13, 20, 51, 0.32);
+}
+.barra-txt { display: grid; line-height: 1.3; min-width: 0; }
+.barra-txt b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.barra-txt span { font-size: 13.5px; color: var(--on-navy); }
+.barra .btn-amarelo { margin-left: auto; flex: none; padding: 0 18px; }
+.subir {
+  position: fixed; right: 16px; bottom: 16px; z-index: 44; width: 48px; height: 48px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--navy-deep); color: #fff; border: 2px solid #fff;
+  box-shadow: 0 6px 18px rgba(13, 20, 51, 0.28);
+}
+.subir:hover { background: var(--navy-deep); }
+.toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; max-width: calc(100% - 32px);
+  background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 12px; font-size: 14px; box-shadow: 0 10px 30px rgba(13, 20, 51, 0.3);
+}
+
+/* ── Checkout: o ticket vem para a frente ─────────────── */
+.ck {
+  padding: 0; border: 0; background: transparent; color: var(--ink); overflow: visible;
+  width: min(100% - 32px, 960px); height: fit-content; max-width: none; max-height: none; margin: auto;
+}
+.ck::backdrop { background: rgba(13, 20, 51, 0.62); }
+.ck-ticket {
+  --corte: 380px;
+  min-height: min(560px, 100dvh - 32px); display: grid; grid-template-columns: var(--corte) minmax(0, 1fr); border-radius: 20px; overflow: hidden;
+  -webkit-mask:
+    radial-gradient(circle 14px at var(--corte) 0, #0000 96%, #000 100%) top / 100% 51% no-repeat,
+    radial-gradient(circle 14px at var(--corte) 100%, #0000 96%, #000 100%) bottom / 100% 51% no-repeat;
+  mask:
+    radial-gradient(circle 14px at var(--corte) 0, #0000 96%, #000 100%) top / 100% 51% no-repeat,
+    radial-gradient(circle 14px at var(--corte) 100%, #0000 96%, #000 100%) bottom / 100% 51% no-repeat;
+}
+.ck-resumo { background: var(--navy); color: #fff; padding: 30px 28px; }
+.ck-resumo, .ck-stub { max-height: min(760px, 100dvh - 32px); overflow-y: auto; }
+.ck-cab img { width: 46px; }
+.ck-resumo .t-linhas { margin-top: 24px; }
+.ck-resumo .t-total { padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.16); }
+.ck-resumo .t-total + .t-total { border-top: 0; padding-top: 0; margin-top: 6px; }
+.t-agora b { color: var(--yellow); font-size: 24px; }
+.carimbo {
+  display: inline-grid; justify-items: center; gap: 2px; margin-top: 28px; padding: 10px 18px;
+  border: 4px double var(--yellow); border-radius: 10px; color: var(--yellow); transform: rotate(-6deg);
+  font-size: 21px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.1;
+}
+.carimbo small { font-size: 13px; letter-spacing: 0.08em; }
+.ck-stub { position: relative; display: flex; flex-direction: column; background: var(--paper); border-left: 2px dashed #d3ccbc; padding: 32px 36px; }
+#ck-ok:not([hidden]) { flex: 1; display: flex; flex-direction: column; }
+.ck-fechar { position: absolute; top: 14px; right: 14px; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; }
+.ck-fechar:hover { background: var(--sand); }
+.ck-h { font-size: 27px; font-weight: 800; line-height: 1.15; letter-spacing: -0.015em; padding-right: 48px; }
+.ck-h:focus { outline: none; }
+.ck-sub { margin-top: 6px; color: var(--muted); }
+.ck-sub .num, .ck-conta .num { white-space: nowrap; }
+.ck-tem-conta { margin-top: 10px; padding: 10px 14px; border-radius: 10px; background: var(--sand); font-size: 15px; }
+.ck-conta { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: var(--sand); }
+.campo { display: grid; gap: 6px; margin-top: 18px; }
+.campo > label, .campo > legend { font-weight: 600; font-size: 15px; margin-bottom: 6px; }
+.campo input[type="text"], .campo input[type="tel"], .copia input {
+  height: 48px; border-radius: 10px; border: 1px solid #cdc6b6; padding: 0 14px; background: #fff; font-size: 16px; width: 100%;
+}
+.campo input:focus, .copia input:focus { outline: 3px solid rgba(30, 45, 107, 0.22); border-color: var(--navy); }
+.campo[data-erro] input { border-color: var(--red); }
+.erro { color: var(--red); font-size: 14px; font-weight: 500; }
+.opcoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.opcao { position: relative; }
+.opcao input, .pg input { position: absolute; opacity: 0; pointer-events: none; }
+.opcao span { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid #cdc6b6; background: #fff; cursor: pointer; font-weight: 500; }
+.opcao input:checked + span { background: var(--navy); border-color: var(--navy); color: #fff; }
+.opcao input:focus-visible + span, .pg input:focus-visible + span { outline: 3px solid var(--navy); outline-offset: 2px; }
+.pagar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pg > span { display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; border: 1px solid #cdc6b6; background: #fff; cursor: pointer; }
+.pg > span span { color: var(--muted); }
+.pg input:checked + span { border: 2px solid var(--navy); padding: 11px 13px; background: var(--navy-tint); }
+.ck-voucher, .aceite { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; font-size: 15px; cursor: pointer; }
+.ck-voucher input, .aceite input { width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--navy); flex: none; }
+.ck-voucher { padding: 12px 14px; border-radius: 12px; background: #fdf3d6; }
+.politica { margin-top: 10px; padding: 12px 14px; border-radius: 10px; background: var(--sand); font-size: 14px; color: var(--muted); }
+.ck-gerar { width: 100%; margin-top: 22px; }
+.pix { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 22px; align-items: center; margin-top: 20px; }
+.pix-qr { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.pix-qr svg { display: block; width: 100%; height: auto; }
+.pix-rot { color: var(--muted); font-size: 14px; }
+.pix-valor { font-size: 34px; font-weight: 800; line-height: 1.1; letter-spacing: -0.02em; }
+.pix-como { margin-top: 6px; font-size: 14px; color: var(--muted); }
+.pix-timer { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; }
+.pix-timer b { font-size: 16px; }
+.copia { display: flex; gap: 8px; }
+.copia input { font-size: 13.5px; color: var(--muted); }
+.copia .btn-navy { flex: none; padding: 0 16px; }
+.pix-receb { margin-top: 14px; font-size: 14px; color: var(--muted); }
+.pix-demo { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #fdf3d6; color: #6e4d00; font-size: 14px; }
+.ck-acao { width: 100%; margin-top: 18px; }
+.ck-voltar { display: block; margin: 14px auto 0; color: var(--muted); }
+.ok-dia { margin-top: 20px; padding: 16px 18px; border-radius: 14px; background: #fdf3d6; border: 1px solid #f0d58b; }
+.ok-dia-rot { font-size: 13px; font-weight: 700; color: #6e4d00; text-transform: uppercase; letter-spacing: 0.06em; }
+.ok-dia-valor { margin-top: 2px; font-size: 25px; font-weight: 800; line-height: 1.2; letter-spacing: -0.015em; }
+.ok-dia-info { margin-top: 4px; color: var(--ink-2); font-size: 15px; }
+.ok-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.ok-acoes > * { flex: 1 1 200px; }
+.ok-fim { margin-top: auto; padding-top: 22px; }
+.ok-fim .btn-borda { width: 100%; }
+.ok-caixa { margin-top: 22px; padding: 16px; border-radius: 14px; background: var(--sand); }
+.ok-caixa b { display: block; }
+.ok-caixa p { margin-top: 4px; color: var(--muted); font-size: 14px; }
+.ok-caixa .btn-navy { margin-top: 12px; }
+
+/* ── Respiro por tamanho de tela ───────────────────────── */
+@media (max-width: 1119px) {
+  .r-grid { grid-template-columns: minmax(0, 1fr); }
+  .r-ticket { display: none; }
+  body.tem-barra { padding-bottom: 92px; }
+  body.tem-barra .subir { display: none; }
+  body.tem-barra .toast { bottom: 100px; }
+  .partida { grid-template-columns: 160px minmax(0, 1fr) 170px; }
+  .v-acao { grid-column: 1 / -1; justify-self: stretch; justify-items: start; text-align: left; }
+}
+@media (min-width: 1120px) { .barra { display: none !important; } }
+@media (min-width: 1100px) {
+  .topo-in { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .nav { margin-left: 0; }
+  .conta { justify-self: end; margin-left: 0; }
+}
+@media (max-width: 1099px) {
+  .nav { display: none; }
+  .burger { display: grid; }
+  .conta { margin-left: auto; }
+}
+@media (max-width: 960px) {
+  .bento { grid-template-columns: 1fr 1fr; grid-template-rows: none; grid-auto-rows: auto; }
+  .foto { height: 260px; }
+  .f-a { grid-column: 1 / -1; grid-row: auto; }
+  .f-b, .f-c, .f-d, .na-arena { grid-column: auto; grid-row: auto; }
+  .na-arena { grid-column: 1 / -1; }
+  .ct-grid { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .ct-mapa { min-height: 320px; }
+  .rp-topo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .rp-marca { grid-column: 1 / -1; }
+  .esc-grid { grid-template-columns: minmax(0, 1fr); }
+  .esc { grid-template-rows: auto; }
+}
+@media (max-width: 760px) {
+  .esc-cta { justify-self: stretch; }
+  .esc h3 { font-size: 24px; }
+  .turma { grid-template-columns: 82px minmax(0, 1fr) auto; gap: 10px; }
+  .minhas span, .perfil-nome, .perfil .ico { display: none; }
+  .perfil { padding: 4px; }
+  .menu-perfil { position: fixed; left: 12px; right: 12px; top: var(--menu-top, 120px); width: auto; max-height: calc(100dvh - var(--menu-top, 120px) - 12px); overflow-y: auto; }
+  .seta { display: none; }
+  .trilho { margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); scroll-padding-inline: var(--gutter); }
+  .quadra { grid-template-columns: minmax(0, 1fr); }
+  .q-foto { min-height: 0; height: 118px; }
+  .q-corpo { padding: 14px 14px 16px; }
+  .q-topo { flex-direction: column; margin-bottom: 12px; }
+  .q-preco { white-space: normal; padding-top: 0; }
+  .periodos { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .periodo, .slots { display: contents; }
+  .p-nome { display: none; }
+  .slot { min-height: 52px; }
+  .slot b { font-size: 15px; }
+  .slot > span { font-size: 12px; }
+  .dia-linha { margin-top: 18px; }
+  .dia-linha h2 { font-size: 20px; }
+  .secao { padding: 56px 0; }
+  .partida { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "quando faltam" "oque oque" "acao acao"; padding: 16px; }
+  .v-quando { grid-area: quando; }
+  .v-faltam { grid-area: faltam; text-align: right; }
+  .v-faltam span { display: none; }
+  .v-oque { grid-area: oque; }
+  .v-acao { grid-area: acao; }
+  .v-acao .btn-borda { width: 100%; }
+  .bento { grid-template-columns: minmax(0, 1fr); }
+  .foto { height: 220px; }
+  .f-a, .f-b, .f-c, .f-d, .na-arena { grid-column: 1 / -1; }
+  .ct-dados div { grid-template-columns: 120px minmax(0, 1fr); }
+  .rp-topo { grid-template-columns: minmax(0, 1fr); }
+  .ck { width: 100%; height: 100dvh; margin: 0; }
+  .ck-ticket { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 1fr; height: 100%; min-height: 0; overflow-y: auto; border-radius: 0; -webkit-mask: none; mask: none; }
+  .ck-resumo, .ck-stub { max-height: none; overflow: visible; }
+  .ck-resumo { padding: 22px 18px 20px; }
+  .ck-stub { border-left: 0; border-top: 3px dashed #d3ccbc; padding: 26px 18px 32px; }
+  .ck-fechar { position: fixed; top: 12px; right: 12px; background: var(--navy-deep); color: #fff; z-index: 2; box-shadow: 0 2px 10px rgba(13, 20, 51, 0.3); }
+  .ck-fechar:hover { background: var(--navy-deep); }
+  .pix { grid-template-columns: 132px minmax(0, 1fr); gap: 16px; }
+  .pix-valor { font-size: 28px; }
+  .pagar { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  /* No celular, a etapa do Pix mostra só o pagamento: o resumo azul já foi visto na etapa anterior */
+  .ck[data-etapa="pix"] .ck-resumo { display: none; }
+  .ck[data-etapa="pix"] .ck-ticket { grid-template-rows: minmax(100%, auto); }
+  .ck[data-etapa="pix"] .ck-stub { border-top: 0; }
+  /* Entrar e criar conta: botão principal e links no fim da tela */
+  .au #au-form { flex: 1; display: flex; flex-direction: column; }
+  .au #au-form [type="submit"] { margin-top: auto; }
+  .au #au-form .campo:last-of-type, .au #au-form .au-dados { margin-bottom: 22px; }
+  /* Checkout: "Gerar Pix" no fim da tela também */
+  #ck-dados:not([hidden]) { flex: 1; display: flex; flex-direction: column; }
+  #ck-dados .ck-gerar { margin-top: auto; }
+  #ck-dados .erro#e-aceite { margin-bottom: 22px; }
+  #ck-dados .aceite { margin-bottom: 22px; }
+  /* QR grande no centro e os botões no fim da tela */
+  .ck[data-etapa="pix"] #ck-pix:not([hidden]) { flex: 1; display: flex; flex-direction: column; }
+  .ck[data-etapa="pix"] .pix { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; gap: 14px; }
+  .ck[data-etapa="pix"] .pix-qr { width: min(240px, 70vw); }
+  .ck[data-etapa="pix"] .pix-timer { justify-content: center; }
+  .ck[data-etapa="pix"] .ck-acao { margin-top: auto; }
+  .ck[data-etapa="pix"] .pix-demo { margin-bottom: 18px; }
+}
+@media (max-width: 520px) {
+  .ct-acoes > a, .ct-whats { width: 100%; }
+  .proto-in p span { display: none; }
+  .criar { display: none; }
+  .marca b { font-size: 17px; }
+  .marca img { width: 40px; }
+  .topo-in { gap: 10px; }
+}
+
+/* Mural recolhido de partidas (embaixo do ticket) */
+.mural-box { margin-top: 18px; border: 1px solid var(--line); border-radius: 14px; background: #fff; }
+.mural-box summary { display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; font-weight: 600; list-style: none; }
+.mural-box summary::-webkit-details-marker { display: none; }
+.mural-box summary .ico { color: var(--muted); }
+.mural-box .seta-d { margin-left: auto; }
+.mural-box[open] .seta-d { transform: rotate(180deg); }
+.mural-sub { padding: 0 16px; font-size: 14px; color: var(--muted); }
+.mural-box .mural { display: grid; gap: 0; padding: 6px 16px 10px; }
+.mural-box .partida { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "quando acao" "oque acao"; gap: 2px 12px; align-items: center; background: none; border-radius: 0; padding: 12px 0; }
+.mural-box .partida + .partida { border-top: 1px solid #ece7dc; }
+.mural-box .v-quando { grid-area: quando; font-size: 14px; color: var(--muted); }
+.mural-box .v-quando b { display: inline; font-size: 14px; color: var(--ink); }
+.mural-box .v-oque { grid-area: oque; }
+.mural-box .v-oque h3 { font-size: 16px; }
+.mural-box .v-oque p { font-size: 14px; }
+.mural-box .v-acao { grid-area: acao; justify-self: end; text-align: right; }
+.mural-box .v-acao .btn-borda { width: auto; min-height: 40px; padding: 0 12px; font-size: 14px; }
+.mural-box .v-msg { max-width: 18ch; font-size: 13px; }
+.mural-box .v-ok { min-height: 40px; font-size: 14px; }
+@media (max-width: 1119px) { .mural-box { margin-top: 14px; } }
+
+/* ══════════════════════════════════════════════════════════
+   Rodada 4: Campeonatos e eventos, Clube, Instagram e os links
+   para Regras e dúvidas e Avaliar no Google.
+   Nenhuma seção nova entra no menu do topo.
+   ══════════════════════════════════════════════════════════ */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.sub-topo { display: flex; justify-content: space-between; align-items: flex-end; gap: 6px 24px; flex-wrap: wrap; margin: 56px 0 18px; }
+.sub-topo h3 { font-size: 25px; font-weight: 800; line-height: 1.2; letter-spacing: -0.015em; }
+.sub-topo p { color: var(--muted); }
+
+
+/* Campeonatos e eventos */
+.ev-agora { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 28px 48px; align-items: center; padding: 30px 32px; border-radius: 18px; background: var(--navy); color: #fff; }
+.ev-vivo { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; color: var(--yellow); }
+.ev-vivo i { width: 9px; height: 9px; border-radius: 50%; background: #ff6b5e; }
+.ev-agora h3 { margin-top: 8px; font-size: clamp(25px, 2.4vw, 32px); font-weight: 800; line-height: 1.12; letter-spacing: -0.02em; }
+.ev-agora-txt { margin-top: 10px; color: var(--on-navy-2); max-width: 46ch; }
+.ev-agora .btn-borda-claro { margin-top: 20px; }
+.chave { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr); gap: 14px 16px; align-items: center; }
+.ch-col { display: grid; gap: 10px; }
+.ch-rot { font-size: 13.5px; color: var(--on-navy); }
+.ch-jogo { display: grid; grid-template-columns: 52px minmax(0, 1fr); border-radius: 12px; background: rgba(255, 255, 255, 0.08); }
+.ch-hora { display: grid; place-items: center; border-right: 1px solid rgba(255, 255, 255, 0.14); font-weight: 700; color: var(--yellow); }
+.ch-jogo ul { display: grid; min-width: 0; }
+.ch-jogo li { padding: 9px 14px; font-weight: 600; }
+.ch-jogo li + li { border-top: 1px solid rgba(255, 255, 255, 0.12); }
+.ch-final .ch-jogo { background: var(--yellow); color: var(--navy-deep); }
+.ch-final .ch-hora { color: var(--navy-deep); border-color: rgba(19, 29, 71, 0.18); }
+.ch-final .ch-jogo li { font-weight: 500; }
+.ch-final .ch-jogo li + li { border-color: rgba(19, 29, 71, 0.15); }
+
+/* Inscrições abertas: cada evento é um ingresso com canhoto da data */
+.ev-lista { display: grid; gap: 14px; }
+.ev { --stub: 116px; position: relative; display: grid; grid-template-columns: var(--stub) minmax(0, 1fr) auto; align-items: center; background: var(--sand); border-radius: 16px; overflow: hidden; }
+.ev::before, .ev::after { content: ""; position: absolute; left: calc(var(--stub) - 12px); width: 22px; height: 22px; border-radius: 50%; background: var(--ground); }
+.ev::before { top: -11px; }
+.ev::after { bottom: -11px; }
+.ev-data {
+  align-self: stretch; display: grid; align-content: center; justify-items: center; gap: 3px; padding: 18px 8px;
+  background: var(--navy); color: #fff; border-right: 3px dotted var(--ground); line-height: 1.1; text-align: center;
+}
+.ev-data span { font-size: 13px; font-weight: 600; color: var(--on-navy); text-transform: uppercase; letter-spacing: 0.06em; }
+.ev-data b { font-size: 34px; font-weight: 800; color: var(--yellow); letter-spacing: -0.02em; }
+.ev-corpo { padding: 18px 24px; min-width: 0; }
+.ev-corpo h4 { font-size: 20px; font-weight: 750; line-height: 1.2; letter-spacing: -0.01em; }
+.ev-tipo { margin-top: 2px; color: var(--muted); }
+.ev-dados { display: flex; flex-wrap: wrap; gap: 4px 22px; margin-top: 10px; }
+.ev-dados div { display: flex; gap: 6px; }
+.ev-dados dt { color: var(--muted); }
+.ev-dados dd { font-weight: 600; }
+.ev-acao { display: grid; justify-items: end; gap: 6px; padding: 18px 24px 18px 0; }
+.ev-acao small { font-size: 13px; color: var(--muted); }
+
+/* Já aconteceu */
+.ev-passados { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 20px; }
+.ev-p img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 14px; background: var(--sand); }
+.ev-p-quando { margin-top: 12px; font-size: 14px; color: var(--muted); }
+.ev-p h4 { margin-top: 2px; font-size: 19px; font-weight: 750; line-height: 1.25; letter-spacing: -0.01em; }
+.ev-p dl { display: grid; gap: 3px; margin-top: 8px; }
+.ev-p dt { display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; color: var(--muted); }
+.ev-p dd { display: inline; }
+.ev-p dt .ico { width: 15px; height: 15px; color: var(--yellow-press); }
+.ev-p dd { font-weight: 600; }
+
+/* Clube Arena Belém: cartela de carimbos no estilo do ticket */
+.clube { background: var(--sand); }
+.cl-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 500px); gap: 40px 80px; align-items: center; }
+.cl-passos { display: grid; gap: 22px; counter-reset: passo; }
+.cl-passos li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; align-items: start; }
+.cl-passos li::before {
+  counter-increment: passo; content: counter(passo); width: 44px; height: 44px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--navy); color: var(--yellow); font-weight: 800; font-size: 19px;
+}
+.cl-passos b { display: block; font-size: 19px; line-height: 1.3; padding-top: 2px; }
+.cl-passos p { margin-top: 2px; color: var(--ink-2); max-width: 52ch; }
+.cartela { border-radius: 18px; overflow: hidden; box-shadow: 0 1px 2px rgba(13, 20, 51, 0.08), 0 14px 34px rgba(13, 20, 51, 0.1); }
+.ca-topo { display: flex; align-items: center; gap: 12px; padding: 18px 22px; background: var(--navy); color: #fff; }
+.ca-topo img { width: 40px; }
+.ca-topo b { display: block; font-size: 18px; line-height: 1.2; }
+.ca-topo span { font-size: 13.5px; color: var(--on-navy); }
+.ca-cont { margin-left: auto; font-size: 14px; color: var(--on-navy); white-space: nowrap; }
+.ca-cont b { display: inline; font-size: 22px; color: var(--yellow); }
+.ca-papel { padding: 24px 22px 22px; background: var(--paper); }
+.casas { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px 12px; }
+.casa {
+  aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; text-align: center;
+  border: 2px dashed #c8bfa9; color: #8f8672; font-weight: 700; font-size: 17px; line-height: 1.05;
+}
+.casa.on { border: 0; background: var(--navy); }
+.casa.on img { width: 64%; transform: rotate(var(--r, -8deg)); }
+.casa.premio { border-color: var(--yellow-press); background: #fdf3d6; color: #6e4d00; font-size: 12.5px; }
+.ca-hist { margin-top: 20px; padding-top: 14px; border-top: 1px solid #ebe5d8; }
+.ca-hist-t { font-size: 13.5px; font-weight: 700; color: var(--muted); }
+.ca-hist ul { display: grid; gap: 4px; margin-top: 6px; font-size: 14.5px; }
+.ca-hist li { display: flex; justify-content: space-between; gap: 12px; }
+.ca-hist li span { color: var(--ink-2); }
+.ca-stub { position: relative; padding: 20px 22px 22px; background: var(--navy); color: #fff; border-top: 4px dotted var(--sand); }
+.ca-stub::before, .ca-stub::after { content: ""; position: absolute; top: -15px; width: 26px; height: 26px; border-radius: 50%; background: var(--sand); }
+.ca-stub::before { left: -13px; }
+.ca-stub::after { right: -13px; }
+.ca-grande { display: block; font-size: 23px; font-weight: 800; line-height: 1.15; letter-spacing: -0.015em; }
+.ca-stub p { margin-top: 6px; color: var(--on-navy-2); font-size: 15px; }
+.ca-stub .btn-amarelo { width: 100%; margin-top: 16px; }
+
+/* Instagram */
+.instagram { background: var(--sand); }
+.ig-cab { display: flex; align-items: center; gap: 16px 20px; flex-wrap: wrap; margin-bottom: 24px; }
+.ig-avatar { width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--navy); box-shadow: 0 0 0 3px var(--sand), 0 0 0 6px var(--yellow); margin: 6px; }
+.ig-avatar img { width: 52px; }
+.ig-quem { min-width: 0; }
+.ig-quem h2 { font-size: clamp(30px, 3.2vw, 42px); font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; overflow-wrap: anywhere; }
+.ig-quem p { margin-top: 4px; color: var(--ink-2); }
+.ig-quem small { font-size: 13px; color: var(--muted); }
+.ig-cab .btn-navy { margin-left: auto; }
+.ig-grade { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px 14px; }
+.post a { display: grid; gap: 8px; text-decoration: none; }
+.post-img { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: #e2ddd1; }
+.post-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.post-tipo { position: absolute; top: 10px; right: 10px; color: #fff; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55)); }
+.post-tipo .ico { width: 20px; height: 20px; }
+.post-fix {
+  position: absolute; top: 10px; left: 10px; display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px 4px 7px; border-radius: 8px; background: rgba(13, 20, 51, 0.78); color: #fff; font-size: 13px; font-weight: 600;
+}
+.post-fix .ico { width: 14px; height: 14px; }
+.post-leg { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 15px; line-height: 1.4; }
+.post-data { margin-top: -4px; font-size: 13.5px; color: var(--muted); }
+.post a:hover .post-leg { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Regras e dúvidas: só no rodapé, com o botão em destaque na coluna Ajuda */
+.rp-regras { justify-self: start; min-height: 42px; padding: 0 14px; margin-bottom: 4px; }
+.rodape .rp-regras:hover { text-decoration: none; }
+
+@media (max-width: 1099px) {
+  .ev-agora { grid-template-columns: minmax(0, 1fr); }
+  .cl-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: 40px 48px; }
+}
+@media (max-width: 960px) {
+  .ev { grid-template-columns: var(--stub) minmax(0, 1fr); }
+  .ev-data { grid-row: span 2; }
+  .ev-acao { grid-column: 2; justify-items: start; padding: 0 24px 20px; }
+}
+@media (max-width: 760px) {
+  .sub-topo { margin-top: 44px; }
+  .ev-agora { padding: 22px 18px; }
+  .chave { grid-template-columns: minmax(0, 1fr); }
+  .ev { --stub: 78px; }
+  .ev-data { padding: 14px 4px; }
+  .ev-data b { font-size: 28px; }
+  .ev-data span { font-size: 12px; }
+  .ev-corpo { padding: 16px 16px 12px; }
+  .ev-corpo h4 { font-size: 18px; }
+  .ev-dados { display: grid; gap: 2px; font-size: 15px; }
+  .ev-acao { padding: 0 16px 16px; justify-items: stretch; }
+  .ev-acao a { width: 100%; }
+  .ev-passados {
+    grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 80%; gap: 14px;
+    overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none;
+    margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); scroll-padding-inline: var(--gutter);
+  }
+  .ev-passados::-webkit-scrollbar { display: none; }
+  .ev-p { scroll-snap-align: start; }
+  .cl-grid { grid-template-columns: minmax(0, 1fr); }
+  .ca-papel { padding: 20px 16px 18px; }
+  .casas { gap: 10px 8px; }
+  .ca-topo, .ca-stub { padding-inline: 16px; }
+  .ig-avatar { width: 60px; height: 60px; }
+  .ig-avatar img { width: 42px; }
+  .ig-cab .btn-navy { margin-left: 0; width: 100%; }
+  .ig-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 10px; }
+  .post-leg { font-size: 14.5px; }
+}
+/* ══════════════════════════════════════════════════════════
+   Rodada 5: área do atleta (entrar, criar conta e Minha conta)
+   Mesmo vocabulário do portal: ticket azul com canhoto de papel,
+   fichas em areia, amarelo só para a ação principal.
+   ══════════════════════════════════════════════════════════ */
+body.em-conta { padding-bottom: 0 !important; }
+body.em-conta .barra { display: none !important; }
+.slot.meu { cursor: pointer; }
+.slot.meu:hover { background: var(--navy-deep); }
+.opc { font-weight: 400; color: var(--muted); }
+.campo input[type="password"], .campo input[type="date"] {
+  height: 48px; border-radius: 10px; border: 1px solid #cdc6b6; padding: 0 14px; background: #fff; font-size: 16px; width: 100%;
+}
+.campo .dica { font-size: 13.5px; color: var(--muted); }
+.campo-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 2px; }
+.campo-cab label { font-weight: 600; font-size: 15px; }
+.campo-rot { font-weight: 600; font-size: 15px; }
+.btn-perigo {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 0 20px; border-radius: 12px;
+  background: var(--red); color: #fff; font-weight: 700; transition: background-color 150ms ease;
+}
+.btn-perigo:hover { background: #a91f21; }
+.btn-perigo:active { transform: scale(0.97); }
+.link-perigo { color: var(--red); font-weight: 600; text-decoration: underline; text-underline-offset: 3px;; display: inline-flex; align-items: center; min-height: 44px; }
+button[aria-busy="true"] { opacity: 0.75; cursor: progress; }
+
+/* Diálogo de conta: o mesmo ticket do checkout */
+.au-tit { margin-top: 28px; font-size: 21px; font-weight: 750; line-height: 1.25; }
+.au-curto { display: none; margin-top: 6px; color: var(--on-navy-2); }
+.au-van { display: grid; gap: 12px; margin-top: 14px; }
+.au-van li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; color: var(--on-navy-2); }
+.au-van .ico { color: var(--yellow); margin-top: 3px; }
+.au-cartela { margin-top: 28px; padding: 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.08); }
+.au-cartela p { margin-top: 10px; font-size: 13.5px; color: var(--on-navy); }
+.au-cartela .carimbos { margin-top: 0; }
+.au-cartela .carimbos li { border-color: rgba(255, 255, 255, 0.35); }
+.au-cartela .carimbos li.on, .au-cartela .carimbos li.novo { background: var(--yellow); }
+.au-abas { display: flex; gap: 4px; padding: 4px; margin: 0 52px 22px 0; border-radius: 12px; background: var(--sand); }
+.au-abas button { flex: 1; min-height: 42px; border-radius: 9px; font-weight: 600; text-align: center; color: var(--ink-2); transition: background-color 150ms ease, color 150ms ease; }
+.au-abas button:hover { color: var(--navy); }
+.au-abas button[aria-selected="true"] { background: var(--navy); color: #fff; }
+.au-troca { margin-top: 16px; text-align: center; color: var(--muted); }
+.campo input.au-codigo { height: 58px; font-size: 26px; font-weight: 700; letter-spacing: 0.45em; text-align: center; padding-left: 0.45em; }
+.au-dados { display: grid; gap: 6px; margin-top: 16px; padding: 14px 16px; border-radius: 12px; background: var(--sand); }
+.au-dados div { display: flex; justify-content: space-between; gap: 16px; }
+.au-dados dt { color: var(--muted); }
+.au-dados dd { font-weight: 600; text-align: right; }
+
+/* Diálogo simples: cabeçalho azul e corpo de papel */
+.dlg {
+  padding: 0; border: 0; border-radius: 18px; width: min(100% - 32px, 540px); max-height: calc(100dvh - 32px); height: fit-content; margin: auto;
+  background: var(--paper); color: var(--ink); overflow: auto; box-shadow: 0 24px 60px rgba(13, 20, 51, 0.35);
+}
+.dlg::backdrop { background: rgba(13, 20, 51, 0.62); }
+.dlg-topo { position: sticky; top: 0; z-index: 1; padding: 18px 64px 18px 22px; background: var(--navy); color: #fff; }
+.dlg-topo h2 { font-size: 21px; font-weight: 800; line-height: 1.2; }
+.dlg-topo h2:focus { outline: none; }
+.dlg-topo span { display: block; margin-top: 2px; font-size: 14px; color: var(--on-navy); }
+.dlg-fechar { position: absolute; right: 12px; top: 14px; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; color: #fff; }
+.dlg-fechar:hover { background: rgba(255, 255, 255, 0.12); }
+.dlg-topo :focus-visible { outline-color: var(--yellow); }
+.dlg-corpo { padding: 22px; }
+.dlg-corpo .au-dados { margin-top: 0; }
+.dlg-txt + .dlg-txt { margin-top: 10px; }
+.dlg-acoes { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 10px 14px; margin-top: 22px; }
+.dlg-acoes .btn-borda, .dlg-acoes .btn-amarelo, .dlg-acoes .btn-navy, .dlg-acoes .btn-perigo { flex: 1 1 180px; }
+.dlg-acoes .link-perigo { margin-right: auto; }
+.dlg-status { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--navy-tint); }
+.dlg-status .ico { color: var(--navy); }
+.dlg-h3 { margin-top: 20px; font-size: 17px; font-weight: 750; }
+.caso { margin-top: 14px; padding: 14px 16px; border-radius: 12px; background: #e8f3ec; border: 1px solid #b9dcc6; }
+.caso p { margin-top: 2px; color: var(--ink-2); }
+.caso.perde { background: #fbeaea; border-color: #efc2c2; }
+.passo-num { display: flex; align-items: center; gap: 14px; }
+.passo-num button {
+  width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--navy); color: var(--navy);
+  font-size: 22px; font-weight: 700; display: grid; place-items: center; transition: background-color 150ms ease;
+}
+.passo-num button:hover:not(:disabled) { background: var(--navy-tint); }
+.passo-num button:disabled { opacity: 0.35; cursor: default; }
+.passo-num b { min-width: 120px; text-align: center; font-size: 18px; }
+.peds { display: grid; margin-top: 8px; }
+.ped { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; padding: 12px 0; border-top: 1px solid #e6e1d6; }
+.ped .avatar { width: 40px; height: 40px; }
+.ped-quem b { font-weight: 650; }
+.ped-quem .sub { display: block; font-size: 14px; color: var(--muted); }
+.ped.ok { opacity: 0.6; }
+.ped-acoes { display: flex; gap: 8px; }
+.ped-acoes > * { min-height: 40px; padding: 0 14px; font-size: 14.5px; }
+.novo { color: var(--red); font-weight: 700; }
+
+/* Minha conta */
+.mc { min-height: calc(100dvh - 110px); }
+.conta-cab { background: var(--sand); padding-top: 28px; }
+.cc-voltar { display: inline-flex; align-items: center; gap: 4px; color: var(--ink-2); font-weight: 600; text-decoration: none; }
+.cc-voltar:hover { color: var(--navy); text-decoration: underline; }
+.cc-linha { display: flex; justify-content: space-between; align-items: center; gap: 20px 32px; flex-wrap: wrap; margin-top: 18px; }
+.cc-quem { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.avatar-xl { width: 64px; height: 64px; font-size: 28px; }
+.cc-quem h1 { font-size: clamp(30px, 3.2vw, 42px); font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; overflow-wrap: anywhere; }
+.cc-quem p { margin-top: 2px; color: var(--ink-2); }
+.cc-resumo { display: flex; flex-wrap: wrap; gap: 10px; }
+.cc-resumo li { display: grid; gap: 1px; padding: 10px 16px; border-radius: 12px; background: #fff; }
+.cc-resumo span { font-size: 13.5px; color: var(--muted); }
+.cc-resumo b { font-size: 16.5px; }
+.cc-resumo .cc-premio { background: #fdf3d6; }
+.abas { display: flex; gap: 4px; margin-top: 22px; overflow-x: auto; scrollbar-width: none; }
+.abas::-webkit-scrollbar { display: none; }
+.abas button {
+  flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 14px 16px 12px; border-bottom: 3px solid transparent;
+  font-weight: 650; color: var(--ink-2); transition: color 150ms ease, border-color 150ms ease;
+}
+.abas button:hover { color: var(--navy); }
+.abas button[aria-selected="true"] { color: var(--navy-deep); border-bottom-color: var(--yellow); }
+.abas .ico { color: var(--muted); }
+.abas button[aria-selected="true"] .ico { color: var(--navy); }
+.abas .cont { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: var(--navy); color: #fff; font-size: 13px; text-align: center; }
+.conta-corpo { padding: 36px 0 88px; }
+.cc-grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 40px; align-items: start; }
+.cc-bloco + .cc-bloco { margin-top: 48px; }
+.cc-bloco-cab { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.cc-bloco-cab .btn-borda { min-height: 42px; padding: 0 16px; }
+.cc-h { font-size: 24px; font-weight: 800; line-height: 1.2; letter-spacing: -0.015em; }
+.cc-lista { display: grid; gap: 16px; margin-top: 16px; }
+.cc-nada, .cc-nota { margin-top: 10px; color: var(--muted); }
+.cc-lado { display: grid; gap: 14px; }
+.cartao { padding: 22px; border-radius: 16px; background: var(--sand); }
+.cartao + .cartao { margin-top: 14px; }
+.cc-lado .cartao + .cartao { margin-top: 0; }
+.cartao h3 { font-size: 18px; font-weight: 750; line-height: 1.25; }
+.cartao > p { margin-top: 6px; color: var(--ink-2); }
+.cartao > .btn-borda { margin-top: 14px; min-height: 44px; padding: 0 16px; }
+.cartao > .link { display: inline-block; margin-top: 12px; }
+.cartao .cc-regras { display: block; }
+.vazio { margin-top: 16px; padding: 30px 24px; border-radius: 16px; border: 1.5px dashed var(--line); text-align: center; }
+.vazio b { display: block; font-size: 19px; }
+.vazio p { margin-top: 4px; color: var(--muted); }
+.vazio .btn-amarelo { margin-top: 16px; }
+.feitos { display: grid; margin-top: 10px; }
+.feitos li { display: grid; gap: 1px; padding: 10px 0; border-top: 1px solid #e3ddcf; }
+.feitos li:first-child { border-top: 0; padding-top: 2px; }
+.feitos span { color: var(--ink-2); font-size: 14.5px; }
+.feitos .ped-st { color: #8a5a00; font-weight: 600; font-size: 14px; }
+
+/* Ticket de cada reserva: canhoto azul com a data, como os ingressos de evento */
+.rsv { --stub: 108px; position: relative; display: grid; grid-template-columns: var(--stub) minmax(0, 1fr); background: var(--sand); border-radius: 16px; overflow: hidden; }
+.rsv::before, .rsv::after { content: ""; position: absolute; left: calc(var(--stub) - 12px); width: 22px; height: 22px; border-radius: 50%; background: var(--ground); }
+.rsv::before { top: -11px; }
+.rsv::after { bottom: -11px; }
+.rsv-data {
+  display: grid; align-content: center; justify-items: center; gap: 3px; padding: 18px 6px;
+  background: var(--navy); color: #fff; border-right: 3px dotted var(--ground); text-align: center; line-height: 1.1;
+}
+.rsv-data span { font-size: 13px; font-weight: 600; color: var(--on-navy); text-transform: uppercase; letter-spacing: 0.06em; }
+.rsv-data b { font-size: 36px; font-weight: 800; color: var(--yellow); letter-spacing: -0.02em; }
+.rsv-data small { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.18); font-size: 15px; font-weight: 700; }
+.rsv-corpo { min-width: 0; padding: 18px 22px 20px; }
+.rsv-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px 16px; flex-wrap: wrap; }
+.rsv-quando { font-size: 16px; font-weight: 600; color: var(--ink-2); }
+.rsv h3 { font-size: 21px; font-weight: 750; line-height: 1.2; letter-spacing: -0.01em; }
+.rsv-sub { margin-top: 2px; font-size: 16px; color: var(--ink-2); }
+.rsv-estado { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; color: var(--navy); white-space: nowrap; }
+.rsv-estado i { width: 9px; height: 9px; border-radius: 50%; background: var(--yellow-press); }
+.rsv-estado.pago i { background: #2e8b57; }
+.rsv-valores { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 28px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #e3ddcf; }
+.rsv-valores div { display: grid; }
+.rsv-valores dt { font-size: 13.5px; color: var(--muted); }
+.rsv-valores dd { font-size: 17px; font-weight: 700; }
+.rsv-arena { padding: 6px 12px; border-radius: 10px; background: #fdf3d6; border: 1px solid #f0d58b; }
+.rsv-valores .rsv-arena dt { color: #6e4d00; }
+.rsv-vagas { display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin-top: 14px; padding: 10px 10px 10px 14px; border-radius: 12px; background: #fff; }
+.rsv-vagas p { display: flex; align-items: center; gap: 10px; }
+.rsv-vagas .ico { color: var(--navy); }
+.rsv-vagas .btn-borda { min-height: 40px; padding: 0 14px; font-size: 14.5px; }
+.rsv-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 16px; }
+.rsv-acoes .btn-navy, .rsv-acoes .btn-borda { min-height: 44px; padding: 0 16px; }
+.rsv-acoes .link-perigo { margin-left: auto; }
+
+/* Histórico (reservas e carimbos) */
+.hist { display: grid; margin-top: 14px; border-top: 1px solid #e6e1d6; }
+.hist li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 22px; align-items: center; padding: 14px 2px; border-bottom: 1px solid #e6e1d6; }
+.hist b { display: block; font-weight: 650; }
+.hist .sub { display: block; font-size: 14.5px; color: var(--muted); }
+.hist-st { font-size: 14px; font-weight: 600; color: var(--muted); }
+.hist-st.cancelada { color: var(--red); }
+.hist-v { font-weight: 600; }
+.hist .link { font-size: 14.5px; }
+.hist-clube li { grid-template-columns: minmax(0, 1fr) auto; }
+
+/* Aba Clube */
+.cc-clube { display: grid; grid-template-columns: minmax(0, 460px) minmax(0, 1fr); gap: 40px 56px; align-items: start; }
+.cupons { display: grid; gap: 10px; margin-top: 14px; }
+.cupom { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 6px 16px; align-items: center; padding: 16px 18px; border-radius: 14px; border: 2px dashed var(--yellow-press); background: #fdf3d6; }
+.cupom-h { grid-row: span 2; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; background: var(--navy); color: var(--yellow); font-size: 22px; }
+.cupom div b { display: block; font-size: 18px; }
+.cupom div span { color: var(--ink-2); font-size: 15px; }
+.cupom-cod { font-size: 14.5px; color: var(--muted); }
+.cupom code { padding: 2px 8px; border-radius: 6px; background: #fff; color: var(--ink); font: 700 14.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.04em; }
+.cc-como { display: inline-block; margin-top: 16px; }
+
+/* Aba Meus dados */
+.cc-dados { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px 24px; align-items: start; }
+.dl-dados { margin-top: 10px; }
+.dl-dados div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-top: 1px solid #e3ddcf; }
+.dl-dados dt { color: var(--muted); }
+.dl-dados dd { font-weight: 600; overflow-wrap: anywhere; }
+.dl-dados small { font-weight: 400; color: var(--muted); font-size: 14px; }
+.form-acoes { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.form-acoes .btn-borda, .form-acoes .btn-amarelo { min-height: 44px; padding: 0 18px; }
+.cartao .campo input { background: #fff; }
+
+/* Visitante abrindo Minha conta */
+.conta-fechada { padding: 72px 0 96px; }
+.cf-card { max-width: 520px; margin-inline: auto; padding: 36px 32px; border-radius: 18px; background: var(--sand); text-align: center; }
+.cf-card h1 { font-size: clamp(30px, 3.2vw, 40px); font-weight: 800; letter-spacing: -0.025em; line-height: 1.1; }
+.cf-card p { margin-top: 8px; color: var(--ink-2); }
+.cf-acoes { display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin: 22px 0 18px; }
+
+/* Rodapé: link para a plataforma */
+.rp-plataforma { color: #fff; text-decoration: none; }
+.rp-plataforma:hover { text-decoration: underline; }
+.rp-plataforma b { color: var(--yellow); }
+
+@media (max-width: 1119px) {
+  .cc-grid { grid-template-columns: minmax(0, 1fr); }
+  .cc-lado { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+}
+@media (max-width: 960px) {
+  .cc-clube { grid-template-columns: minmax(0, 1fr); }
+  .cc-clube > .cartela { max-width: 480px; }
+}
+@media (max-width: 760px) {
+  .au-van, .au-cartela { display: none; }
+  .au-curto { display: block; }
+  .au-tit { margin-top: 14px; font-size: 18px; }
+  .au-abas { margin-right: 0; }
+  .dlg { width: 100%; max-width: 100%; max-height: 92dvh; margin: auto 0 0; border-radius: 18px 18px 0 0; }
+  .dlg-corpo { padding: 18px 16px 24px; }
+  .ped { grid-template-columns: 40px minmax(0, 1fr); }
+  .ped-acoes { grid-column: 2; }
+  .conta-cab { padding-top: 20px; }
+  .avatar-xl { width: 52px; height: 52px; font-size: 22px; }
+  .cc-resumo { width: 100%; }
+  .cc-resumo li { flex: 1 1 140px; }
+  .conta-corpo { padding: 28px 0 64px; }
+  .cc-h { font-size: 21px; }
+  .rsv { --stub: 76px; }
+  .rsv-data { padding: 14px 4px; }
+  .rsv-data b { font-size: 28px; }
+  .rsv-data span { font-size: 12px; }
+  .rsv-data small { font-size: 13.5px; }
+  .rsv-corpo { padding: 14px 14px 16px; }
+  .rsv h3 { font-size: 18px; }
+  .rsv-valores { gap: 8px 18px; }
+  .rsv-vagas .btn-borda { width: 100%; }
+  .rsv-acoes > * { flex: 1 1 100%; }
+  .rsv-acoes .link-perigo { margin-left: 0; text-align: center; padding: 6px 0; }
+  .abas { gap: 0; }
+  .abas button { flex: 1 1 auto; justify-content: center; padding: 12px 8px 10px; }
+  .abas .ico { display: none; }
+  .hist li { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "info valor" "estado valor"; gap: 6px 16px; }
+  .hist li > div { grid-area: info; }
+  .hist .hist-v { grid-area: valor; align-self: start; text-align: right; }
+  .hist .hist-st { grid-area: estado; }
+  .hist-clube li { grid-template-areas: none; }
+  .hist-clube li > div { grid-area: auto; }
+  .cc-dados { grid-template-columns: minmax(0, 1fr); }
+  .dl-dados div { grid-template-columns: 104px minmax(0, 1fr); }
+  .cf-card { padding: 28px 20px; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<symbol id="i-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-graduation-cap" viewBox="0 0 24 24"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></symbol>
+<symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol>
+<symbol id="i-map-pin" viewBox="0 0 24 24"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
+<symbol id="i-navigation" viewBox="0 0 24 24"><polygon points="3 11 22 2 13 21 11 13 3 11"/></symbol>
+<symbol id="i-message-circle" viewBox="0 0 24 24"><path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="i-calendar-plus" viewBox="0 0 24 24"><path d="M16 18h6"/><path d="M16 2v3"/><path d="M19 15v6"/><path d="M21 11.5V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h8.3"/><path d="M3 9h18"/><path d="M8 2v3"/></symbol>
+<symbol id="i-log-out" viewBox="0 0 24 24"><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+<symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></symbol>
+<symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+<symbol id="i-instagram" viewBox="0 0 24 24"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><path d="M17.5 6.5h.01"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3" fill="currentColor"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol>
+<symbol id="i-file-text" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></symbol>
+<symbol id="i-gift" viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/></symbol>
+</svg>
+
+<div class="proto" role="region" aria-label="Controles do protótipo">
+  <div class="wrap proto-in">
+    <p><b>Protótipo</b><span> · dados de exemplo, nada é cobrado</span></p>
+    <div class="proto-modos" role="group" aria-label="Ver a página como">
+      <button type="button" data-modo="visitante" aria-pressed="true">Visitante</button>
+      <button type="button" data-modo="logado" aria-pressed="false">Cliente logado</button>
+    </div>
+  </div>
+</div>
+
+<header class="topo" id="topo" data-rolado="false">
+  <div class="wrap topo-in">
+    <a class="marca" href="#reservar" aria-label="Arena Belém, voltar ao início">
+      <img src="/preview-redesign/real/logo.png" alt="" width="388" height="374">
+      <b>Arena Belém</b>
+    </a>
+    <nav class="nav" aria-label="Seções da página">
+      <a href="#reservar">Reservar</a>
+      <a href="#escolinhas">Escolinhas</a>
+      <a href="#eventos">Campeonatos</a>
+      <a href="#estrutura">Estrutura</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <div class="conta">
+      <div class="conta-vis" data-so="visitante">
+        <button type="button" class="entrar" data-acao="entrar">Entrar</button>
+        <button type="button" class="criar" data-acao="criar">Criar conta</button>
+      </div>
+      <div class="conta-log" data-so="logado" hidden>
+        <a class="minhas" href="#minha-conta"><svg class="ico" aria-hidden="true"><use href="#i-ticket"/></svg><span>Minhas reservas</span></a>
+        <button type="button" class="perfil" data-acao="perfil" aria-expanded="false" aria-controls="menu-perfil" aria-label="Abrir menu da conta de Rafael">
+          <span class="avatar" aria-hidden="true">R</span><span class="perfil-nome">Rafael</span><svg class="ico" aria-hidden="true"><use href="#i-chevron-down"/></svg>
+        </button>
+        <div class="menu-perfil" id="menu-perfil" hidden>
+          <div class="mp-quem"><span class="avatar avatar-g" id="mp-avatar" aria-hidden="true">R</span><div><b id="mp-nome">Rafael Souza</b><span class="num" id="mp-whats">(91) 99876-5432</span></div></div>
+          <div class="mp-clube" id="mp-clube"></div>
+          <nav class="mp-links" aria-label="Sua conta">
+            <a href="#minha-conta"><svg class="ico" aria-hidden="true"><use href="#i-ticket"/></svg>Minhas reservas<span class="mp-cont" id="mp-prox"></span></a>
+            <a href="#minha-conta/clube"><svg class="ico" aria-hidden="true"><use href="#i-gift"/></svg>Meu Clube</a>
+            <a href="#minha-conta/dados"><svg class="ico" aria-hidden="true"><use href="#i-user"/></svg>Meus dados</a>
+            <button type="button" data-acao="sair"><svg class="ico" aria-hidden="true"><use href="#i-log-out"/></svg>Sair</button>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="burger" data-acao="menu" aria-expanded="false" aria-controls="menu-mobile" aria-label="Abrir menu">
+      <svg class="ico" aria-hidden="true"><use href="#i-menu"/></svg>
+    </button>
+  </div>
+  <div class="menu-mobile" id="menu-mobile" hidden>
+    <nav class="wrap mm-nav" aria-label="Seções da página no celular">
+      <a href="#reservar">Reservar</a>
+      <a href="#escolinhas">Escolinhas</a>
+      <a href="#eventos">Campeonatos</a>
+      <a href="#estrutura">Estrutura</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <div class="wrap mm-conta" data-so="visitante">
+      <button type="button" class="btn-amarelo" data-acao="criar">Criar conta</button>
+      <button type="button" class="btn-borda-claro" data-acao="entrar">Entrar</button>
+    </div>
+    <div class="wrap mm-conta" data-so="logado" hidden>
+      <a class="btn-borda-claro" href="#minha-conta">Minhas reservas</a>
+    </div>
+  </div>
+</header>
+
+<main id="portal">
+  <section class="reservar" id="reservar" aria-labelledby="titulo-reserva">
+    <div class="wrap">
+      <div class="r-intro">
+        <h1 id="titulo-reserva">Reserve sua quadra</h1>
+        <p>Três quadras de areia e um campo society no Jurunas. Escolha o dia, toque nos horários livres e pague o sinal no Pix.</p>
+      </div>
+
+      <div class="r-grid">
+        <div class="r-main">
+          <div class="datas">
+            <button type="button" class="seta" data-dir="-1" aria-label="Dias anteriores" disabled><svg class="ico" aria-hidden="true"><use href="#i-chevron-left"/></svg></button>
+            <div class="trilho" id="trilho" role="group" aria-label="Escolha o dia"></div>
+            <button type="button" class="seta" data-dir="1" aria-label="Próximos dias"><svg class="ico" aria-hidden="true"><use href="#i-chevron-right"/></svg></button>
+          </div>
+
+          <div class="dia-linha">
+            <div>
+              <h2 id="dia-titulo">Hoje</h2>
+              <p class="dia-nota" id="dia-nota" hidden></p>
+            </div>
+            <ul class="legenda" aria-label="Legenda dos horários">
+              <li><i class="lg-livre"></i>Livre</li>
+              <li><i class="lg-sel"></i>Selecionado</li>
+              <li><i class="lg-ocup"></i>Ocupado</li>
+              <li><i class="lg-aula"></i>Aula</li>
+            </ul>
+          </div>
+
+          <div class="quadras" id="quadras"></div>
+        </div>
+
+        <aside class="r-ticket" aria-label="Seu ticket">
+          <div class="ticket" id="ticket" aria-live="polite"></div>
+          <p class="t-obs"><b>Cancelamento:</b> com mais de 24 horas de antecedência, você recebe o sinal de volta no Pix.</p>
+          <p class="t-obs"><b>Clube Arena Belém:</b> a cada 10 horas reservadas com a sua conta, você ganha 1 hora grátis. <a class="link" href="#clube">Como funciona</a></p>
+          <p class="t-obs"><a class="link" href="/preview-portal-regras.html">Regras da arena e dúvidas</a></p>
+          <details class="mural-box" id="partidas">
+            <summary><svg class="ico" aria-hidden="true"><use href="#i-users"/></svg><span>Partidas procurando jogadores</span><svg class="ico seta-d" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+            <p class="mural-sub">Peça para entrar e o organizador confirma com você pelo WhatsApp.</p>
+            <ul class="mural" id="mural"></ul>
+          </details>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="secao escolinhas" id="escolinhas" aria-labelledby="esc-titulo">
+    <div class="wrap esc-grid">
+      <div>
+        <div class="sec-topo">
+          <h2 id="esc-titulo">Escolinhas</h2>
+          <p>Aulas na areia e no society, com turmas por nível e idade. Para entrar numa turma, fale com a arena no WhatsApp.</p>
+        </div>
+        <article class="esc" id="esc-beach" aria-labelledby="esc-beach-t">
+          <div class="esc-cab"><img class="esc-rosto" src="/preview-redesign/real/prof-beach.png" alt="" width="220" height="275" loading="lazy"><h3 id="esc-beach-t">Beach tennis</h3><p class="esc-prof">Prof. Italo Bianck</p><p class="esc-desc">Do primeiro saque ao jogo competitivo. Turmas pequenas, com raquete e bolas da arena para quem está começando.</p></div>
+          <a class="btn-amarelo esc-cta" data-whats="Olá! Vim pelo site e quero uma vaga no beach tennis com o Prof. Italo Bianck. Pode me passar os valores e as vagas das turmas?" target="_blank" rel="noopener">Quero uma vaga</a>
+          <dl class="turmas"><div class="turma"><dt>Seg e Qua</dt><dd class="horas">16h</dd><dd class="nivel">Avançado</dd></div><div class="turma"><dt>Ter e Qui</dt><dd class="horas">7h e 8h</dd><dd class="nivel">Iniciante</dd></div><div class="turma"><dt>Ter e Qui</dt><dd class="horas">19h</dd><dd class="nivel">Intermediário</dd></div></dl>
+        </article>
+
+        <article class="esc" id="esc-futevolei" aria-labelledby="esc-futevolei-t">
+          <div class="esc-cab"><img class="esc-rosto" src="/preview-redesign/real/prof-futevolei.png" alt="" width="220" height="275" loading="lazy"><h3 id="esc-futevolei-t">Futevôlei</h3><p class="esc-prof">Prof. Diego Moraes</p><p class="esc-desc">Fundamentos, dupla e leitura de jogo. A turma juvenil é para quem tem de 12 a 17 anos.</p></div>
+          <a class="btn-amarelo esc-cta" data-whats="Olá! Vim pelo site e quero uma vaga no futevôlei com o Prof. Diego Moraes. Pode me passar os valores e as vagas das turmas?" target="_blank" rel="noopener">Quero uma vaga</a>
+          <dl class="turmas"><div class="turma"><dt>Seg e Qua</dt><dd class="horas">17h e 18h</dd><dd class="nivel">Livre</dd></div><div class="turma"><dt>Ter e Qui</dt><dd class="horas">17h</dd><dd class="nivel">Juvenil</dd></div><div class="turma"><dt>Ter e Qui</dt><dd class="horas">18h e 19h</dd><dd class="nivel">Livre</dd></div><div class="turma"><dt>Sex</dt><dd class="horas">17h, 18h e 19h</dd><dd class="nivel">Livre</dd></div></dl>
+        </article>
+
+        <article class="esc" id="esc-volei" aria-labelledby="esc-volei-t">
+          <div class="esc-cab"><img class="esc-rosto" src="/preview-redesign/real/prof-volei.png" alt="" width="220" height="275" loading="lazy"><h3 id="esc-volei-t">Vôlei</h3><p class="esc-prof">Prof. Lucas Andrade</p><p class="esc-desc">Toque, manchete e saque na areia, em duplas e quartetos. Aos sábados, a turma é aberta a todos os níveis.</p></div>
+          <a class="btn-amarelo esc-cta" data-whats="Olá! Vim pelo site e quero uma vaga no vôlei com o Prof. Lucas Andrade. Pode me passar os valores e as vagas das turmas?" target="_blank" rel="noopener">Quero uma vaga</a>
+          <dl class="turmas"><div class="turma"><dt>Sábado</dt><dd class="horas">9h, 10h e 11h</dd><dd class="nivel">Livre</dd></div><div class="turma"><dt>Seg e Qua</dt><dd class="horas">19h</dd><dd class="nivel">Iniciante</dd></div><div class="turma"><dt>Ter e Qui</dt><dd class="horas">20h</dd><dd class="nivel">Intermediário</dd></div></dl>
+        </article>
+
+        <article class="esc" id="esc-falcao" aria-labelledby="esc-falcao-t">
+          <div class="esc-cab"><img class="esc-rosto" src="/preview-redesign/real/prof-falcao.png" alt="" width="220" height="275" loading="lazy"><h3 id="esc-falcao-t">CT Falcão 12</h3><p class="esc-prof">Prof. Marcos Falcão</p><p class="esc-desc">Futebol society para crianças e adolescentes: técnica, posicionamento e jogo coletivo, com treinos separados por idade e amistosos ao longo do ano.</p></div>
+          <a class="btn-amarelo esc-cta" data-whats="Olá! Vim pelo site e quero uma vaga no CT Falcão 12 com o Prof. Marcos Falcão. Pode me passar os valores e as vagas das turmas?" target="_blank" rel="noopener">Quero uma vaga</a>
+          <dl class="turmas"><div class="turma"><dt>Ter e Qui</dt><dd class="horas">8h e 9h</dd><dd class="nivel">6 a 10 anos</dd></div><div class="turma"><dt>Ter e Qui</dt><dd class="horas">16h</dd><dd class="nivel">11 a 14 anos</dd></div><div class="turma"><dt>Sábado</dt><dd class="horas">8h</dd><dd class="nivel">Todas as idades</dd></div></dl>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao eventos" id="eventos" aria-labelledby="ev-titulo">
+    <div class="wrap">
+      <div class="sec-topo">
+        <h2 id="ev-titulo">Campeonatos e eventos</h2>
+        <p>Torneios para todos os níveis e encontros para a galera da arena. Para assistir, a entrada é livre.</p>
+      </div>
+
+      <article class="ev-agora" aria-labelledby="ev-agora-t">
+        <div>
+          <p class="ev-vivo"><i aria-hidden="true"></i>Rolando agora</p>
+          <h3 id="ev-agora-t">Copa de Outubro de Beach Tennis</h3>
+          <p class="ev-agora-txt">Duplas mistas, categoria C. As semifinais e a final são neste sábado, 31 de outubro, na Areia 3. Vem torcer!</p>
+          <a class="btn-borda-claro" href="https://www.instagram.com/arenabelem/" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-instagram"/></svg>Placar ao vivo nos stories</a>
+        </div>
+        <div class="chave" role="group" aria-label="Chave da copa: semifinais e final">
+          <div class="ch-col">
+            <p class="ch-rot">Semifinais · sábado, 31/10</p>
+            <div class="ch-jogo"><p class="ch-hora num">15h</p><ul><li>Ana Beatriz e Pedro Henrique</li><li>Camila Rocha e Thiago Barros</li></ul></div>
+            <div class="ch-jogo"><p class="ch-hora num">16h</p><ul><li>Larissa Santos e Gustavo Melo</li><li>Fernanda Alves e Marcelo Dias</li></ul></div>
+          </div>
+          <div class="ch-col ch-final">
+            <p class="ch-rot">Final · sábado, 31/10</p>
+            <div class="ch-jogo"><p class="ch-hora num">18h</p><ul><li>Vencedores da semi das 15h</li><li>Vencedores da semi das 16h</li></ul></div>
+          </div>
+        </div>
+      </article>
+
+      <div class="sub-topo">
+        <h3>Inscrições abertas</h3>
+        
+      </div>
+      <ul class="ev-lista">
+        <li class="ev">
+          <p class="ev-data"><span>Sáb</span><b class="num">21</b><span>Nov</span></p>
+          <div class="ev-corpo">
+            <h4>Open de Beach Tennis Arena Belém</h4>
+            <p class="ev-tipo">Beach tennis · duplas · categorias D, C e iniciante</p>
+            <dl class="ev-dados">
+              <div><dt>Quando</dt><dd>21 e 22 de novembro</dd></div>
+              <div><dt>Inscrição</dt><dd class="num">R$ 120 por dupla</dd></div>
+              <div><dt>Vagas</dt><dd class="num">até 32 duplas</dd></div>
+              <div><dt>Prazo</dt><dd class="num">até 17/11</dd></div>
+            </dl>
+          </div>
+          <div class="ev-acao">
+            <a class="btn-amarelo" href="#" data-prototipo="Formulário de inscrição do Open">Inscrever-se</a>
+          </div>
+        </li>
+        <li class="ev">
+          <p class="ev-data"><span>Sáb</span><b class="num">5</b><span>Dez</span></p>
+          <div class="ev-corpo">
+            <h4>Rei e Rainha do Futevôlei</h4>
+            <p class="ev-tipo">Futevôlei · individual: a dupla muda a cada jogo · masculino e feminino</p>
+            <dl class="ev-dados">
+              <div><dt>Inscrição</dt><dd class="num">R$ 60 por atleta</dd></div>
+              <div><dt>Vagas</dt><dd class="num">até 24 atletas</dd></div>
+              <div><dt>Prazo</dt><dd class="num">até 1/12</dd></div>
+            </dl>
+          </div>
+          <div class="ev-acao">
+            <a class="btn-amarelo" data-whats="Olá! Vim pelo site e quero me inscrever no Rei e Rainha do Futevôlei, dia 5/12. Como faço?" target="_blank" rel="noopener">Inscrever-se</a>
+          </div>
+        </li>
+        <li class="ev">
+          <p class="ev-data"><span>Sex</span><b class="num">18</b><span>Dez</span></p>
+          <div class="ev-corpo">
+            <h4>Resenha de fim de ano</h4>
+            <p class="ev-tipo">Encontro de alunos, clientes e convidados</p>
+            <dl class="ev-dados">
+              <div><dt>Horário</dt><dd class="num">a partir das 19h</dd></div>
+              <div><dt>Entrada</dt><dd>1 kg de alimento não perecível</dd></div>
+            </dl>
+          </div>
+          <div class="ev-acao">
+            <a class="btn-borda" data-whats="Olá! Vim pelo site e quero confirmar presença na Resenha de fim de ano, dia 18/12." target="_blank" rel="noopener">Confirmar presença</a>
+          </div>
+        </li>
+      </ul>
+
+      <div class="sub-topo">
+        <h3>Já aconteceu</h3>
+        <a class="link" href="https://www.instagram.com/arenabelem/" target="_blank" rel="noopener">Mais fotos no Instagram</a>
+      </div>
+      <ul class="ev-passados">
+        <li class="ev-p">
+          <img src="/preview-redesign/real/society.jpg" alt="Campo society de grama sintética, onde foi a final" width="680" height="510" loading="lazy">
+          <p class="ev-p-quando">27 de setembro · Futebol society</p>
+          <h4>Copa Society de Setembro</h4>
+          <dl>
+            <div><dt><svg class="ico" aria-hidden="true"><use href="#i-trophy"/></svg>Campeão</dt><dd>Resenha FC</dd></div>
+            <div><dt>Final</dt><dd class="num">4 × 2 contra Amigos do Jurunas</dd></div>
+          </dl>
+        </li>
+        <li class="ev-p">
+          <img src="/preview-redesign/real/areia-lounge.jpg" alt="Quadra de areia coberta, com o deck de mesas ao lado" width="680" height="510" loading="lazy" style="object-position: 70% 50%">
+          <p class="ev-p-quando">9 de agosto · Futevôlei</p>
+          <h4>Torneio do Dia dos Pais</h4>
+          <dl>
+            <div><dt><svg class="ico" aria-hidden="true"><use href="#i-trophy"/></svg>Campeões</dt><dd>Diego Pinheiro e Lucas Moraes</dd></div>
+            <div><dt>Final</dt><dd class="num">18 × 15</dd></div>
+          </dl>
+        </li>
+        <li class="ev-p">
+          <img src="/preview-redesign/real/society-bar.jpg" alt="Bar da arena enfeitado com bandeirinhas, de frente para o campo" width="680" height="510" loading="lazy">
+          <p class="ev-p-quando">27 de junho · Beach tennis</p>
+          <h4>Arraiá do Beach Tennis</h4>
+          <dl>
+            <div><dt><svg class="ico" aria-hidden="true"><use href="#i-trophy"/></svg>Campeãs</dt><dd>Juliana Costa e Vanessa Cruz</dd></div>
+            <div><dt>Final</dt><dd class="num">6/3, categoria D</dd></div>
+          </dl>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="secao clube" id="clube" aria-labelledby="cl-titulo">
+    <div class="wrap cl-grid">
+      <div>
+        <div class="sec-topo">
+          <h2 id="cl-titulo">Clube Arena Belém</h2>
+          <p>Quem joga sempre, joga de graça. Cada hora reservada com a sua conta vira um carimbo na cartela.</p>
+        </div>
+        <ol class="cl-passos">
+          <li><div><b>Reserve com a sua conta</b><p>Cada hora reservada vale um carimbo, em qualquer quadra e em qualquer horário.</p></div></li>
+          <li><div><b>Junte 10 carimbos</b><p>Cada carimbo vale por 3 meses, contados a partir do dia do jogo.</p></div></li>
+          <li><div><b>Ganhe 1 hora grátis</b><p>A hora grátis aparece no seu ticket na próxima reserva. Vale por 60 dias, até R$ 100.</p></div></li>
+        </ol>
+      </div>
+      <div class="cartela" id="cartela" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="secao estrutura" id="estrutura" aria-labelledby="estrutura-titulo">
+    <div class="wrap">
+      <div class="sec-topo">
+        <h2 id="estrutura-titulo">Estrutura</h2>
+        <p>Areia tratada, campo de grama sintética, iluminação de LED e um bar para a resenha depois do jogo.</p>
+      </div>
+      <div class="bento">
+        <figure class="foto f-a">
+          <img src="/preview-redesign/real/areia-lounge.jpg" alt="Quadra de areia com deck de grama sintética e mesas de madeira ao lado" width="680" height="510" loading="lazy">
+          <figcaption>Deck com mesas ao lado da areia</figcaption>
+        </figure>
+        <figure class="foto f-b">
+          <img src="/preview-redesign/real/bar-corredor.jpg" alt="Corredor do bar da arena" width="382" height="510" loading="lazy">
+          <figcaption>Bar da arena</figcaption>
+        </figure>
+        <figure class="foto f-c">
+          <img src="/preview-redesign/real/society-bar.jpg" alt="Campo society visto do mezanino do bar" width="680" height="510" loading="lazy">
+          <figcaption>O society visto do bar</figcaption>
+        </figure>
+        <figure class="foto f-d">
+          <img src="/preview-redesign/real/society.jpg" alt="Campo society de grama sintética dentro do galpão" width="680" height="510" loading="lazy">
+          <figcaption>Campo society</figcaption>
+        </figure>
+        <div class="na-arena">
+          <h3>Na arena</h3>
+          <ul>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>3 quadras de areia</b> tratada</span></li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>Campo society</b> de grama sintética</span></li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>Iluminação de LED</b> para jogar à noite</span></li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>Bar</b> com bebida gelada e jogo na TV</span></li>
+            <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg><span><b>Duchas</b> e vestiários</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="secao instagram" id="instagram" aria-labelledby="ig-titulo">
+    <div class="wrap">
+      <div class="ig-cab">
+        <a class="ig-avatar" href="https://www.instagram.com/arenabelem/" target="_blank" rel="noopener" tabindex="-1" aria-hidden="true"><img src="/preview-redesign/real/logo.png" alt="" width="388" height="374" loading="lazy"></a>
+        <div class="ig-quem">
+          <h2 id="ig-titulo">@arenabelem</h2>
+          <p class="num">Arena Belém no Instagram · 312 posts · 4.120 seguidores <small>(simulado)</small></p>
+        </div>
+        <a class="btn-navy" href="https://www.instagram.com/arenabelem/" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-instagram"/></svg>Seguir no Instagram</a>
+      </div>
+      <ul class="ig-grade" id="ig-posts"></ul>
+    </div>
+  </section>
+
+  <section class="secao contato" id="contato" aria-labelledby="ct-titulo">
+    <div class="wrap ct-grid">
+      <div class="ct-mapa">
+        <img src="/preview-redesign/img/mapa-jurunas.jpg" alt="Mapa do Jurunas com a Arena Belém na Avenida Roberto Camelier" width="1200" height="720" loading="lazy">
+        <span class="pino" aria-hidden="true"><svg class="ico"><use href="#i-map-pin"/></svg></span>
+        <span class="pino-nome" aria-hidden="true">Arena Belém</span>
+      </div>
+      <div class="ct-info">
+        <h2 id="ct-titulo">Como chegar</h2>
+        <p class="ct-end">Av. Roberto Camelier, 580 · Jurunas<br>Esquina com a Rua dos Caripunas<br>Belém, PA · 66033-420</p>
+        <div class="ct-acoes">
+          <a class="btn-navy" href="https://www.google.com/maps/place/Arena+Bel%C3%A9m/@-1.4663397,-48.4906044,17z/data=!4m6!3m5!1s0x92a48f48ea496ed7:0x16dca8251ba0b465!8m2!3d-1.4663397!4d-48.4906044" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-map-pin"/></svg>Abrir no Google Maps</a>
+          <a class="btn-borda" href="https://waze.com/ul?ll=-1.4663397,-48.4906044&amp;navigate=yes" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-navigation"/></svg>Ir com o Waze</a>
+          <!-- Quando o Place ID (ChIJ...) for descoberto, trocar por https://search.google.com/local/writereview?placeid=PLACE_ID -->
+          <a class="btn-borda" href="https://www.google.com/maps/place/Arena+Bel%C3%A9m/@-1.4663397,-48.4906044,17z/data=!4m6!3m5!1s0x92a48f48ea496ed7:0x16dca8251ba0b465!8m2!3d-1.4663397!4d-48.4906044" target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-star"/></svg>Avaliar no Google</a>
+        </div>
+        <dl class="ct-dados">
+          <div><dt>Funcionamento</dt><dd>Todos os dias, das 7h às 23h</dd></div>
+          <div><dt>WhatsApp</dt><dd><a href="https://wa.me/5591984982865" target="_blank" rel="noopener">(91) 98498-2865</a></dd></div>
+          <div><dt>Pagamento</dt><dd>Sinal de 50% no Pix ao reservar. O restante na arena.</dd></div>
+        </dl>
+        <details class="ct-politica">
+          <summary>Política de cancelamento</summary>
+          <p id="politica-texto"></p>
+        </details>
+        <a class="btn-amarelo ct-whats" data-whats="Olá! Vim pelo site da Arena Belém." target="_blank" rel="noopener"><svg class="ico" aria-hidden="true"><use href="#i-message-circle"/></svg>Chamar no WhatsApp</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<main class="mc" id="conta" aria-labelledby="cc-titulo" hidden></main>
+
+<footer class="rodape">
+  <div class="wrap rp-topo">
+    <a class="rp-marca" href="#reservar">
+      <img src="/preview-redesign/real/logo.png" alt="" width="388" height="374">
+      <span><b>Arena Belém</b><span>Av. Roberto Camelier, 580 · Jurunas · Belém/PA</span></span>
+    </a>
+    <nav class="rp-nav" aria-label="Rodapé">
+      <p class="rp-tit">Na página</p>
+      <a href="#reservar">Reservar</a>
+      <a href="#escolinhas">Escolinhas</a>
+      <a href="#eventos">Campeonatos</a>
+      <a href="#estrutura">Estrutura</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <nav class="rp-nav" aria-label="Ajuda">
+      <p class="rp-tit">Ajuda</p>
+      <a class="btn-borda-claro rp-regras" href="/preview-portal-regras.html"><svg class="ico" aria-hidden="true"><use href="#i-file-text"/></svg>Regras e dúvidas</a>
+      <a href="/preview-portal-regras.html#cancelamento">Cancelamento e chuva</a>
+      <a href="/preview-portal-regras.html#perguntas">Perguntas frequentes</a>
+    </nav>
+    <div class="rp-contato">
+      <p class="rp-tit">Contato</p>
+      <a href="https://wa.me/5591984982865" target="_blank" rel="noopener">WhatsApp (91) 98498-2865</a>
+      <a href="https://www.instagram.com/arenabelem/" target="_blank" rel="noopener">Instagram @arenabelem</a>
+      <span>Todos os dias, das 7h às 23h</span>
+    </div>
+  </div>
+  <div class="wrap rp-base">
+    <span>© 2026 Arena Belém</span>
+    <span><a class="rp-plataforma" href="https://dsai-ap1-reservei-jykz9j1rz-leo-gr-ibeiro.vercel.app/para-arenas" target="_blank" rel="noopener">Reservas online com <b>MarcArena</b> · tenha um site assim na sua arena</a> · Mapa © colaboradores do OpenStreetMap</span>
+  </div>
+</footer>
+
+<div class="barra" id="barra" hidden>
+  <div class="barra-txt" id="barra-txt"></div>
+  <button type="button" class="btn-amarelo" data-acao="checkout">Continuar</button>
+</div>
+<button type="button" class="subir" id="subir" data-acao="subir" aria-label="Voltar ao topo" hidden><svg class="ico" aria-hidden="true"><use href="#i-arrow-up"/></svg></button>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<dialog class="ck" id="ck" aria-labelledby="ck-titulo" data-lenis-prevent>
+  <div class="ck-ticket" id="ck-ticket">
+    <section class="ck-resumo" id="ck-resumo" aria-label="Resumo da reserva"></section>
+    <div class="ck-stub">
+      <button type="button" class="ck-fechar" data-acao="fechar" aria-label="Fechar"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
+      <form class="ck-etapa" id="ck-dados" data-etapa="dados" novalidate></form>
+      <div class="ck-etapa" id="ck-pix" data-etapa="pix" hidden></div>
+      <div class="ck-etapa" id="ck-ok" data-etapa="ok" hidden></div>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="ck au" id="auth" aria-labelledby="auth-titulo" data-lenis-prevent>
+  <div class="ck-ticket">
+    <section class="ck-resumo" id="au-lado" aria-label="Vantagens da conta"></section>
+    <div class="ck-stub">
+      <button type="button" class="ck-fechar" data-acao="fechar-auth" aria-label="Fechar"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
+      <div class="au-abas" id="au-abas" role="tablist" aria-label="Entrar ou criar conta">
+        <button type="button" role="tab" data-au="entrar" aria-selected="true">Entrar</button>
+        <button type="button" role="tab" data-au="criar" aria-selected="false">Criar conta</button>
+      </div>
+      <form id="au-form" novalidate></form>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="dlg" id="dlg" aria-labelledby="dlg-titulo" data-lenis-prevent>
+  <div class="dlg-topo">
+    <div><h2 id="dlg-titulo" tabindex="-1"></h2><span id="dlg-sub"></span></div>
+    <button type="button" class="dlg-fechar" data-acao="fechar-dlg" aria-label="Fechar"><svg class="ico" aria-hidden="true"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="dlg-corpo" id="dlg-corpo"></div>
+</dialog>
+
+<script src="/preview-lenis.min.js"></script>
+<script>
+(() => {
+  "use strict";
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => Array.from(el.querySelectorAll(s));
+
+  /* ── Dados de exemplo: seed da Arena Belém, sistema atual da arena e artes do Instagram ── */
+  const FOTOS = "/preview-redesign/real/";
+  const WHATS = "5591984982865";
+  const ANTECEDENCIA_MIN = 60;
+  // Hora real de Belém, em minutos desde a meia-noite: hoje só mostra o que ainda dá para reservar
+  const [horaBelem, minBelem] = new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Belem", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .format(new Date()).split(":").map(Number);
+  const AGORA_MIN = horaBelem * 60 + minBelem;
+  const TETO_VOUCHER = 100;
+  const POLITICA = "Cancelamentos com mais de 24 horas de antecedência: você recebe o sinal de volta no Pix. Com menos de 24 horas, o sinal não é devolvido. Em caso de chuva forte, a arena remarca sem custo.";
+  const PIX_CODE = "00020126580014BR.GOV.BCB.PIX0136demonstracao-reservei-arena-belem5204000053039865802BR5911ARENA BELEM6005BELEM6304DEMO";
+  const QR_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37" shape-rendering="crispEdges" aria-hidden="true"><path stroke="#131d47" d="M0 0.5h7m2 0h5m1 0h2m10 0h2m1 0h7M0 1.5h1m5 0h1m3 0h2m1 0h3m1 0h2m1 0h5m5 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h1m1 0h1m1 0h2m3 0h2m1 0h1m1 0h2m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h1m3 0h3m1 0h3m3 0h2m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h1m4 0h2m1 0h7m3 0h2m2 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m1 0h1m1 0h3m1 0h1m1 0h2m2 0h2m3 0h3m2 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h4m3 0h4m1 0h4m2 0h1M0 8.5h1m1 0h5m4 0h1m1 0h1m2 0h1m4 0h1m1 0h3m1 0h2m1 0h5M0 9.5h1m2 0h2m2 0h3m1 0h5m1 0h2m1 0h1m1 0h1m1 0h3m2 0h1m2 0h2m1 0h1M1 10.5h1m1 0h4m1 0h1m3 0h1m1 0h6m4 0h3m1 0h1m1 0h1m1 0h2m1 0h1M0 11.5h2m1 0h1m1 0h1m3 0h1m3 0h1m1 0h1m3 0h2m3 0h1m2 0h1m1 0h2m1 0h5M1 12.5h1m3 0h2m2 0h1m3 0h4m2 0h5m3 0h1m2 0h2m2 0h1M1 13.5h4m3 0h2m2 0h1m2 0h2m1 0h1m4 0h1m2 0h4m2 0h1m3 0h1M1 14.5h1m2 0h3m1 0h3m2 0h2m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m6 0h1m4 0h1M0 15.5h3m4 0h1m1 0h1m3 0h1m2 0h1m9 0h5m2 0h1M0 16.5h10m1 0h1m1 0h3m2 0h1m1 0h7m1 0h1m5 0h1M1 17.5h1m1 0h2m3 0h4m1 0h1m1 0h2m7 0h1m2 0h6m1 0h3M0 18.5h1m5 0h2m3 0h1m1 0h1m3 0h2m1 0h2m5 0h1m1 0h1m1 0h1m1 0h3M0 19.5h1m4 0h1m1 0h1m2 0h1m2 0h2m1 0h2m3 0h1m1 0h2m2 0h1m5 0h1m2 0h1M0 20.5h1m1 0h3m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1m2 0h1m2 0h2m5 0h1m3 0h1M2 21.5h3m2 0h3m1 0h1m2 0h5m2 0h1m5 0h2m1 0h2m3 0h2M0 22.5h2m2 0h3m1 0h1m1 0h1m1 0h1m1 0h4m2 0h2m1 0h1m1 0h3m4 0h1m1 0h2M0 23.5h1m1 0h1m2 0h1m2 0h8m1 0h2m2 0h4m2 0h3m3 0h2M1 24.5h2m3 0h1m1 0h1m6 0h2m2 0h1m1 0h1m5 0h4m5 0h1M0 25.5h1m4 0h1m1 0h2m1 0h1m2 0h1m1 0h1m1 0h2m1 0h3m2 0h1m1 0h2m1 0h4m2 0h1M0 26.5h1m2 0h2m1 0h1m1 0h1m1 0h1m2 0h1m1 0h5m4 0h1m1 0h1m1 0h3m2 0h1m1 0h1M0 27.5h1m1 0h2m1 0h1m1 0h2m2 0h1m1 0h1m1 0h1m1 0h1m1 0h2m2 0h3m1 0h1m2 0h3M0 28.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h3m2 0h3m1 0h1m2 0h10M8 29.5h2m3 0h3m3 0h1m2 0h1m2 0h1m2 0h1m3 0h1m2 0h2M0 30.5h7m3 0h1m4 0h1m2 0h1m1 0h1m1 0h3m2 0h2m1 0h1m1 0h2M0 31.5h1m5 0h1m1 0h2m2 0h3m9 0h2m1 0h2m3 0h1m2 0h1M0 32.5h1m1 0h3m1 0h1m1 0h3m7 0h1m1 0h4m4 0h6m1 0h2M0 33.5h1m1 0h3m1 0h1m1 0h1m4 0h4m6 0h3m1 0h1m1 0h1m3 0h2m1 0h1M0 34.5h1m1 0h3m1 0h1m1 0h2m1 0h1m1 0h1m3 0h2m1 0h2m3 0h2m1 0h1m1 0h2m1 0h2m1 0h1M0 35.5h1m5 0h1m3 0h1m1 0h1m1 0h1m1 0h2m3 0h1m1 0h1m1 0h1m3 0h1m1 0h3M0 36.5h7m1 0h7m2 0h1m3 0h2m1 0h2m1 0h2m2 0h1m1 0h1m2 0h1"/></svg>';
+
+  // Nomes e esportes das quadras vêm do sistema que a arena usa hoje; preços e horários, do seed.
+  const QUADRAS = [
+    { id: "areia-1", nome: "Areia 1 · Terraço", esportes: ["Beach tennis"], piso: "areia", foto: "areia-lounge.jpg", pos: "50% 62%", alt: "Quadra de areia com deck de grama e mesas de madeira" },
+    { id: "areia-2", nome: "Areia 2 · Terraço", esportes: ["Beach tennis"], piso: "areia", foto: "aula-beach.jpg", pos: "50% 40%", alt: "Alunos de beach tennis na areia diante do painel da arena" },
+    { id: "areia-3", nome: "Areia 3", esportes: ["Futevôlei", "Vôlei", "Beach tennis"], piso: "areia", foto: "areia-lounge.jpg", pos: "6% 50%", alt: "Quadra de areia dentro do galpão" },
+    { id: "society", nome: "Campo Society", esportes: ["Futebol society"], piso: "society", foto: "society.jpg", pos: "50% 55%", alt: "Campo society de grama sintética" },
+  ];
+
+  // Turmas das artes do Instagram. Em qual quadra cada turma acontece é suposição do protótipo.
+  const AULAS = [
+    { quadra: "areia-1", dias: [1, 3], horas: [16], nome: "beach tennis", ref: "esc-beach" },
+    { quadra: "areia-3", dias: [1, 3], horas: [17, 18], nome: "futevôlei", ref: "esc-futevolei" },
+    { quadra: "areia-3", dias: [2, 4], horas: [17, 18, 19], nome: "futevôlei", ref: "esc-futevolei" },
+    { quadra: "areia-3", dias: [5], horas: [17, 18, 19], nome: "futevôlei", ref: "esc-futevolei" },
+    { quadra: "areia-3", dias: [6], horas: [9, 10, 11], nome: "vôlei", ref: "esc-volei" },
+  ];
+
+  // Preenchido por clienteDemo() (Rafael, modo "Cliente logado") ou clienteNovo() (conta criada no protótipo)
+  const CLIENTE = {};
+
+  // Posts simulados com as fotos reais da arena. Na produção vêm da API do Instagram (GET /me/media), com cache no servidor.
+  const INSTAGRAM = "https://www.instagram.com/arenabelem/";
+  const POSTS = [
+    { img: "aula-beach.jpg", w: 382, h: 510, pos: "50% 35%", tipo: "carrossel", fixado: true, quando: "há 3 dias", alt: "Alunas e professor de beach tennis diante do painel da arena", legenda: "Inscrições abertas para o Open de Beach Tennis, 21 e 22 de novembro. Duplas nas categorias D, C e iniciante. Link na bio." },
+    { img: "professores.png", w: 1228, h: 579, pos: "47% 30%", tipo: "reels", quando: "há 2 dias", alt: "Professores da arena com bolas e raquetes", legenda: "Esse é o nosso time de professores: beach tennis, futevôlei, vôlei e o CT Falcão 12, tudo na mesma arena." },
+    { img: "areia-lounge.jpg", w: 680, h: 510, pos: "40% 60%", tipo: "foto", quando: "há 4 dias", alt: "Deck de grama sintética com mesas de madeira ao lado da quadra de areia", legenda: "Deck do lado da areia: mesa, sombra e bebida gelada entre um jogo e outro." },
+    { img: "society.jpg", w: 680, h: 510, pos: "50% 55%", tipo: "reels", quando: "há 1 semana", alt: "Campo society de grama sintética", legenda: "Final da Copa Society de Setembro: Resenha FC 4 × 2 Amigos do Jurunas. Que jogo!" },
+    { img: "professores.png", w: 1228, h: 579, pos: "97% 30%", tipo: "foto", quando: "há 1 semana", alt: "Prof. Italo Bianck com raquete de beach tennis", legenda: "Turma iniciante de beach tennis com o Prof. Italo, às terças e quintas, 7h e 8h. Raquete e bolas por conta da arena." },
+    { img: "society-bar.jpg", w: 680, h: 510, pos: "50% 50%", tipo: "carrossel", quando: "há 2 semanas", alt: "Mezanino do bar de frente para o campo society", legenda: "Do mezanino do bar dá para ver o society inteiro. Vem assistir o jogo da galera." },
+    { img: "professores.png", w: 1228, h: 579, pos: "6% 30%", tipo: "reels", quando: "há 2 semanas", alt: "Professor de vôlei segurando a bola", legenda: "Toque, manchete e saque: a turma de vôlei de sábado é aberta a todos os níveis." },
+    { img: "bar-corredor.jpg", w: 382, h: 510, pos: "50% 50%", tipo: "reels", quando: "há 3 semanas", alt: "Corredor do bar da arena", legenda: "Resenha depois da final, no bar da arena." },
+  ];
+  const TIPO_POST = { reels: ["i-play", "Reels"], carrossel: ["i-copy", "Carrossel"] };
+
+  /* ── Datas (fuso de Belém) ───────────────────────────── */
+  const hojeISO = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Belem", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  const paraData = (iso) => { const [a, m, d] = iso.split("-").map(Number); return new Date(a, m - 1, d, 12); };
+  const paraISO = (dt) => `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+  const somarDias = (iso, n) => { const dt = paraData(iso); dt.setDate(dt.getDate() + n); return paraISO(dt); };
+  const DIAS = Array.from({ length: 31 }, (_, i) => somarDias(hojeISO, i)); // hoje + 30 dias
+
+  const SEM_CURTA = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+  const SEM = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+  const MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  const MES_CURTO = MES.map((m) => m.slice(0, 3));
+  const hh = (h) => `${String(h).padStart(2, "0")}:00`;
+  const reais = (v) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2 })}`;
+  const maiuscula = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+  const lista = (itens) => (itens.length < 2 ? itens.join("") : `${itens.slice(0, -1).join(", ")} e ${itens[itens.length - 1]}`);
+  const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+  const esc = (t) => String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const relativo = (iso) => (iso === hojeISO ? "Hoje" : iso === somarDias(hojeISO, 1) ? "Amanhã" : null);
+  function diaLongo(iso) {
+    const d = paraData(iso);
+    const base = `${SEM[d.getDay()]}, ${d.getDate()} de ${MES[d.getMonth()]}`;
+    const rel = relativo(iso);
+    return rel ? `${rel}, ${base}` : maiuscula(base);
+  }
+  function diaCurto(iso) {
+    const d = paraData(iso);
+    return `${relativo(iso) ?? SEM_CURTA[d.getDay()]}, ${d.getDate()} de ${MES_CURTO[d.getMonth()]}`;
+  }
+
+  /* ── Preço e ocupação (determinísticos por dia, quadra e hora) ── */
+  function preco(q, iso, h) {
+    const dow = paraData(iso).getDay();
+    if (h >= 18) return q.piso === "society" ? 180 : 100;
+    if (dow === 0 || dow === 6) return q.piso === "society" ? 160 : 90;
+    return q.piso === "society" ? 150 : 80;
+  }
+  function sorteio(chave) {
+    let x = 2166136261;
+    for (let i = 0; i < chave.length; i++) { x ^= chave.charCodeAt(i); x = Math.imul(x, 16777619); }
+    return ((x >>> 0) % 10000) / 10000;
+  }
+  function chanceOcupado(iso, h) {
+    const dow = paraData(iso).getDay();
+    const fds = dow === 0 || dow === 6;
+    if (h >= 18 && h <= 21) return fds ? 0.5 : 0.6;
+    if (h === 22) return 0.35;
+    if (h < 10) return fds ? 0.5 : 0.3;
+    if (h < 16) return fds ? 0.45 : 0.22;
+    return 0.4;
+  }
+
+  const PARTIDAS = [
+    { id: "p1", em: 0, quadra: "areia-1", h: 20, esporte: "Beach tennis", org: "Thiago", faltam: 2, pediram: 3 },
+    { id: "p2", em: 1, quadra: "society", h: 19, esporte: "Futebol society", org: "Bruno", faltam: 3, pediram: 5 },
+    { id: "p3", em: 2, quadra: "areia-2", h: 8, esporte: "Beach tennis", org: "Carla", faltam: 1, pediram: 1 },
+    { id: "p4", em: 4, quadra: "areia-3", h: 21, esporte: "Futevôlei", org: "Diego", faltam: 2, pediram: 0 },
+  ].map((p) => ({ ...p, data: somarDias(hojeISO, p.em) }));
+
+  const minhas = new Map(); // horários reservados: "data|quadra|hora" → código da reserva
+
+  function situacao(q, iso, h) {
+    const dono = minhas.get(`${iso}|${q.id}|${h}`);
+    if (dono) {
+      const minha = estado.modo === "logado" && CLIENTE.reservas.some((r) => r.codigo === dono && r.status === "ativa");
+      return minha ? { tipo: "meu", codigo: dono } : { tipo: "ocupado" };
+    }
+    if (iso === hojeISO && h * 60 < AGORA_MIN + ANTECEDENCIA_MIN) return { tipo: "passado" };
+    const dow = paraData(iso).getDay();
+    const aula = AULAS.find((a) => a.quadra === q.id && a.dias.includes(dow) && a.horas.includes(h));
+    if (aula) return { tipo: "aula", aula };
+    if (sorteio(`${iso}|${q.id}|${h}`) < chanceOcupado(iso, h)) return { tipo: "ocupado" };
+    return { tipo: "livre" };
+  }
+
+  /* ── Estado da página ────────────────────────────────── */
+  const estado = {
+    modo: "visitante",
+    dia: DIAS[0],
+    quadra: null,
+    horas: [],
+    usarVoucher: false,
+    pagamento: "sinal",
+    esporte: null,
+    etapa: "dados",
+    form: { nome: "", whats: "" },
+    pedidos: new Set(),
+    ultimo: null,
+    codigo: "",
+    clubeAntes: 0,
+  };
+
+  /* ── Rolagem suave: mesma configuração do SmoothScrollProvider do site atual ── */
+  let lenis = null;
+  if (window.Lenis) {
+    lenis = new window.Lenis({
+      duration: 0.85,
+      wheelMultiplier: 1.35,
+      touchMultiplier: 1.8,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: "vertical",
+      gestureOrientation: "vertical",
+      smoothWheel: true,
+      respectReducedMotion: false,
+    });
+    const quadro = (t) => { lenis.raf(t); requestAnimationFrame(quadro); };
+    requestAnimationFrame(quadro);
+  }
+  function rolarAte(alvo, folga = 0) {
+    const el = typeof alvo === "string" ? document.getElementById(alvo) : alvo;
+    if (!el) return;
+    const offset = -($("#topo").offsetHeight + folga);
+    // O Lenis remede a página com 250 ms de atraso; medir antes evita parar no limite antigo
+    lenis?.resize();
+    if (lenis) lenis.scrollTo(el, { offset, duration: 0.85, force: true });
+    else window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY + offset, behavior: "smooth" });
+  }
+
+  /* ── Datas ───────────────────────────────────────────── */
+  function renderDias() {
+    let html = "";
+    let mesAnterior = null;
+    DIAS.forEach((iso, i) => {
+      const d = paraData(iso);
+      if (d.getMonth() !== mesAnterior) {
+        html += `<span class="mes" aria-hidden="true">${MES_CURTO[d.getMonth()]}</span>`;
+        mesAnterior = d.getMonth();
+      }
+      const dow = d.getDay();
+      const fds = dow === 0 || dow === 6;
+      html += `<button type="button" class="dia${fds ? " fds" : ""}" data-dia="${iso}" aria-pressed="${iso === estado.dia}" aria-label="${diaLongo(iso)}">
+        <span>${i === 0 ? "Hoje" : SEM_CURTA[dow]}</span><b class="num">${d.getDate()}</b></button>`;
+    });
+    $("#trilho").innerHTML = html;
+  }
+  function atualizarSetas() {
+    const t = $("#trilho");
+    const [ant, prox] = $$(".seta");
+    ant.disabled = t.scrollLeft <= 2;
+    prox.disabled = t.scrollLeft + t.clientWidth >= t.scrollWidth - 2;
+  }
+
+  /* ── Quadras ─────────────────────────────────────────── */
+  const PERIODOS = [["Manhã", 7, 11], ["Tarde", 12, 17], ["Noite", 18, 22]];
+
+  function slotHTML(q, iso, h, s) {
+    const faixa = `${hh(h)} às ${hh(h + 1)}`;
+    if (s.tipo === "livre") {
+      const valor = reais(preco(q, iso, h));
+      const sel = estado.quadra === q.id && estado.horas.includes(h);
+      return `<button type="button" class="slot ${sel ? "sel" : "livre"}" data-q="${q.id}" data-h="${h}" aria-pressed="${sel}" aria-label="${faixa}, ${valor}">
+        <b class="num">${hh(h)}</b><span class="num"><svg class="ico slot-ok" aria-hidden="true"><use href="#i-check"/></svg>${valor}</span></button>`;
+    }
+    if (s.tipo === "ocupado") return `<button type="button" class="slot ocupado" disabled aria-label="${faixa}, ocupado"><b class="num">${hh(h)}</b><span>Ocupado</span></button>`;
+    if (s.tipo === "meu") return `<button type="button" class="slot meu" data-conta="${s.codigo}" aria-label="${faixa}, sua reserva. Ver em Minhas reservas"><b class="num">${hh(h)}</b><span>Sua reserva</span></button>`;
+    if (s.tipo === "aula") {
+      return `<button type="button" class="slot aula" data-ir="${s.aula.ref}" title="Aula de ${s.aula.nome}" aria-label="${faixa}, aula de ${s.aula.nome}. Ver a turma">
+        <b class="num">${hh(h)}</b><span><svg class="ico" aria-hidden="true"><use href="#i-graduation-cap"/></svg>Aula</span></button>`;
+    }
+    return `<button type="button" class="slot vaga" data-ir="vaga-${s.partida.id}" title="Partida de ${s.partida.esporte.toLowerCase()} procurando jogadores" aria-label="${faixa}, partida com ${s.partida.faltam} vagas. Ver no mural">
+      <b class="num">${hh(h)}</b><span>Faltam ${s.partida.faltam}</span></button>`;
+  }
+
+  function renderQuadras() {
+    const iso = estado.dia;
+    $("#quadras").innerHTML = QUADRAS.map((q, i) => {
+      const periodos = PERIODOS.map(([nome, ini, fim]) => {
+        const itens = [];
+        for (let h = ini; h <= fim; h++) {
+          const s = situacao(q, iso, h);
+          if (s.tipo !== "passado") itens.push(slotHTML(q, iso, h, s));
+        }
+        return itens.length ? `<div class="periodo"><span class="p-nome">${nome}</span><div class="slots">${itens.join("")}</div></div>` : "";
+      }).join("");
+      const esportes = maiuscula(lista(q.esportes.map((e) => e.toLowerCase())));
+      return `<article class="quadra" id="q-${q.id}" aria-labelledby="qt-${q.id}">
+        <div class="q-foto"><img src="${FOTOS}${q.foto}" alt="${q.alt}" width="680" height="510" style="object-position:${q.pos}" ${i > 1 ? 'loading="lazy"' : ""}></div>
+        <div class="q-corpo">
+          <div class="q-topo">
+            <div><h3 id="qt-${q.id}">${q.nome}</h3><p class="q-esportes">${esportes}</p></div>
+            <p class="q-preco num"><b>${reais(preco(q, iso, 10))}</b> de dia · <b>${reais(preco(q, iso, 19))}</b> à noite</p>
+          </div>
+          <div class="periodos">${periodos || '<p class="q-sem">Não há mais horários hoje nesta quadra.</p>'}</div>
+        </div>
+      </article>`;
+    }).join("");
+  }
+
+  function renderDia() {
+    $("#dia-titulo").textContent = diaLongo(estado.dia);
+    const nota = $("#dia-nota");
+    // Primeira hora que ainda dá para reservar hoje (antecedência mínima de 1 hora)
+    const corte = Math.ceil((AGORA_MIN + ANTECEDENCIA_MIN) / 60);
+    const primeira = PERIODOS[0][1];
+    const ultima = PERIODOS[PERIODOS.length - 1][2];
+    nota.hidden = estado.dia !== hojeISO || corte <= primeira;
+    if (!nota.hidden) {
+      nota.textContent = corte > ultima
+        ? "Os horários de hoje já acabaram. Escolha outro dia."
+        : `Antes das ${hh(corte)} já não dá para reservar hoje.`;
+    }
+    renderQuadras();
+    renderTicket();
+  }
+
+  /* Seleção: horas seguidas na mesma quadra. Clicar fora da sequência começa uma nova. */
+  function alternar(qid, h) {
+    if (estado.quadra !== qid) { estado.quadra = qid; estado.horas = [h]; return; }
+    const hs = [...estado.horas].sort((a, b) => a - b);
+    if (hs.includes(h)) {
+      if (h === hs[0]) hs.shift();
+      else if (h === hs[hs.length - 1]) hs.pop();
+      else hs.splice(hs.indexOf(h));
+      estado.horas = hs;
+      if (!hs.length) estado.quadra = null;
+      return;
+    }
+    if (h === hs[0] - 1 || h === hs[hs.length - 1] + 1) { estado.horas = [...hs, h].sort((a, b) => a - b); return; }
+    estado.horas = [h];
+  }
+  function limparSelecao() { estado.quadra = null; estado.horas = []; }
+  function atualizarSelecao() {
+    $$("#quadras .slot[data-h]").forEach((b) => {
+      const sel = b.dataset.q === estado.quadra && estado.horas.includes(Number(b.dataset.h));
+      b.classList.toggle("sel", sel);
+      b.classList.toggle("livre", !sel);
+      b.setAttribute("aria-pressed", String(sel));
+    });
+    renderTicket();
+  }
+
+  /* ── Ticket ──────────────────────────────────────────── */
+  function resumo() {
+    if (!estado.quadra || !estado.horas.length) return null;
+    const q = QUADRAS.find((x) => x.id === estado.quadra);
+    const horas = [...estado.horas].sort((a, b) => a - b);
+    const itens = horas.map((h) => ({ h, valor: preco(q, estado.dia, h) }));
+    const bruto = itens.reduce((s, i) => s + i.valor, 0);
+    const temVoucher = estado.modo === "logado" && estado.usarVoucher && CLIENTE.cupons.length > 0;
+    const desconto = temVoucher ? Math.min(Math.min(...itens.map((i) => i.valor)), TETO_VOUCHER) : 0;
+    const total = bruto - desconto;
+    const sinal = Math.round(total * 50) / 100;
+    const agora = estado.pagamento === "integral" ? total : sinal;
+    return { q, horas, itens, bruto, desconto, total, sinal, agora, resto: total - agora, inicio: hh(horas[0]), fim: hh(horas[horas.length - 1] + 1) };
+  }
+
+  function itensHTML(r) {
+    return `<ul class="t-itens">${r.itens.map((i) => `<li><span class="num">${hh(i.h)} às ${hh(i.h + 1)}</span><span class="num">${reais(i.valor)}</span></li>`).join("")}
+      ${r.desconto ? `<li class="t-desc"><span>Hora grátis do Clube</span><span class="num">−${reais(r.desconto)}</span></li>` : ""}</ul>`;
+  }
+
+  function ticketHTML(r) {
+    const cab = `<div class="t-cab"><img src="${FOTOS}logo.png" alt="" width="388" height="374"><div><b>Seu ticket</b><span>Arena Belém</span></div></div>`;
+    if (!r) {
+      return `<div class="t-top">${cab}
+        <dl class="t-linhas">
+          <div><dt>Dia</dt><dd>${diaCurto(estado.dia)}</dd></div>
+          <div><dt>Quadra</dt><dd class="t-traco">a escolher</dd></div>
+          <div><dt>Horário</dt><dd class="t-traco">a escolher</dd></div>
+        </dl>
+        <p class="t-vazio">Toque num horário livre para começar. Dá para juntar horas seguidas na mesma quadra.</p></div>
+        <div class="t-stub"><p class="t-rot">Sinal no Pix agora (50%)</p><p class="t-sinal num">R$ 0</p>
+        <p class="t-resto">O restante você paga na arena.</p>
+        <button type="button" class="btn-amarelo" disabled>Escolha um horário</button></div>`;
+    }
+    const logado = estado.modo === "logado";
+    const n = r.horas.length;
+    const resto = r.total - r.sinal;
+    return `<div class="t-top">${cab}
+      <dl class="t-linhas">
+        <div><dt>Quadra</dt><dd>${r.q.nome}</dd></div>
+        <div><dt>Dia</dt><dd>${diaCurto(estado.dia)}</dd></div>
+        <div><dt>Horário</dt><dd class="num">${r.inicio} às ${r.fim}</dd></div>
+      </dl>
+      ${itensHTML(r)}
+      ${logado && CLIENTE.cupons.length > 0 ? `<label class="t-voucher"><input type="checkbox" data-voucher data-foco="voucher-ticket" ${estado.usarVoucher ? "checked" : ""}><span>Usar minha hora grátis do Clube<small>1 hora grátis, até ${reais(TETO_VOUCHER)}</small></span></label>` : ""}
+      <div class="t-total"><span>Total · ${plural(n, "hora", "horas")}</span><b class="num">${reais(r.total)}</b></div></div>
+      <div class="t-stub"><p class="t-rot">Sinal no Pix agora (50%)</p><p class="t-sinal num">${reais(r.sinal)}</p>
+      <p class="t-resto">${resto > 0 ? `Os outros <span class="num">${reais(resto)}</span> você paga na arena.` : "Nada a pagar na arena."}</p>
+      <button type="button" class="btn-amarelo" data-acao="checkout">Continuar para o Pix<svg class="ico" aria-hidden="true"><use href="#i-arrow-right"/></svg></button>
+      ${logado ? `<p class="t-clube">Esta reserva soma ${plural(n, "hora", "horas")} no Clube Arena Belém.</p>` : ""}
+      <button type="button" class="link t-limpar" data-acao="limpar">Limpar seleção</button></div>`;
+  }
+
+  function renderTicket() {
+    const ativo = document.activeElement?.dataset?.foco;
+    const r = resumo();
+    $("#ticket").innerHTML = ticketHTML(r);
+    const barra = $("#barra");
+    barra.hidden = !r;
+    document.body.classList.toggle("tem-barra", Boolean(r));
+    if (r) {
+      $("#barra-txt").innerHTML = `<b>${r.q.nome} · <span class="num">${r.inicio} às ${r.fim}</span></b><span class="num">Sinal ${reais(r.sinal)} · total ${reais(r.total)}</span>`;
+    }
+    if (ativo) $(`[data-foco="${ativo}"]`)?.focus();
+  }
+
+  /* ── Mural de partidas: recolhido, embaixo do ticket (no celular, embaixo das quadras) ── */
+  const telaLarga = window.matchMedia("(min-width: 1120px)");
+  function posicionarMural() {
+    const box = $("#partidas");
+    if (telaLarga.matches) $(".r-ticket").append(box);
+    else $("#quadras").after(box);
+  }
+  telaLarga.addEventListener("change", posicionarMural);
+  posicionarMural();
+
+  // Mural: partidas dos outros + as do próprio cliente que estão procurando jogadores
+  function todasPartidas() {
+    const proprias = CLIENTE.reservas
+      .filter((r) => r.status === "ativa" && r.vagas?.aberta && r.data >= hojeISO)
+      .map((r) => ({
+        id: `r-${r.codigo}`, codigo: r.codigo, proprio: true, data: r.data, h: r.horas[0], fim: r.horas[r.horas.length - 1] + 1,
+        quadra: r.quadra, esporte: r.esporte, org: CLIENTE.primeiro, pedidos: r.pedidos.filter((p) => !p.combinado).length,
+      }));
+    const chave = (p) => p.data + hh(p.h);
+    return [...PARTIDAS.map((p) => ({ ...p, fim: p.h + 1 })), ...proprias].sort((a, b) => chave(a).localeCompare(chave(b)));
+  }
+  function renderPartidas() {
+    const logado = estado.modo === "logado";
+    $("#mural").innerHTML = todasPartidas().map((p) => {
+      const q = quadraDe(p.quadra);
+      const d = paraData(p.data);
+      const rel = relativo(p.data);
+      const minha = p.proprio && logado;
+      const pedido = estado.pedidos.has(p.id);
+      const acao = minha
+        ? `<button type="button" class="btn-borda" data-acao="vagas" data-rsv="${p.codigo}">${ICO("i-users")}Ver pedidos${p.pedidos ? ` (${p.pedidos})` : ""}</button>`
+        : pedido
+          ? `<p class="v-ok">${ICO("i-check")}Pedido enviado</p>`
+          : `<button type="button" class="btn-borda" data-acao="pedir" data-partida="${p.id}">${ICO("i-users")}Quero jogar</button>`;
+      return `<li class="partida" id="vaga-${p.id}">
+        <p class="v-quando"><b>${rel ?? maiuscula(SEM[d.getDay()])}</b> <span class="num">${hh(p.h)} às ${hh(p.fim)}${rel ? "" : ` · ${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}`}</span></p>
+        <div class="v-oque"><h3>${p.esporte}</h3><p>${q.nome} · ${minha ? "sua partida" : `com ${p.org}`}</p></div>
+        <div class="v-acao">${acao}
+          <p class="v-msg" id="msg-${p.id}" aria-live="polite">${pedido && !minha ? `${p.org} recebe seu pedido no WhatsApp e confirma com você.` : ""}</p>
+        </div>
+      </li>`;
+    }).join("");
+  }
+
+  /* ── Conta: Clube Arena Belém e modo do protótipo ────── */
+  function carimbos(cheias, novas = 0) {
+    return `<ol class="carimbos" aria-label="${cheias + novas} de 10 carimbos">${Array.from({ length: 10 }, (_, i) => `<li class="${i < cheias ? "on" : i < cheias + novas ? "novo" : ""}"></li>`).join("")}</ol>`;
+  }
+  function renderPerfil() {
+    const faltam = 10 - CLIENTE.horasClube;
+    $("#mp-clube").innerHTML = `<p class="mp-clube-tit"><b>Clube Arena Belém</b><span class="num">${CLIENTE.horasClube} de 10 carimbos</span></p>
+      ${carimbos(CLIENTE.horasClube)}
+      <p class="mp-nota">Faltam ${plural(faltam, "carimbo", "carimbos")} para ganhar 1 hora grátis.${CLIENTE.cupons.length ? ` Você tem ${CLIENTE.cupons.length === 1 ? "1 hora grátis" : `${CLIENTE.cupons.length} horas grátis`} para usar.` : ""}</p>`;
+    // Nome, avatar e próximas reservas do cliente atual no topo e no menu da conta
+    const n = proximas().length;
+    $("#mp-prox").textContent = n ? plural(n, "próxima", "próximas") : "";
+    $$(".perfil .avatar, #mp-avatar").forEach((el) => { el.textContent = CLIENTE.primeiro[0]; });
+    $(".perfil-nome").textContent = CLIENTE.primeiro;
+    $(".perfil").setAttribute("aria-label", `Abrir menu da conta de ${CLIENTE.primeiro}`);
+    $("#mp-nome").textContent = CLIENTE.nome;
+    $("#mp-whats").textContent = CLIENTE.whatsapp;
+    renderClube();
+  }
+
+  /* ── Clientes do protótipo: Rafael (demonstração) ou uma conta criada agora ── */
+  const quadraDe = (id) => QUADRAS.find((q) => q.id === id);
+  const novoCupom = () => `CLUBE-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+  const chavesDe = (r) => r.horas.map((h) => `${r.data}|${r.quadra}|${h}`);
+
+  // Reservas, carimbos e pedidos do Rafael são inventados para mostrar a área do atleta preenchida
+  function clienteDemo() {
+    const em = (n) => somarDias(hojeISO, n);
+    return {
+      id: "rafael", nome: "Rafael Souza", primeiro: "Rafael", whatsapp: "(91) 99876-5432", nascimento: "1994-03-12",
+      horasClube: 6,
+      cupons: [{ codigo: "CLUBE-7Q4M", ate: em(52) }],
+      historico: [
+        { data: em(-6), quadra: "Areia 2 · Terraço", horas: 2 },
+        { data: em(-16), quadra: "Areia 1 · Terraço", horas: 2 },
+        { data: em(-27), quadra: "Campo Society", horas: 2 },
+      ],
+      reservas: [
+        {
+          codigo: "K7P2", data: em(1), quadra: "areia-2", horas: [19, 20], esporte: "Beach tennis", total: 200, pago: 100, status: "ativa",
+          vagas: { aberta: true, faltam: 2 },
+          pedidos: [
+            { nome: "Lucas Moraes", whats: "5591981112233", quando: "há 2 horas", novo: true },
+            { nome: "Camila Rocha", whats: "5591992224455", quando: "há 5 horas", novo: true },
+            { nome: "Diego Pinheiro", whats: "5591983336677", quando: "ontem", novo: false },
+          ],
+        },
+        { codigo: "M3XQ", data: em(6), quadra: "society", horas: [20], esporte: "Futebol society", total: 180, pago: 180, status: "ativa", vagas: { aberta: false, faltam: 2 }, pedidos: [] },
+        { codigo: "F9A1", data: em(-6), quadra: "areia-2", horas: [18, 19], esporte: "Beach tennis", total: 200, pago: 200, status: "concluida" },
+        { codigo: "B2C8", data: em(-16), quadra: "areia-1", horas: [19, 20], esporte: "Beach tennis", total: 200, pago: 200, status: "concluida" },
+        { codigo: "T5R0", data: em(-21), quadra: "areia-3", horas: [20], esporte: "Futevôlei", total: 100, pago: 50, status: "cancelada" },
+        { codigo: "Q1W4", data: em(-27), quadra: "society", horas: [19, 20], esporte: "Futebol society", total: 360, pago: 360, status: "concluida" },
+      ],
+    };
+  }
+  // "marina   de souza" vira "Marina de Souza"
+  const nomeProprio = (t) => t.trim().split(/\s+/).map((p, i) => (i > 0 && /^(d[aeo]s?|e)$/i.test(p) ? p.toLowerCase() : maiuscula(p.toLowerCase()))).join(" ");
+  function clienteNovo({ nome: digitado, whatsapp, nascimento = "" }) {
+    const nome = nomeProprio(digitado);
+    return {
+      id: `novo-${Date.now()}`, nome, primeiro: maiuscula(nome.split(/\s+/)[0]), whatsapp, nascimento,
+      horasClube: 0, cupons: [], historico: [], reservas: [],
+    };
+  }
+  function trocarCliente(dados) {
+    Object.keys(CLIENTE).forEach((k) => delete CLIENTE[k]);
+    Object.assign(CLIENTE, dados);
+  }
+  function somarCarimbos(n, data, quadraNome) {
+    let horas = CLIENTE.horasClube + n;
+    while (horas >= 10) { horas -= 10; CLIENTE.cupons.push({ codigo: novoCupom(), ate: somarDias(hojeISO, 60) }); }
+    CLIENTE.horasClube = horas;
+    CLIENTE.historico.unshift({ data, quadra: quadraNome, horas: n });
+  }
+  trocarCliente(clienteDemo());
+  CLIENTE.reservas.filter((r) => r.status === "ativa").forEach((r) => chavesDe(r).forEach((k) => minhas.set(k, r.codigo)));
+
+  /* ── Seção do Clube: cartela de 10 casas, histórico e voucher ── */
+  const GIRO = [-10, 6, -4, 9, -7, 3, -12, 8, -5];
+  const dataLonga = (iso) => { const d = paraData(iso); return `${d.getDate()} de ${MES[d.getMonth()]}`; };
+
+  function casasHTML(cheias) {
+    const casas = Array.from({ length: 10 }, (_, i) => {
+      if (i < cheias) return `<li class="casa on" style="--r:${GIRO[i % GIRO.length]}deg"><img src="${FOTOS}logo.png" alt="" width="388" height="374"></li>`;
+      if (i === 9) return `<li class="casa premio">1h<br>grátis</li>`;
+      return `<li class="casa num">${i + 1}</li>`;
+    });
+    return `<ol class="casas" role="img" aria-label="${cheias} de 10 carimbos. O décimo vale 1 hora grátis.">${casas.join("")}</ol>`;
+  }
+
+  function renderClube() {
+    $("#cartela").innerHTML = cartelaHTML();
+  }
+  function cartelaHTML({ ultimos = true } = {}) {
+    const logado = estado.modo === "logado";
+    const cheias = logado ? CLIENTE.horasClube : 0;
+    const faltam = 10 - cheias;
+    const historico = ultimos && logado && CLIENTE.historico.length
+      ? `<div class="ca-hist"><p class="ca-hist-t">Últimos carimbos</p><ul>${CLIENTE.historico.slice(0, 3).map((x) => `<li><span>${diaCurto(x.data)} · ${x.quadra}</span><b class="num">+${plural(x.horas, "hora", "horas")}</b></li>`).join("")}</ul></div>`
+      : "";
+    let canhoto;
+    if (!logado) {
+      canhoto = `<b class="ca-grande">Comece a juntar hoje</b>
+        <p>Crie a conta com o seu WhatsApp em menos de um minuto. A próxima reserva já vira carimbo.</p>
+        <button type="button" class="btn-amarelo" data-acao="criar">Criar conta e começar a juntar</button>`;
+    } else if (CLIENTE.cupons.length > 0) {
+      canhoto = `<b class="ca-grande">${CLIENTE.cupons.length === 1 ? "Você tem 1 hora grátis" : `Você tem ${CLIENTE.cupons.length} horas grátis`}</b>
+        <p>Vale em qualquer quadra, até <span class="num">${reais(TETO_VOUCHER)}</span>, até ${dataLonga(CLIENTE.cupons[0].ate)}. Faltam ${plural(faltam, "carimbo", "carimbos")} para a próxima.</p>
+        <button type="button" class="btn-amarelo" data-acao="usar-voucher">Usar na próxima reserva</button>`;
+    } else {
+      canhoto = `<b class="ca-grande">Faltam ${plural(faltam, "carimbo", "carimbos")}</b>
+        <p>Mais ${plural(faltam, "hora", "horas")} de jogo e você ganha 1 hora grátis.</p>
+        <a class="btn-amarelo" href="#reservar">Reservar um horário</a>`;
+    }
+    return `<div class="ca-topo"><img src="${FOTOS}logo.png" alt="" width="388" height="374">
+        <div><b>${logado ? "Sua cartela" : "Cartela do Clube"}</b><span>${logado ? CLIENTE.nome : "Arena Belém"}</span></div>
+        <p class="ca-cont num"><b>${cheias}</b> de 10</p></div>
+      <div class="ca-papel">${casasHTML(cheias)}${historico}</div>
+      <div class="ca-stub">${canhoto}</div>`;
+  }
+
+  /* ── Instagram: grade de posts com o fixado primeiro ── */
+  const telaPequena = window.matchMedia("(max-width: 760px)");
+  function postHTML(p) {
+    const tipo = TIPO_POST[p.tipo];
+    return `<li class="post"><a href="${INSTAGRAM}" target="_blank" rel="noopener">
+      <span class="post-img"><img src="${FOTOS}${p.img}" alt="${p.alt}" width="${p.w}" height="${p.h}" style="object-position:${p.pos}" loading="lazy">
+        ${p.fixado ? `<span class="post-fix"><svg class="ico" aria-hidden="true"><use href="#i-pin"/></svg>Fixado</span>` : ""}
+        ${tipo ? `<span class="post-tipo"><svg class="ico" aria-hidden="true"><use href="#${tipo[0]}"/></svg><span class="sr">${tipo[1]}</span></span>` : ""}</span>
+      <span class="post-leg">${p.legenda}</span>
+      <span class="post-data">${p.quando}</span></a></li>`;
+  }
+  function renderInstagram() {
+    $("#ig-posts").innerHTML = POSTS.slice(0, telaPequena.matches ? 6 : 8).map(postHTML).join("");
+  }
+  telaPequena.addEventListener("change", renderInstagram);
+
+  /* ── Utilitários da área do atleta ───────────────────── */
+  const zap = (texto, numero = WHATS) => `https://wa.me/${numero}?text=${encodeURIComponent(texto)}`;
+  const ICO = (id) => `<svg class="ico" aria-hidden="true"><use href="#${id}"/></svg>`;
+  const faixaDe = (r) => `${hh(r.horas[0])} às ${hh(r.horas[r.horas.length - 1] + 1)}`;
+  const linhaReserva = (r) => `${quadraDe(r.quadra).nome} · ${diaCurto(r.data)} · ${faixaDe(r)}`;
+  const reservaPorCodigo = (c) => CLIENTE.reservas.find((r) => r.codigo === c);
+  const proximas = () => CLIENTE.reservas
+    .filter((r) => r.status === "ativa" && r.data >= hojeISO)
+    .sort((a, b) => (a.data + hh(a.horas[0])).localeCompare(b.data + hh(b.horas[0])));
+  function horasAte(r) {
+    const dias = Math.round((paraData(r.data) - paraData(hojeISO)) / 86400000);
+    return (dias * 1440 + r.horas[0] * 60 - AGORA_MIN) / 60;
+  }
+  function dataNasc(iso) {
+    const [a, m, d] = iso.split("-").map(Number);
+    return `${d} de ${MES[m - 1]} de ${a}`;
+  }
+
+  // Marca o campo com erro (ou limpa, quando msg é falsa). Devolve true se houver erro.
+  function erroCampo(id, msg) {
+    const caixa = $(`[data-campo="${id}"]`);
+    caixa?.toggleAttribute("data-erro", Boolean(msg));
+    const p = $(`#e-${id}`);
+    if (p) { p.textContent = msg || ""; p.hidden = !msg; }
+    $(`#${id}`)?.setAttribute("aria-invalid", String(Boolean(msg)));
+    return Boolean(msg);
+  }
+
+  function campoWhats(id, valor, dica = "") {
+    return `<div class="campo" data-campo="${id}"><label for="${id}">WhatsApp</label>
+      <input type="tel" id="${id}" data-mascara="whats" inputmode="tel" autocomplete="tel-national" placeholder="(91) 90000-0000" value="${esc(valor ?? "")}" aria-describedby="${dica ? `d-${id} ` : ""}e-${id}">
+      ${dica ? `<p class="dica" id="d-${id}">${dica}</p>` : ""}
+      <p class="erro" id="e-${id}" hidden></p></div>`;
+  }
+
+  /* ── Entrar e criar conta: código no WhatsApp, sem senha (só visual no protótipo) ── */
+  const auth = $("#auth");
+  let reenvioTimer = 0;
+  function abrirAuth(modo = "entrar", { motivo = "", depois = null } = {}) {
+    estado.au = { modo, motivo, depois, etapa: "dados", form: estado.au?.form ?? {} };
+    fecharMenus();
+    renderAuth();
+    if (!auth.open) { auth.showModal(); lenis?.stop(); }
+    focarAuth();
+  }
+  function focarAuth() {
+    ($("#au-form input:not([hidden])") ?? $("#auth-titulo"))?.focus();
+  }
+  function renderAuth() {
+    const { modo, etapa } = estado.au;
+    $("#au-lado").innerHTML = ladoAuthHTML(modo);
+    $("#au-abas").hidden = modo === "concluir" || etapa === "codigo";
+    $$("#au-abas [data-au]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.au === modo)));
+    $("#au-form").innerHTML = etapa === "codigo" ? codigoHTML() : { entrar: entrarHTML, criar: criarHTML, concluir: concluirHTML }[modo]();
+  }
+  function ladoAuthHTML(modo) {
+    const cab = `<div class="ck-cab"><img src="${FOTOS}logo.png" alt="" width="388" height="374"><div><b>Arena Belém</b><span>Sua conta</span></div></div>`;
+    const u = estado.ultimaReserva;
+    if (modo === "concluir" && u) {
+      const n = u.horas.length;
+      return `${cab}<p class="au-tit">Sua reserva já vira carimbo</p>
+        <p class="au-curto">Com a conta, ${n === 1 ? "a hora de hoje entra" : `as ${n} horas de hoje entram`} na sua cartela do Clube.</p>
+        <div class="au-cartela">${carimbos(0, Math.min(n, 10))}<p>+${plural(n, "carimbo", "carimbos")} na cartela. Com 10, você ganha 1 hora grátis.</p></div>`;
+    }
+    return `${cab}<p class="au-tit">Com a conta, você</p>
+      <p class="au-curto">Entra com um código no WhatsApp, sem senha, e junta carimbos no Clube.</p>
+      <ul class="au-van">
+        <li>${ICO("i-check")}<span>Entra com um código no WhatsApp. Sem senha para lembrar</span></li>
+        <li>${ICO("i-check")}<span>Junta carimbos no Clube: a cada 10 horas, 1 hora grátis</span></li>
+        <li>${ICO("i-check")}<span>Acompanha e cancela suas reservas</span></li>
+        <li>${ICO("i-check")}<span>Chama gente para a sua partida e pede vaga nas outras</span></li>
+      </ul>
+      <div class="au-cartela">${carimbos(3)}<p>Exemplo de cartela: 3 de 10 carimbos.</p></div>`;
+  }
+  const botaoCodigo = () => `<button type="submit" class="btn-amarelo ck-gerar">${ICO("i-message-circle")}Receber código no WhatsApp</button>`;
+  function entrarHTML() {
+    const { motivo, form } = estado.au;
+    return `<h2 class="ck-h" id="auth-titulo" tabindex="-1">Entre na sua conta</h2>
+      <p class="ck-sub">${motivo || "Digite o seu WhatsApp. Mandamos um código para você entrar, sem senha."}</p>
+      ${campoWhats("au-whats", form.whats)}
+      ${botaoCodigo()}
+      <p class="au-troca">Ainda não tem conta? <button type="button" class="link" data-au="criar">Criar conta</button></p>`;
+  }
+  function criarHTML() {
+    const { motivo, form } = estado.au;
+    return `<h2 class="ck-h" id="auth-titulo" tabindex="-1">Crie sua conta</h2>
+      <p class="ck-sub">${motivo || "Leva menos de um minuto e não precisa de senha. A próxima reserva já vira carimbo no Clube."}</p>
+      <div class="campo" data-campo="au-nome"><label for="au-nome">Nome completo</label>
+        <input type="text" id="au-nome" autocomplete="name" value="${esc(form.nome ?? "")}" aria-describedby="e-au-nome">
+        <p class="erro" id="e-au-nome" hidden></p></div>
+      ${campoWhats("au-whats", form.whats, "Você entra com ele. As confirmações das reservas também chegam nele.")}
+      <div class="campo"><label for="au-nasc">Data de nascimento <span class="opc">(opcional)</span></label>
+        <input type="date" id="au-nasc" value="${esc(form.nasc ?? "")}" aria-describedby="d-au-nasc">
+        <p class="dica" id="d-au-nasc">Para a arena lembrar do seu aniversário.</p></div>
+      ${botaoCodigo()}
+      <p class="au-troca">Já tem conta? <button type="button" class="link" data-au="entrar">Entrar</button></p>`;
+  }
+  function concluirHTML() {
+    const f = estado.form;
+    return `<h2 class="ck-h" id="auth-titulo" tabindex="-1">Confirme o seu WhatsApp</h2>
+      <p class="ck-sub">Usamos os dados da sua reserva. Só falta confirmar o número com um código.</p>
+      <dl class="au-dados"><div><dt>Nome</dt><dd>${esc(nomeProprio(f.nome))}</dd></div><div><dt>WhatsApp</dt><dd class="num">${esc(f.whats)}</dd></div></dl>
+      ${botaoCodigo()}
+      <button type="button" class="link ck-voltar" data-acao="fechar-auth">Agora não</button>`;
+  }
+  function codigoHTML() {
+    const { modo, form } = estado.au;
+    return `<h2 class="ck-h" id="auth-titulo" tabindex="-1">Digite o código</h2>
+      <p class="ck-sub">Mandamos um código de 6 números para o WhatsApp <b class="num">${esc(form.whats)}</b>.</p>
+      <div class="campo" data-campo="au-codigo"><label for="au-codigo">Código</label>
+        <input type="text" id="au-codigo" class="au-codigo num" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" aria-describedby="e-au-codigo">
+        <p class="erro" id="e-au-codigo" hidden></p></div>
+      <button type="submit" class="btn-amarelo ck-gerar">${modo === "entrar" ? "Entrar" : "Criar conta"}</button>
+      <p class="au-troca"><button type="button" class="link" data-acao="reenviar-codigo" id="au-reenviar" disabled>Reenviar em <span class="num">0:30</span></button> · <button type="button" class="link" data-acao="trocar-numero">Trocar número</button></p>`;
+  }
+  function contarReenvio() {
+    clearInterval(reenvioTimer);
+    let resta = 30;
+    reenvioTimer = setInterval(() => {
+      const b = $("#au-reenviar");
+      resta -= 1;
+      if (!b) { clearInterval(reenvioTimer); return; }
+      if (resta > 0) { b.innerHTML = `Reenviar em <span class="num">0:${String(resta).padStart(2, "0")}</span>`; return; }
+      clearInterval(reenvioTimer);
+      b.disabled = false;
+      b.textContent = "Reenviar código";
+    }, 1000);
+  }
+
+  function validarAuth(modo) {
+    const valor = (id) => $(`#${id}`)?.value.trim() ?? "";
+    const erros = [];
+    const checa = (id, msg) => { if (erroCampo(id, msg)) erros.push(id); };
+    if (estado.au.etapa === "codigo") {
+      checa("au-codigo", valor("au-codigo").length !== 6 && "Digite os 6 números do código.");
+    } else {
+      if (modo === "criar") checa("au-nome", valor("au-nome").split(/\s+/).filter(Boolean).length < 2 && "Informe seu nome completo.");
+      if (modo !== "concluir") checa("au-whats", valor("au-whats").replace(/\D/g, "").length < 10 && "WhatsApp inválido. Use DDD e número.");
+    }
+    if (erros.length) $(`#${erros[0]}`).focus();
+    return !erros.length;
+  }
+  // Passo 1 guarda os dados e "manda" o código; passo 2 entra ou cria a conta
+  function enviarCodigo() {
+    const f = estado.au.form;
+    ["whats", "nome", "nasc"].forEach((k) => { const el = $(`#au-${k}`); if (el) f[k] = el.value; });
+    if (estado.au.modo === "concluir") f.whats = estado.form.whats;
+    estado.au.etapa = "codigo";
+    renderAuth();
+    focarAuth();
+    contarReenvio();
+  }
+  function concluirAuth(modo) {
+    const { depois, form } = estado.au;
+    clearInterval(reenvioTimer);
+    if (modo === "entrar") {
+      if (CLIENTE.id !== "rafael") trocarCliente(clienteDemo());
+      entrarComo(`Que bom te ver de novo, ${CLIENTE.primeiro}!`);
+    } else if (modo === "criar") {
+      trocarCliente(clienteNovo({ nome: form.nome, whatsapp: form.whats, nascimento: form.nasc }));
+      entrarComo(`Conta criada. Bem-vindo, ${CLIENTE.primeiro}!`);
+    } else {
+      const u = estado.ultimaReserva;
+      trocarCliente(clienteNovo({ nome: estado.form.nome, whatsapp: estado.form.whats }));
+      if (u) { CLIENTE.reservas.unshift(u); somarCarimbos(u.horas.length, u.data, quadraDe(u.quadra).nome); }
+      entrarComo("Conta criada. Sua reserva já está em Minhas reservas.");
+      abrirConta("reservas", u?.codigo);
+      return;
+    }
+    depois?.();
+  }
+  function entrarComo(msg) {
+    estado.modo = "logado";
+    auth.close();
+    aplicarModo();
+    aviso(msg);
+  }
+
+  /* ── Minha conta: Reservas, Clube e Meus dados ─────────── */
+  const conta = $("#conta");
+  const ABAS = [["reservas", "Reservas", "i-ticket"], ["clube", "Clube", "i-gift"], ["dados", "Meus dados", "i-user"]];
+
+  function abrirConta(aba = "reservas", foco = null) {
+    estado.view = "conta";
+    estado.aba = ABAS.some(([id]) => id === aba) ? aba : "reservas";
+    estado.editando = false;
+    fecharMenus();
+    if (ck.open) ck.close();
+    document.body.classList.add("em-conta");
+    $("#portal").hidden = true;
+    conta.hidden = false;
+    renderConta();
+    history.replaceState(null, "", `#minha-conta${estado.aba === "reservas" ? "" : `/${estado.aba}`}`);
+    lenis?.resize();
+    if (lenis) lenis.scrollTo(0, { immediate: true, force: true });
+    else window.scrollTo(0, 0);
+    if (foco && document.getElementById(`rsv-${foco}`)) requestAnimationFrame(() => destacar(`rsv-${foco}`));
+  }
+  function mostrarPortal() {
+    if (estado.view !== "conta") return;
+    estado.view = "portal";
+    document.body.classList.remove("em-conta");
+    conta.hidden = true;
+    $("#portal").hidden = false;
+    lenis?.resize();
+  }
+
+  function renderConta() {
+    if (estado.view !== "conta") return;
+    if (estado.modo !== "logado") { conta.innerHTML = contaFechadaHTML(); return; }
+    const corpo = { reservas: abaReservasHTML, clube: abaClubeHTML, dados: abaDadosHTML }[estado.aba]();
+    conta.innerHTML = `${cabContaHTML()}
+      <div class="wrap conta-corpo" role="tabpanel" id="cc-painel" aria-labelledby="aba-${estado.aba}">
+        ${corpo}
+      </div>`;
+  }
+
+  function contaFechadaHTML() {
+    return `<div class="wrap conta-fechada"><div class="cf-card">
+      <h1 id="cc-titulo">Minha conta</h1>
+      <p>Entre para ver suas reservas, seus carimbos do Clube e seus dados.</p>
+      <div class="cf-acoes"><button type="button" class="btn-amarelo" data-acao="entrar">Entrar</button><button type="button" class="btn-borda" data-acao="criar">Criar conta</button></div>
+      <a class="link" href="#reservar">Voltar para as quadras</a>
+    </div></div>`;
+  }
+
+  function cabContaHTML() {
+    const ativas = proximas();
+    const prox = ativas[0];
+    return `<section class="conta-cab"><div class="wrap">
+      <a class="cc-voltar" href="#reservar">${ICO("i-chevron-left")}Voltar para as quadras</a>
+      <div class="cc-linha">
+        <div class="cc-quem"><span class="avatar avatar-xl" aria-hidden="true">${esc(CLIENTE.primeiro[0])}</span>
+          <div><h1 id="cc-titulo">Olá, ${esc(CLIENTE.primeiro)}</h1><p class="num">${esc(CLIENTE.whatsapp)}</p></div></div>
+        <ul class="cc-resumo">
+          <li><span>Próximo jogo</span><b>${prox ? `${diaCurto(prox.data)} · <span class="num">${hh(prox.horas[0])}</span>` : "Nenhum marcado"}</b></li>
+          <li><span>Clube</span><b class="num">${CLIENTE.horasClube} de 10 carimbos</b></li>
+          ${CLIENTE.cupons.length ? `<li class="cc-premio"><span>Para usar</span><b>${CLIENTE.cupons.length === 1 ? "1 hora grátis" : `${CLIENTE.cupons.length} horas grátis`}</b></li>` : ""}
+        </ul>
+      </div>
+      <div class="abas" role="tablist" aria-label="Minha conta">${ABAS.map(([id, nome, ico]) => `<button type="button" role="tab" id="aba-${id}" aria-controls="cc-painel" aria-selected="${estado.aba === id}" data-aba="${id}">${ICO(ico)}${nome}${id === "reservas" && ativas.length ? `<span class="cont num">${ativas.length}</span>` : ""}</button>`).join("")}</div>
+    </div></section>`;
+  }
+
+  /* Aba Reservas */
+  function abaReservasHTML() {
+    const ativas = proximas();
+    const passadas = CLIENTE.reservas.filter((r) => !ativas.includes(r)).sort((a, b) => b.data.localeCompare(a.data));
+    const lista = ativas.length
+      ? `<div class="cc-lista">${ativas.map(reservaHTML).join("")}</div>`
+      : `<div class="vazio"><b>Nenhum jogo marcado</b><p>Escolha um dia e um horário livre para jogar.</p><a class="btn-amarelo" href="#reservar">Reservar um horário</a></div>`;
+    const historico = passadas.length
+      ? `<ul class="hist">${passadas.map(historicoHTML).join("")}</ul>`
+      : `<p class="cc-nada">Os jogos que você já fez aparecem aqui.</p>`;
+    return `<div class="cc-grid">
+      <div>
+        <section class="cc-bloco" aria-labelledby="cc-prox">
+          <div class="cc-bloco-cab"><h2 class="cc-h" id="cc-prox">Próximos jogos</h2>${ativas.length ? '<a class="btn-borda" href="#reservar">Nova reserva</a>' : ""}</div>
+          ${lista}
+        </section>
+        <section class="cc-bloco" aria-labelledby="cc-hist"><h2 class="cc-h" id="cc-hist">Histórico</h2>${historico}</section>
+      </div>
+      <aside class="cc-lado">${pedidosFeitosHTML()}${ajudaHTML()}</aside>
+    </div>`;
+  }
+
+  function reservaHTML(r) {
+    const q = quadraDe(r.quadra);
+    const d = paraData(r.data);
+    const resto = r.total - r.pago;
+    const ativos = r.pedidos.filter((p) => !p.combinado);
+    const novos = ativos.filter((p) => p.novo).length;
+    const combinados = r.pedidos.filter((p) => p.combinado).length;
+    const vagas = r.vagas.completa
+      ? `<p>${ICO("i-check")}<span><b>Partida completa</b> · combinado com ${plural(combinados, "jogador", "jogadores")}</span></p>
+         <button type="button" class="btn-borda" data-acao="vagas" data-rsv="${r.codigo}">Ver detalhes</button>`
+      : r.vagas.aberta
+      ? `<p>${ICO("i-users")}<span><b>No mural procurando jogadores</b> · ${ativos.length ? `${plural(ativos.length, "pedido", "pedidos")}${novos ? `, <span class="novo">${novos === 1 ? "1 novo" : `${novos} novos`}</span>` : ""}` : "nenhum pedido ainda"}</span></p>
+         <button type="button" class="btn-borda" data-acao="vagas" data-rsv="${r.codigo}">Ver pedidos</button>`
+      : `<p>${ICO("i-users")}<span>Faltou gente? Coloque a partida no mural.</span></p>
+         <button type="button" class="btn-borda" data-acao="vagas" data-rsv="${r.codigo}">Procurar jogadores</button>`;
+    return `<article class="rsv" id="rsv-${r.codigo}" aria-labelledby="rsv-t-${r.codigo}">
+      <p class="rsv-data"><span>${SEM_CURTA[d.getDay()]}</span><b class="num">${d.getDate()}</b><span>${MES_CURTO[d.getMonth()]}</span><small class="num">${hh(r.horas[0])}</small></p>
+      <div class="rsv-corpo">
+        <div class="rsv-topo">
+          <div>
+            <p class="rsv-quando">${diaLongo(r.data)} · <span class="num">${faixaDe(r)}</span></p>
+            <h3 id="rsv-t-${r.codigo}">${q.nome}</h3>
+            <p class="rsv-sub">${r.esporte} · ${plural(r.horas.length, "hora", "horas")} · Nº ${r.codigo}</p>
+          </div>
+          <p class="rsv-estado${resto > 0 ? "" : " pago"}"><i aria-hidden="true"></i>${resto > 0 ? "Sinal pago" : "Tudo pago"}</p>
+        </div>
+        <dl class="rsv-valores">
+          <div><dt>Total</dt><dd class="num">${reais(r.total)}</dd></div>
+          <div><dt>Pago no Pix</dt><dd class="num">${reais(r.pago)}</dd></div>
+          ${resto > 0 ? `<div class="rsv-arena"><dt>Pagar na arena</dt><dd class="num">${reais(resto)}</dd></div>` : ""}
+        </dl>
+        <div class="rsv-vagas">${vagas}</div>
+        <div class="rsv-acoes">
+          <button type="button" class="btn-navy" data-acao="ics-rsv" data-rsv="${r.codigo}">${ICO("i-calendar-plus")}Adicionar à agenda</button>
+          <a class="btn-borda" href="${zap(`Olá! Tenho uma dúvida sobre a minha reserva Nº ${r.codigo}: ${linhaReserva(r)}.`)}" target="_blank" rel="noopener">${ICO("i-message-circle")}Falar com a arena</a>
+          <button type="button" class="link-perigo" data-acao="cancelar-rsv" data-rsv="${r.codigo}">Cancelar reserva</button>
+        </div>
+      </div>
+    </article>`;
+  }
+
+  function historicoHTML(r) {
+    const cancelada = r.status === "cancelada";
+    return `<li>
+      <div><b>${diaCurto(r.data)} · <span class="num">${faixaDe(r)}</span></b><span class="sub">${quadraDe(r.quadra).nome} · ${r.esporte}</span></div>
+      <span class="hist-st${cancelada ? " cancelada" : ""}">${cancelada ? "Cancelada" : "Jogou"}</span>
+      <span class="num hist-v">${reais(r.total)}</span>
+    </li>`;
+  }
+
+  function pedidosFeitosHTML() {
+    const lista = todasPartidas().filter((p) => !p.proprio && estado.pedidos.has(p.id));
+    const itens = lista.map((p) => `<li><b>${p.esporte} · ${diaCurto(p.data)}, <span class="num">${hh(p.h)}</span></b>
+        <span>${quadraDe(p.quadra).nome} · com ${p.org}</span><span class="ped-st">Aguardando ${p.org} chamar no WhatsApp</span></li>`).join("");
+    return `<section class="cartao" aria-labelledby="cc-ped"><h3 id="cc-ped">Pedidos para jogar</h3>
+      ${lista.length ? `<ul class="feitos">${itens}</ul>` : "<p>Viu uma partida procurando jogadores? Peça para entrar e acompanhe aqui.</p>"}
+      <button type="button" class="link" data-acao="ver-mural">Ver partidas procurando jogadores</button></section>`;
+  }
+  function ajudaHTML() {
+    return `<section class="cartao" aria-labelledby="cc-ajuda"><h3 id="cc-ajuda">Precisa mudar algo?</h3>
+      <p>Você pode cancelar até o início do jogo. Com mais de 24 horas de antecedência, você recebe de volta o valor pago, no Pix.</p>
+      <a class="btn-borda" href="${zap("Olá! Vim pela Minha conta do site e preciso de ajuda com uma reserva.")}" target="_blank" rel="noopener">${ICO("i-message-circle")}Falar com a arena</a>
+      <a class="link cc-regras" href="/preview-portal-regras.html#cancelamento">Regras de cancelamento</a></section>`;
+  }
+
+  /* Aba Clube */
+  function vencimentoCarimbos() {
+    if (!CLIENTE.horasClube || !CLIENTE.historico.length) return "";
+    const antigo = CLIENTE.historico[CLIENTE.historico.length - 1];
+    const d = paraData(antigo.data);
+    d.setMonth(d.getMonth() + 3);
+    return `Os carimbos de ${dataLonga(antigo.data)} vencem em ${dataLonga(paraISO(d))}. Cada carimbo vale 3 meses.`;
+  }
+  function abaClubeHTML() {
+    const cupons = CLIENTE.cupons;
+    const venc = vencimentoCarimbos();
+    const listaCupons = cupons.map((c) => `<li class="cupom">
+        <b class="cupom-h">1h</b>
+        <div><b>1 hora grátis</b><span>Em qualquer quadra, até ${reais(TETO_VOUCHER)}. Vale até ${dataLonga(c.ate)}.</span></div>
+        <p class="cupom-cod">Código <code>${c.codigo}</code> <button type="button" class="link" data-acao="copiar-cupom" data-cod="${c.codigo}">Copiar</button></p>
+      </li>`).join("");
+    const carimbosFeitos = CLIENTE.historico.map((x) => `<li><div><b>${diaCurto(x.data)}</b><span class="sub">${x.quadra}</span></div><b class="num">+${plural(x.horas, "carimbo", "carimbos")}</b></li>`).join("");
+    return `<div class="cc-clube">
+      <div class="cartela">${cartelaHTML({ ultimos: false })}</div>
+      <div>
+        <section class="cc-bloco" aria-labelledby="cc-cup"><h2 class="cc-h" id="cc-cup">Horas grátis</h2>
+          ${cupons.length
+            ? `<ul class="cupons">${listaCupons}</ul><p class="cc-nota">No site, a hora grátis aparece no ticket da reserva. Reservando pelo WhatsApp, informe o código.</p>`
+            : '<p class="cc-nada">Quando você juntar 10 carimbos, a sua hora grátis aparece aqui.</p>'}
+        </section>
+        <section class="cc-bloco" aria-labelledby="cc-car"><h2 class="cc-h" id="cc-car">Seus carimbos</h2>
+          ${venc ? `<p class="cc-nota">${venc}</p>` : ""}
+          ${CLIENTE.historico.length ? `<ul class="hist hist-clube">${carimbosFeitos}</ul>` : '<p class="cc-nada">Cada hora reservada com a sua conta vira um carimbo.</p>'}
+          <a class="link cc-como" href="#clube">Como funciona o Clube</a>
+        </section>
+      </div>
+    </div>`;
+  }
+
+  /* Aba Meus dados */
+  function abaDadosHTML() {
+    const dados = estado.editando
+      ? `<form class="cartao" id="form-dados" novalidate><h3>Seus dados</h3>
+          <div class="campo" data-campo="md-nome"><label for="md-nome">Nome completo</label>
+            <input type="text" id="md-nome" autocomplete="name" value="${esc(CLIENTE.nome)}" aria-describedby="e-md-nome"><p class="erro" id="e-md-nome" hidden></p></div>
+          ${campoWhats("md-whats", CLIENTE.whatsapp, "É o seu login. Se mudar, use o número novo para entrar.")}
+          <div class="campo"><label for="md-nasc">Data de nascimento <span class="opc">(opcional)</span></label><input type="date" id="md-nasc" value="${esc(CLIENTE.nascimento)}"></div>
+          <div class="form-acoes"><button type="submit" class="btn-amarelo">Salvar</button><button type="button" class="btn-borda" data-acao="cancelar-edicao">Cancelar</button></div>
+        </form>`
+      : `<section class="cartao" aria-labelledby="md-t"><h3 id="md-t">Seus dados</h3>
+          <dl class="dl-dados">
+            <div><dt>Nome</dt><dd>${esc(CLIENTE.nome)}</dd></div>
+            <div><dt>WhatsApp</dt><dd><span class="num">${esc(CLIENTE.whatsapp)}</span> <small>· seu login</small></dd></div>
+            <div><dt>Nascimento</dt><dd>${CLIENTE.nascimento ? dataNasc(CLIENTE.nascimento) : "Não informado"}</dd></div>
+          </dl>
+          <div class="form-acoes"><button type="button" class="btn-borda" data-acao="editar-dados">Editar dados</button></div>
+        </section>`;
+    return `<div class="cc-dados">
+      <div>${dados}</div>
+      <div>
+        <section class="cartao" aria-labelledby="ar-t"><h3 id="ar-t">Falar com a arena</h3>
+          <p>Dúvida sobre um horário, um pedido especial ou o Clube? A arena responde no WhatsApp, das 7h às 23h.</p>
+          <a class="btn-borda" href="${zap(`Olá! Sou ${CLIENTE.nome} e vim pela Minha conta do site.`)}" target="_blank" rel="noopener">${ICO("i-message-circle")}Chamar no WhatsApp</a></section>
+        <section class="cartao"><h3>Sair da conta</h3><p>Para entrar de novo, é só pedir um código no seu WhatsApp.</p>
+          <div class="form-acoes"><button type="button" class="btn-borda" data-acao="sair">${ICO("i-log-out")}Sair</button></div></section>
+        <section class="cartao"><h3>Excluir conta</h3><p>Apaga seus dados e seus carimbos do Clube. Não dá para desfazer.</p>
+          <div class="form-acoes"><button type="button" class="link-perigo" data-acao="excluir-conta">Excluir minha conta</button></div></section>
+      </div>
+    </div>`;
+  }
+
+  /* ── Diálogos simples: cancelar reserva e procurar jogadores ── */
+  const dlg = $("#dlg");
+  function abrirDialogo(titulo, sub, corpo) {
+    $("#dlg-titulo").textContent = titulo;
+    $("#dlg-sub").textContent = sub;
+    $("#dlg-corpo").innerHTML = corpo;
+    if (!dlg.open) { dlg.showModal(); lenis?.stop(); }
+    $("#dlg-titulo").focus();
+  }
+  const trocarCorpo = (html) => { $("#dlg-corpo").innerHTML = html; };
+
+  function cancelarHTML(r) {
+    const credito = horasAte(r) >= 24;
+    return `<dl class="au-dados">
+        <div><dt>Quadra</dt><dd>${quadraDe(r.quadra).nome}</dd></div>
+        <div><dt>Dia</dt><dd>${diaLongo(r.data)}</dd></div>
+        <div><dt>Horário</dt><dd class="num">${faixaDe(r)}</dd></div>
+        <div><dt>Pago no Pix</dt><dd class="num">${reais(r.pago)}</dd></div>
+      </dl>
+      <div class="caso${credito ? "" : " perde"}"><b>${credito ? "Faltam mais de 24 horas" : "Faltam menos de 24 horas"}</b>
+        <p>${credito ? `Você recebe de volta os <span class="num">${reais(r.pago)}</span> pagos, no mesmo Pix.` : `Pelas regras da arena, os <span class="num">${reais(r.pago)}</span> pagos não são devolvidos.`}</p></div>
+      <div class="dlg-acoes"><button type="button" class="btn-borda" data-acao="fechar-dlg">Manter reserva</button><button type="button" class="btn-perigo" data-acao="confirmar-cancelar" data-rsv="${r.codigo}">Cancelar reserva</button></div>`;
+  }
+
+  function vagasHTML(r) {
+    const v = r.vagas;
+    if (v.completa) {
+      return `<p class="dlg-txt"><b>Partida completa.</b> Ela saiu do mural e ninguém mais pode pedir para entrar.</p>
+        <div class="dlg-acoes"><button type="button" class="btn-borda" data-acao="reabrir-vagas" data-rsv="${r.codigo}">Procurar mais gente</button><button type="button" class="btn-navy" data-acao="fechar-dlg">Pronto</button></div>`;
+    }
+    if (!v.aberta) {
+      return `<p class="dlg-txt">Sua partida entra no mural <b>Partidas procurando jogadores</b>. Quem quiser jogar pede para entrar, e você combina tudo pelo WhatsApp.</p>
+        <div class="campo"><p class="campo-rot" id="rot-faltam">Quantos jogadores faltam?</p>
+          <div class="passo-num" role="group" aria-labelledby="rot-faltam">
+            <button type="button" data-acao="faltam" data-delta="-1" data-rsv="${r.codigo}" aria-label="Um a menos" ${v.faltam <= 1 ? "disabled" : ""}>−</button>
+            <b aria-live="polite">${plural(v.faltam, "jogador", "jogadores")}</b>
+            <button type="button" data-acao="faltam" data-delta="1" data-rsv="${r.codigo}" aria-label="Um a mais" ${v.faltam >= 20 ? "disabled" : ""}>+</button>
+          </div>
+          <p class="dica">O número não aparece no mural. A partida sai de lá sozinha quando completar.</p></div>
+        <label class="aceite" data-campo="vg-termo"><input type="checkbox" id="vg-termo" aria-describedby="e-vg-termo"><span>Entendo que a arena só divulga a partida. O combinado e a divisão do valor ficam entre mim e os jogadores.</span></label>
+        <p class="erro" id="e-vg-termo" hidden></p>
+        <div class="dlg-acoes"><button type="button" class="btn-borda" data-acao="fechar-dlg">Agora não</button><button type="button" class="btn-amarelo" data-acao="publicar-vagas" data-rsv="${r.codigo}">Publicar no mural</button></div>`;
+    }
+    const pedidos = r.pedidos.map((p, i) => pedidoHTML(r, p, i)).join("");
+    return `<p class="dlg-status">${ICO("i-users")}<span><b>No mural</b> · faltam ${plural(v.faltam, "jogador", "jogadores")}</span></p>
+      <h3 class="dlg-h3">Pedidos para jogar</h3>
+      ${r.pedidos.length ? `<ul class="peds">${pedidos}</ul>` : '<p class="cc-nada">Ainda ninguém pediu. Quando alguém pedir, aparece aqui e chega no seu WhatsApp.</p>'}
+      <div class="dlg-acoes"><button type="button" class="link-perigo" data-acao="tirar-vagas" data-rsv="${r.codigo}">Tirar do mural</button><button type="button" class="btn-navy" data-acao="fechar-dlg">Pronto</button></div>`;
+  }
+  function pedidoHTML(r, p, i) {
+    const msg = `Oi, ${p.nome.split(" ")[0]}! Vi seu pedido para jogar ${r.esporte.toLowerCase()} comigo na Arena Belém, ${diaCurto(r.data).toLowerCase()} às ${hh(r.horas[0])}, na ${quadraDe(r.quadra).nome}. Bora?`;
+    return `<li class="ped${p.combinado ? " ok" : ""}"><span class="avatar" aria-hidden="true">${p.nome[0]}</span>
+      <div class="ped-quem"><b>${p.nome}</b>${p.novo && !p.combinado ? ' <span class="novo">novo</span>' : ""}<span class="sub">${p.combinado ? "Combinado" : `Pediu ${p.quando}`}</span></div>
+      ${p.combinado ? "" : `<div class="ped-acoes">
+        <a class="btn-navy" href="${zap(msg, p.whats)}" target="_blank" rel="noopener" data-acao="visto" data-rsv="${r.codigo}" data-i="${i}">${ICO("i-message-circle")}Chamar</a>
+        <button type="button" class="btn-borda" data-acao="combinado" data-rsv="${r.codigo}" data-i="${i}">Combinado</button></div>`}
+    </li>`;
+  }
+  function atualizarTudo() {
+    renderConta();
+    renderPartidas();
+    renderPerfil();
+  }
+
+  function aplicarModo() {
+    $$("[data-so]").forEach((el) => { el.hidden = el.dataset.so !== estado.modo; });
+    $$("[data-modo]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.modo === estado.modo)));
+    if (estado.modo !== "logado") estado.usarVoucher = false;
+    fecharMenus();
+    renderPerfil();
+    renderTicket();
+    renderPartidas();
+    renderDia();
+    renderConta();
+  }
+  function fecharMenus() {
+    $("#menu-perfil").hidden = true;
+    $(".perfil").setAttribute("aria-expanded", "false");
+    $("#menu-mobile").hidden = true;
+    $(".burger").setAttribute("aria-expanded", "false");
+  }
+
+  let toastTimer = 0;
+  function aviso(texto) {
+    const t = $("#toast");
+    t.textContent = texto;
+    t.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.hidden = true; }, 2800);
+  }
+
+  function destacar(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    rolarAte(el, 28);
+    el.classList.add("destaque");
+    setTimeout(() => el.classList.remove("destaque"), 2600);
+  }
+
+  /* ── Checkout: dados → Pix → confirmada ──────────────── */
+  const ck = $("#ck");
+  let timer = 0;
+  function pararTimer() { clearInterval(timer); timer = 0; }
+
+  function resumoCkHTML(r) {
+    const integral = estado.pagamento === "integral";
+    return `<div class="ck-cab"><img src="${FOTOS}logo.png" alt="" width="388" height="374"><div><b>Arena Belém</b><span>Reserva de quadra</span></div></div>
+      <dl class="t-linhas">
+        <div><dt>Quadra</dt><dd>${r.q.nome}</dd></div>
+        <div><dt>Dia</dt><dd>${diaLongo(estado.dia)}</dd></div>
+        <div><dt>Horário</dt><dd class="num">${r.inicio} às ${r.fim}</dd></div>
+      </dl>
+      ${itensHTML(r)}
+      <div class="t-total"><span>Total</span><b class="num">${reais(r.total)}</b></div>
+      <div class="t-total t-agora"><span>${estado.etapa === "ok" ? "Pago no Pix" : integral ? "Pagar agora" : "Sinal agora (50%)"}</span><b class="num">${reais(r.agora)}</b></div>
+      ${estado.etapa === "ok" ? `<div class="carimbo" aria-label="Reserva confirmada, código ${estado.codigo}"><small>Reserva</small><span>Confirmada</span><small class="num">Nº ${estado.codigo}</small></div>` : ""}`;
+  }
+
+  function dadosHTML(r) {
+    const logado = estado.modo === "logado";
+    const varios = r.q.esportes.length > 1;
+    return `<h2 class="ck-h" id="ck-titulo" tabindex="-1">Seus dados</h2>
+      ${logado
+        ? `<p class="ck-conta"><span class="avatar" aria-hidden="true">${CLIENTE.primeiro[0]}</span><span>Reservando como <b>${CLIENTE.nome}</b><br><span class="num">${CLIENTE.whatsapp}</span></span></p>`
+        : `<p class="ck-sub">Sem cadastro: só nome e WhatsApp. A confirmação chega por lá.</p>
+          <p class="ck-tem-conta">Tem conta? <button type="button" class="link" data-acao="entrar-checkout">Entre</button> e esta reserva vira carimbo no Clube.</p>
+          <div class="campo" data-campo="nome"><label for="f-nome">Nome completo</label>
+            <input type="text" id="f-nome" autocomplete="name" value="${esc(estado.form.nome)}" aria-describedby="e-nome">
+            <p class="erro" id="e-nome" hidden>Informe seu nome completo.</p></div>
+          <div class="campo" data-campo="whats"><label for="f-whats">WhatsApp</label>
+            <input type="tel" id="f-whats" inputmode="tel" autocomplete="tel-national" placeholder="(91) 90000-0000" value="${esc(estado.form.whats)}" aria-describedby="e-whats">
+            <p class="erro" id="e-whats" hidden>WhatsApp inválido. Use DDD e número.</p></div>`}
+      ${varios ? `<fieldset class="campo" data-campo="esporte"><legend>Esporte</legend>
+          <div class="opcoes">${r.q.esportes.map((e) => `<label class="opcao"><input type="radio" name="esporte" value="${e}" ${estado.esporte === e ? "checked" : ""}><span>${e}</span></label>`).join("")}</div>
+          <p class="erro" id="e-esporte" hidden>Escolha o esporte da partida.</p></fieldset>` : ""}
+      <fieldset class="campo"><legend>Quanto pagar agora</legend>
+        <div class="pagar">
+          <label class="pg"><input type="radio" name="pagamento" value="sinal" ${estado.pagamento === "sinal" ? "checked" : ""}><span><b>Sinal de 50%</b><span class="num" data-valor="sinal">${reais(r.sinal)}</span></span></label>
+          <label class="pg"><input type="radio" name="pagamento" value="integral" ${estado.pagamento === "integral" ? "checked" : ""}><span><b>Valor integral</b><span class="num" data-valor="total">${reais(r.total)}</span></span></label>
+        </div></fieldset>
+      ${logado && CLIENTE.cupons.length > 0 ? `<label class="ck-voucher"><input type="checkbox" data-voucher data-foco="voucher-ck" ${estado.usarVoucher ? "checked" : ""}><span><b>Usar minha hora grátis do Clube</b><br>1 hora grátis nesta reserva, até ${reais(TETO_VOUCHER)}.</span></label>` : ""}
+      <label class="aceite" data-campo="aceite"><input type="checkbox" id="f-aceite" aria-describedby="e-aceite"><span>Li e aceito a <button type="button" class="link" data-acao="politica" aria-expanded="false" aria-controls="politica-ck">política de cancelamento</button>.</span></label>
+      <p class="politica" id="politica-ck" hidden>${POLITICA}</p>
+      <p class="erro" id="e-aceite" hidden>Aceite a política para continuar.</p>
+      <button type="submit" class="btn-amarelo ck-gerar" id="ck-gerar">${textoGerar(r)}</button>`;
+  }
+  const textoGerar = (r) => (r.agora > 0 ? `<span>Gerar Pix de <span class="num">${reais(r.agora)}</span></span>` : "Confirmar reserva");
+
+  function pixHTML(r) {
+    return `<h2 class="ck-h" id="ck-titulo" tabindex="-1">Pague com Pix</h2>
+      <div class="pix">
+        <div class="pix-qr" role="img" aria-label="QR Code Pix de demonstração">${QR_SVG}</div>
+        <div>
+          <p class="pix-rot">${estado.pagamento === "integral" ? "Valor integral" : "Sinal de 50%"}</p>
+          <p class="pix-valor num">${reais(r.agora)}</p>
+          <p class="pix-como">No app do banco, escolha Pix e leia o código. Ou copie o código abaixo.</p>
+          <p class="pix-timer"><svg class="ico" aria-hidden="true"><use href="#i-clock"/></svg><span>Horário guardado por <b class="num" id="pix-timer">10:00</b></span></p>
+        </div>
+      </div>
+      <div class="campo"><label for="pix-code">Pix copia e cola</label>
+        <div class="copia"><input id="pix-code" readonly value="${PIX_CODE}"><button type="button" class="btn-navy" data-acao="copiar"><svg class="ico" aria-hidden="true"><use href="#i-copy"/></svg><span>Copiar</span></button></div></div>
+      <p class="pix-receb">Recebedor: <b>Arena Belém</b>. Confira esse nome no app do banco antes de pagar.</p>
+      <p class="pix-demo">Ambiente de demonstração: nenhum valor é cobrado.</p>
+      <button type="button" class="btn-amarelo ck-acao" data-acao="pagar">Simular pagamento</button>
+      <button type="button" class="link ck-voltar" data-acao="voltar">Voltar e editar os dados</button>`;
+  }
+
+  function okHTML(r) {
+    const logado = estado.modo === "logado";
+    const nome = logado ? CLIENTE.primeiro : estado.form.nome.split(/\s+/)[0];
+    const whats = logado ? CLIENTE.whatsapp : estado.form.whats;
+    const n = r.horas.length;
+    const clube = logado
+      ? `<div class="ok-caixa"><b>Clube Arena Belém: +${plural(n, "carimbo", "carimbos")}</b>
+          ${carimbos(Math.min(estado.clubeAntes, 10), Math.max(0, Math.min(n, 10 - estado.clubeAntes)))}
+          <p>${estado.clubeAntes + n >= 10 ? "Você completou 10 carimbos e ganhou 1 hora grátis para a próxima reserva." : `Agora são ${estado.clubeAntes + n} de 10 carimbos. Faltam ${plural(10 - estado.clubeAntes - n, "carimbo", "carimbos")} para ganhar 1 hora grátis.`}</p></div>`
+      : `<div class="ok-caixa"><b>Crie sua conta com esse WhatsApp</b>
+          <p>Você acompanha suas reservas e soma horas no Clube Arena Belém: a cada 10 horas, 1 hora grátis.</p>
+          <button type="button" class="btn-navy" data-acao="criar-conta">Criar conta</button></div>`;
+    // O selo do lado azul já diz "Reserva confirmada"; aqui o foco é o que fazer no dia do jogo
+    return `<h2 class="ck-h" id="ck-titulo" tabindex="-1">${nome ? `Tudo certo, ${esc(maiuscula(nome))}!` : "Tudo certo!"}</h2>
+      <p class="ck-sub">Seu horário está garantido. O comprovante foi para o WhatsApp <span class="num">${esc(whats)}</span>.</p>
+      <div class="ok-dia">
+        <p class="ok-dia-rot">No dia do jogo</p>
+        <p class="ok-dia-valor">${r.resto > 0 ? `Pague <span class="num">${reais(r.resto)}</span> na arena` : "Está tudo pago"}</p>
+        <p class="ok-dia-info">${diaCurto(estado.dia)} · <span class="num">${r.inicio} às ${r.fim}</span> · ${r.q.nome}. ${r.resto > 0 ? "Chegue 10 minutos antes." : "É só chegar e jogar."}</p>
+      </div>
+      <div class="ok-acoes">
+        <button type="button" class="btn-navy" data-acao="ics"><svg class="ico" aria-hidden="true"><use href="#i-calendar-plus"/></svg>Adicionar à agenda</button>
+        ${logado ? `<a class="btn-borda" href="#minha-conta" data-foco-rsv="${estado.codigo}"><svg class="ico" aria-hidden="true"><use href="#i-ticket"/></svg>Ver minhas reservas</a>` : ""}
+      </div>
+      ${clube}
+      <div class="ok-fim"><button type="button" class="btn-borda" data-acao="fechar">Fechar</button></div>`;
+  }
+
+  function renderCheckout() {
+    const r = estado.etapa === "ok" ? estado.ultimo : resumo();
+    if (!r) return;
+    $("#ck-resumo").innerHTML = resumoCkHTML(r);
+    ck.dataset.etapa = estado.etapa;
+    $$("#ck .ck-etapa").forEach((el) => {
+      const ativa = el.dataset.etapa === estado.etapa;
+      el.hidden = !ativa;
+      if (!ativa) el.innerHTML = "";
+    });
+    if (estado.etapa === "dados") $("#ck-dados").innerHTML = dadosHTML(r);
+    if (estado.etapa === "ok") $("#ck-ok").innerHTML = okHTML(r);
+  }
+
+  function atualizarValoresCk() {
+    const r = resumo();
+    if (!r || !ck.open) return;
+    $("#ck-resumo").innerHTML = resumoCkHTML(r);
+    $$("#ck-dados [data-valor]").forEach((el) => { el.textContent = reais(r[el.dataset.valor]); });
+    const gerar = $("#ck-gerar");
+    if (gerar) gerar.innerHTML = textoGerar(r);
+  }
+
+  function abrirCheckout() {
+    const r = resumo();
+    if (!r) return;
+    if (r.q.esportes.length === 1) estado.esporte = r.q.esportes[0];
+    else if (!r.q.esportes.includes(estado.esporte)) estado.esporte = null;
+    estado.etapa = "dados";
+    fecharMenus();
+    renderCheckout();
+    ck.showModal();
+    lenis?.stop();
+    ($("#f-nome") ?? $("#ck-titulo"))?.focus();
+  }
+
+  function marcarErro(campo, invalido) {
+    const caixa = $(`#ck-dados [data-campo="${campo}"]`);
+    caixa?.toggleAttribute("data-erro", invalido);
+    const msg = $(`#e-${campo}`);
+    if (msg) msg.hidden = !invalido;
+    caixa?.querySelector("input")?.setAttribute("aria-invalid", String(invalido));
+    return invalido;
+  }
+
+  function mostrarPix() {
+    const alvo = $("#ck-pix");
+    alvo.innerHTML = `<h2 class="ck-h" id="ck-titulo" tabindex="-1">Gerando seu Pix…</h2><p class="ck-sub">Segurando o horário para você enquanto isso.</p>`;
+    $("#ck-titulo").focus();
+    setTimeout(() => {
+      if (estado.etapa !== "pix" || !ck.open) return;
+      alvo.innerHTML = pixHTML(resumo());
+      $("#ck-titulo").focus();
+      iniciarTimer();
+    }, 700);
+  }
+
+  function iniciarTimer() {
+    pararTimer();
+    let resta = 600;
+    const pinta = () => {
+      const el = $("#pix-timer");
+      if (el) el.textContent = `${String(Math.floor(resta / 60)).padStart(2, "0")}:${String(resta % 60).padStart(2, "0")}`;
+    };
+    pinta();
+    timer = setInterval(() => {
+      resta -= 1;
+      pinta();
+      if (resta > 0) return;
+      pararTimer();
+      $("#ck-pix").innerHTML = `<h2 class="ck-h" id="ck-titulo" tabindex="-1">Tempo esgotado</h2>
+        <p class="ck-sub">O prazo de 10 minutos para pagar acabou e o horário foi liberado.</p>
+        <button type="button" class="btn-amarelo ck-acao" data-acao="fechar">Escolher de novo</button>`;
+      $("#ck-titulo").focus();
+    }, 1000);
+  }
+
+  function confirmarPagamento() {
+    pararTimer();
+    const r = resumo();
+    if (!r) return;
+    estado.codigo = Math.random().toString(36).slice(2, 6).toUpperCase();
+    r.horas.forEach((h) => minhas.set(`${estado.dia}|${r.q.id}|${h}`, estado.codigo));
+    estado.ultimaReserva = {
+      codigo: estado.codigo, data: estado.dia, quadra: r.q.id, horas: [...r.horas], esporte: estado.esporte ?? r.q.esportes[0],
+      total: r.total, pago: r.agora, status: "ativa", vagas: { aberta: false, faltam: 2 }, pedidos: [],
+    };
+    if (estado.modo === "logado") {
+      estado.clubeAntes = CLIENTE.horasClube;
+      if (r.desconto) CLIENTE.cupons.shift();
+      somarCarimbos(r.horas.length, estado.dia, r.q.nome);
+      CLIENTE.reservas.unshift(estado.ultimaReserva);
+      estado.usarVoucher = false;
+      renderPerfil();
+    }
+    estado.ultimo = r;
+    estado.etapa = "ok";
+    renderCheckout();
+    $("#ck-titulo").focus();
+  }
+
+  function baixarAgenda(r, data = estado.dia) {
+    const [a, m, d] = data.split("-").map(Number);
+    const utc = (h) => new Date(Date.UTC(a, m - 1, d, h + 3)).toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z"; // Belém = UTC-3
+    const ics = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//MarcArena//Prototipo//PT", "BEGIN:VEVENT",
+      `UID:${Date.now()}@marcarena`, `DTSTAMP:${utc(new Date().getUTCHours() - 3)}`,
+      `DTSTART:${utc(r.horas[0])}`, `DTEND:${utc(r.horas[r.horas.length - 1] + 1)}`,
+      `SUMMARY:${r.q.nome} · Arena Belém`, "LOCATION:Av. Roberto Camelier\\, 580 - Jurunas\\, Belém - PA",
+      "END:VEVENT", "END:VCALENDAR",
+    ].join("\r\n");
+    const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "reserva-arena-belem.ics";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  const mascaraWhats = (v) => {
+    const n = v.replace(/\D/g, "").slice(0, 11);
+    if (!n) return "";
+    if (n.length <= 2) return `(${n}`;
+    if (n.length <= 7) return `(${n.slice(0, 2)}) ${n.slice(2)}`;
+    return `(${n.slice(0, 2)}) ${n.slice(2, 7)}-${n.slice(7)}`;
+  };
+
+  /* ── Eventos ─────────────────────────────────────────── */
+  $("#trilho").addEventListener("click", (e) => {
+    const b = e.target.closest(".dia");
+    if (!b || b.dataset.dia === estado.dia) return;
+    estado.dia = b.dataset.dia;
+    limparSelecao();
+    $$("#trilho .dia").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+    renderDia();
+  });
+  $("#trilho").addEventListener("scroll", atualizarSetas, { passive: true });
+  $$(".seta").forEach((s) => s.addEventListener("click", () => {
+    const t = $("#trilho");
+    t.scrollBy({ left: Number(s.dataset.dir) * t.clientWidth * 0.8, behavior: "smooth" });
+  }));
+
+  $("#quadras").addEventListener("click", (e) => {
+    const b = e.target.closest(".slot");
+    if (!b || b.disabled) return;
+    if (b.dataset.conta) { abrirConta("reservas", b.dataset.conta); return; }
+    if (b.dataset.ir) { destacar(b.dataset.ir); return; }
+    alternar(b.dataset.q, Number(b.dataset.h));
+    atualizarSelecao();
+  });
+
+  document.addEventListener("click", (e) => {
+    const modo = e.target.closest("[data-modo]");
+    if (modo) {
+      // "Cliente logado" na barra do protótipo é sempre o Rafael de demonstração
+      if (modo.dataset.modo === "logado" && CLIENTE.id !== "rafael") trocarCliente(clienteDemo());
+      estado.modo = modo.dataset.modo;
+      aplicarModo();
+      return;
+    }
+
+    const abaAuth = e.target.closest("[data-au]");
+    if (abaAuth) {
+      const f = estado.au.form;
+      ["whats", "nome", "nasc"].forEach((k) => { const el = $(`#au-${k}`); if (el) f[k] = el.value; });
+      estado.au.modo = abaAuth.dataset.au;
+      estado.au.motivo = "";
+      estado.au.etapa = "dados";
+      renderAuth();
+      focarAuth();
+      return;
+    }
+    const aba = e.target.closest("[data-aba]");
+    if (aba) {
+      estado.aba = aba.dataset.aba;
+      estado.editando = false;
+      renderConta();
+      history.replaceState(null, "", `#minha-conta${estado.aba === "reservas" ? "" : `/${estado.aba}`}`);
+      $(`#aba-${estado.aba}`)?.focus();
+      return;
+    }
+
+    const prototipo = e.target.closest("[data-prototipo]");
+    if (prototipo) { e.preventDefault(); fecharMenus(); aviso(`${prototipo.dataset.prototipo}: essa página não faz parte deste protótipo.`); return; }
+
+    const ancora = e.target.closest('a[href^="#"]');
+    if (ancora) {
+      const id = ancora.getAttribute("href").slice(1);
+      if (id.startsWith("minha-conta")) {
+        e.preventDefault();
+        abrirConta(id.split("/")[1], ancora.dataset.focoRsv);
+        return;
+      }
+      if (id && document.getElementById(id)) {
+        e.preventDefault();
+        fecharMenus();
+        if (ck.open) ck.close();
+        if (dlg.open) dlg.close();
+        if (estado.view === "conta" && !conta.contains(document.getElementById(id))) mostrarPortal();
+        rolarAte(id);
+        history.replaceState(null, "", `#${id}`);
+      }
+      return;
+    }
+
+    const alvo = e.target.closest("[data-acao]");
+    if (!alvo) {
+      if (!e.target.closest(".conta-log")) { $("#menu-perfil").hidden = true; $(".perfil").setAttribute("aria-expanded", "false"); }
+      return;
+    }
+    switch (alvo.dataset.acao) {
+      case "perfil": {
+        const abrir = $("#menu-perfil").hidden;
+        fecharMenus();
+        $("#menu-perfil").hidden = !abrir;
+        alvo.setAttribute("aria-expanded", String(abrir));
+        // No celular o menu é fixo na tela: começa logo abaixo do topo azul, onde quer que a página esteja
+        $("#menu-perfil").style.setProperty("--menu-top", `${Math.round($("#topo").getBoundingClientRect().bottom) + 8}px`);
+        break;
+      }
+      case "menu": {
+        const abrir = $("#menu-mobile").hidden;
+        fecharMenus();
+        $("#menu-mobile").hidden = !abrir;
+        alvo.setAttribute("aria-expanded", String(abrir));
+        break;
+      }
+      case "entrar": abrirAuth("entrar"); break;
+      case "entrar-checkout":
+        // Entra por cima do checkout e volta para ele já como cliente logado
+        abrirAuth("entrar", { motivo: "Entre para esta reserva virar carimbo no Clube.", depois: () => { renderCheckout(); $("#ck-titulo")?.focus(); } });
+        break;
+      case "criar": abrirAuth("criar"); break;
+      case "fechar-auth": auth.close(); break;
+      case "trocar-numero": clearInterval(reenvioTimer); estado.au.etapa = "dados"; renderAuth(); focarAuth(); break;
+      case "reenviar-codigo": alvo.disabled = true; contarReenvio(); aviso("Mandamos um código novo no seu WhatsApp."); break;
+      case "sair": {
+        const naConta = estado.view === "conta";
+        estado.modo = "visitante";
+        mostrarPortal();
+        aplicarModo();
+        if (naConta) lenis ? lenis.scrollTo(0, { immediate: true, force: true }) : window.scrollTo(0, 0);
+        aviso("Você saiu da conta.");
+        break;
+      }
+      case "checkout": abrirCheckout(); break;
+      case "usar-voucher":
+        mostrarPortal();
+        estado.usarVoucher = true;
+        renderTicket();
+        rolarAte("reservar");
+        aviso("A hora grátis entra no ticket assim que você escolher um horário.");
+        break;
+      case "editar-dados": estado.editando = true; renderConta(); $("#md-nome")?.focus(); break;
+      case "cancelar-edicao": estado.editando = false; renderConta(); break;
+      case "ics-rsv": {
+        const r = reservaPorCodigo(alvo.dataset.rsv);
+        if (r) baixarAgenda({ horas: r.horas, q: quadraDe(r.quadra) }, r.data);
+        break;
+      }
+      case "ver-mural":
+        mostrarPortal();
+        $("#partidas").open = true;
+        rolarAte("partidas", 20);
+        break;
+      case "copiar-cupom":
+        navigator.clipboard?.writeText(alvo.dataset.cod).catch(() => {});
+        alvo.textContent = "Copiado";
+        setTimeout(() => { alvo.textContent = "Copiar"; }, 2000);
+        break;
+      case "cancelar-rsv": {
+        const r = reservaPorCodigo(alvo.dataset.rsv);
+        abrirDialogo("Cancelar reserva", linhaReserva(r), cancelarHTML(r));
+        break;
+      }
+      case "confirmar-cancelar": {
+        const r = reservaPorCodigo(alvo.dataset.rsv);
+        const credito = horasAte(r) >= 24;
+        r.status = "cancelada";
+        r.vagas.aberta = false;
+        chavesDe(r).forEach((k) => minhas.delete(k));
+        trocarCorpo(`<p class="dlg-txt"><b>Reserva cancelada.</b> O horário foi liberado para outras pessoas.</p>
+          ${credito ? `<p class="dlg-txt">O reembolso de <span class="num">${reais(r.pago)}</span> volta para o Pix que você usou.</p>` : ""}
+          <div class="dlg-acoes"><button type="button" class="btn-navy" data-acao="fechar-dlg">Fechar</button></div>`);
+        $("#dlg-titulo").focus();
+        atualizarTudo();
+        renderDia();
+        break;
+      }
+      case "vagas": {
+        const r = reservaPorCodigo(alvo.dataset.rsv);
+        abrirDialogo("Procurar jogadores", linhaReserva(r), vagasHTML(r));
+        break;
+      }
+      case "faltam": {
+        const r = reservaPorCodigo(alvo.dataset.rsv);
+        r.vagas.faltam = Math.min(20, Math.max(1, r.vagas.faltam + Number(alvo.dataset.delta)));
+        const marcado = $("#vg-termo")?.checked;
+        trocarCorpo(vagasHTML(r));
+        if (marcado) $("#vg-termo").checked = true;
+        $(`[data-acao="faltam"][data-delta="${alvo.dataset.delta}"]`)?.focus();
+        break;
+      }
+      case "publicar-vagas": {
+        const r = reservaPorCodigo(alvo.dataset.rsv);
+        if (erroCampo("vg-termo", !$("#vg-termo").checked && "Marque a caixa para publicar a partida.")) { $("#vg-termo").focus(); break; }
+        r.vagas.aberta = true;
+        trocarCorpo(vagasHTML(r));
+        atualizarTudo();
+        aviso("Sua partida está no mural.");
+        break;
+      }
+      case "tirar-vagas": {
+        const r = reservaPorCodigo(alvo.dataset.rsv);
+        r.vagas.aberta = false;
+        trocarCorpo(vagasHTML(r));
+        atualizarTudo();
+        aviso("Sua partida saiu do mural.");
+        break;
+      }
+      case "reabrir-vagas": {
+        const r = reservaPorCodigo(alvo.dataset.rsv);
+        r.vagas.completa = false;
+        r.vagas.faltam = 1;
+        trocarCorpo(vagasHTML(r));
+        break;
+      }
+      case "visto": {
+        const r = reservaPorCodigo(alvo.dataset.rsv);
+        r.pedidos[Number(alvo.dataset.i)].novo = false;
+        setTimeout(() => { trocarCorpo(vagasHTML(r)); atualizarTudo(); }, 0);
+        break;
+      }
+      case "combinado": {
+        const r = reservaPorCodigo(alvo.dataset.rsv);
+        const p = r.pedidos[Number(alvo.dataset.i)];
+        p.combinado = true;
+        p.novo = false;
+        r.vagas.faltam -= 1;
+        if (r.vagas.faltam <= 0) {
+          Object.assign(r.vagas, { aberta: false, completa: true, faltam: 2 });
+          aviso("Partida completa! Ela saiu do mural.");
+        } else {
+          aviso(`Combinado com ${p.nome.split(" ")[0]}. Falta${r.vagas.faltam > 1 ? "m" : ""} ${plural(r.vagas.faltam, "jogador", "jogadores")}.`);
+        }
+        trocarCorpo(vagasHTML(r));
+        atualizarTudo();
+        break;
+      }
+      case "fechar-dlg": dlg.close(); break;
+      case "excluir-conta": {
+        const ativas = proximas().length;
+        const perde = [CLIENTE.horasClube ? `${plural(CLIENTE.horasClube, "carimbo", "carimbos")} do Clube` : "", CLIENTE.cupons.length ? plural(CLIENTE.cupons.length, "hora grátis", "horas grátis") : ""].filter(Boolean);
+        abrirDialogo("Excluir conta", CLIENTE.nome, `<p class="dlg-txt">Isso apaga seu nome, seu WhatsApp e o histórico da sua conta${perde.length ? `, além de ${lista(perde)}` : ""}. Não dá para desfazer.</p>
+          ${ativas ? `<div class="caso perde"><b>Você tem ${plural(ativas, "jogo marcado", "jogos marcados")}</b><p>As reservas continuam valendo na arena. Se quiser cancelar alguma, faça isso antes de excluir a conta.</p></div>` : ""}
+          <div class="dlg-acoes"><button type="button" class="btn-borda" data-acao="fechar-dlg">Manter conta</button><button type="button" class="btn-perigo" data-acao="confirmar-excluir">Excluir conta</button></div>`);
+        break;
+      }
+      case "confirmar-excluir":
+        dlg.close();
+        estado.modo = "visitante";
+        trocarCliente(clienteDemo());
+        mostrarPortal();
+        aplicarModo();
+        lenis ? lenis.scrollTo(0, { immediate: true, force: true }) : window.scrollTo(0, 0);
+        aviso("Sua conta foi excluída.");
+        break;
+      case "limpar": limparSelecao(); atualizarSelecao(); break;
+      case "subir": lenis ? lenis.scrollTo(0, { duration: 0.85, force: true }) : window.scrollTo({ top: 0, behavior: "smooth" }); break;
+      case "pedir": {
+        const p = todasPartidas().find((x) => x.id === alvo.dataset.partida);
+        const pedir = () => {
+          const atual = todasPartidas().find((x) => x.id === p.id);
+          if (atual?.proprio) { aviso("Essa partida é sua. Os pedidos aparecem em Minhas reservas."); return; }
+          estado.pedidos.add(p.id);
+          renderPartidas();
+          aviso(`Pedido enviado. ${p.org} recebe no WhatsApp e confirma com você.`);
+        };
+        if (estado.modo !== "logado") {
+          abrirAuth("entrar", { motivo: `Entre para pedir vaga na partida de ${p.esporte.toLowerCase()} com ${p.org}.`, depois: pedir });
+          break;
+        }
+        pedir();
+        break;
+      }
+      case "politica": {
+        const texto = $("#politica-ck");
+        texto.hidden = !texto.hidden;
+        alvo.setAttribute("aria-expanded", String(!texto.hidden));
+        break;
+      }
+      case "copiar": {
+        const campo = $("#pix-code");
+        const rotulo = alvo.querySelector("span");
+        (navigator.clipboard?.writeText(campo.value) ?? Promise.reject()).catch(() => campo.select());
+        rotulo.textContent = "Copiado";
+        setTimeout(() => { rotulo.textContent = "Copiar"; }, 2000);
+        break;
+      }
+      case "pagar": confirmarPagamento(); break;
+      case "voltar": pararTimer(); estado.etapa = "dados"; renderCheckout(); $("#ck-titulo").focus(); break;
+      case "fechar": ck.close(); break;
+      case "ics": if (estado.ultimo) baixarAgenda(estado.ultimo); break;
+      case "criar-conta":
+        ck.close();
+        abrirAuth("concluir");
+        break;
+      default: break;
+    }
+  });
+
+  document.addEventListener("change", (e) => {
+    if (e.target.matches("[data-voucher]")) {
+      estado.usarVoucher = e.target.checked;
+      renderTicket();
+      atualizarValoresCk();
+      if (ck.open) { const cx = $("#ck-dados [data-voucher]"); if (cx) cx.checked = estado.usarVoucher; }
+    }
+    if (e.target.name === "pagamento") { estado.pagamento = e.target.value; atualizarValoresCk(); }
+    if (e.target.name === "esporte") { estado.esporte = e.target.value; marcarErro("esporte", false); }
+  });
+
+  document.addEventListener("input", (e) => {
+    if (e.target.id === "f-whats") { e.target.value = mascaraWhats(e.target.value); estado.form.whats = e.target.value; }
+    if (e.target.id === "f-nome") estado.form.nome = e.target.value;
+    if (e.target.dataset.mascara === "whats") e.target.value = mascaraWhats(e.target.value);
+    if (e.target.id === "au-codigo") e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6);
+  });
+
+  // Entrar, criar conta e confirmar o WhatsApp depois da reserva: pede o código e depois confere
+  $("#au-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const modo = estado.au.modo;
+    if (!validarAuth(modo)) return;
+    const botao = $("#au-form [type=submit]");
+    const codigo = estado.au.etapa === "codigo";
+    botao.disabled = true;
+    botao.setAttribute("aria-busy", "true");
+    botao.textContent = codigo ? (modo === "entrar" ? "Entrando…" : "Criando conta…") : "Enviando código…";
+    setTimeout(() => (codigo ? concluirAuth(modo) : enviarCodigo()), 600);
+  });
+
+  // Formulário da Minha conta: dados
+  document.addEventListener("submit", (e) => {
+    const f = e.target;
+    if (f.id !== "form-dados") return;
+    e.preventDefault();
+    if (f.id === "form-dados") {
+      const nome = nomeProprio($("#md-nome").value);
+      const whats = $("#md-whats").value;
+      const erroNome = erroCampo("md-nome", nome.split(" ").filter(Boolean).length < 2 && "Informe seu nome completo.");
+      const erroWhats = erroCampo("md-whats", whats.replace(/\D/g, "").length < 10 && "WhatsApp inválido. Use DDD e número.");
+      if (erroNome || erroWhats) { $(erroNome ? "#md-nome" : "#md-whats").focus(); return; }
+      Object.assign(CLIENTE, { nome, primeiro: maiuscula(nome.split(" ")[0]), whatsapp: whats, nascimento: $("#md-nasc").value });
+      estado.editando = false;
+      atualizarTudo();
+      aviso("Dados salvos.");
+    }
+  });
+
+  auth.addEventListener("click", (e) => { if (e.target === auth) auth.close(); });
+  auth.addEventListener("close", () => { if (!ck.open && !dlg.open) lenis?.start(); clearInterval(reenvioTimer); if (estado.au) estado.au.depois = null; });
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+  dlg.addEventListener("close", () => { if (!ck.open && !auth.open) lenis?.start(); });
+
+  $("#ck-dados").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const r = resumo();
+    if (!r) return;
+    const erros = [];
+    if (estado.modo !== "logado") {
+      const nome = estado.form.nome.trim();
+      if (marcarErro("nome", nome.split(/\s+/).filter(Boolean).length < 2)) erros.push("#f-nome");
+      const digitos = estado.form.whats.replace(/\D/g, "").length;
+      if (marcarErro("whats", digitos < 10)) erros.push("#f-whats");
+    }
+    if (r.q.esportes.length > 1 && marcarErro("esporte", !estado.esporte)) erros.push('#ck-dados input[name="esporte"]');
+    if (marcarErro("aceite", !$("#f-aceite").checked)) erros.push("#f-aceite");
+    if (erros.length) { $(erros[0])?.focus(); return; }
+    if (r.agora === 0) { confirmarPagamento(); return; }
+    estado.etapa = "pix";
+    renderCheckout();
+    mostrarPix();
+  });
+
+  ck.addEventListener("click", (e) => { if (e.target === ck) ck.close(); });
+  ck.addEventListener("close", () => {
+    pararTimer();
+    lenis?.start();
+    if (estado.etapa === "ok") {
+      limparSelecao();
+      renderDia();
+    }
+    estado.etapa = "dados";
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape" || ck.open || auth.open || dlg.open) return;
+    const aberto = !$("#menu-perfil").hidden ? ".perfil" : !$("#menu-mobile").hidden ? ".burger" : null;
+    fecharMenus();
+    if (aberto) $(aberto).focus();
+  });
+
+  /* Topo com sombra ao rolar, botão de voltar ao topo e destaque da seção ativa (scroll spy) */
+  const aoRolar = () => {
+    $("#topo").dataset.rolado = String(window.scrollY > 8);
+    $("#subir").hidden = window.scrollY < 700;
+  };
+  window.addEventListener("scroll", aoRolar, { passive: true });
+
+  const SECOES = ["reservar", "escolinhas", "eventos", "estrutura", "contato"];
+  const visivel = {};
+  const espiao = new IntersectionObserver((entradas) => {
+    entradas.forEach((en) => { visivel[en.target.id] = en.isIntersecting ? en.intersectionRect.height : 0; });
+    // Nas seções fora do menu (Clube, Instagram, Regras) nenhum link fica marcado
+    const maior = Math.max(...SECOES.map((id) => visivel[id] ?? 0));
+    const ativa = maior > 0 ? SECOES.find((id) => (visivel[id] ?? 0) === maior) : null;
+    $$(".nav a, .mm-nav a").forEach((a) => {
+      if (a.getAttribute("href") === `#${ativa}`) a.setAttribute("aria-current", "location");
+      else a.removeAttribute("aria-current");
+    });
+  }, { rootMargin: "-72px 0px -35% 0px", threshold: [0, 0.1, 0.25, 0.5, 0.75, 1] });
+  SECOES.forEach((id) => espiao.observe(document.getElementById(id)));
+
+  /* ── Início ──────────────────────────────────────────── */
+  $$("[data-whats]").forEach((a) => { a.href = `https://wa.me/${WHATS}?text=${encodeURIComponent(a.dataset.whats)}`; });
+  $("#politica-texto").textContent = POLITICA;
+  renderDias();
+  renderDia();
+  renderInstagram();
+  aplicarModo();
+  atualizarSetas();
+  aoRolar();
+  if (location.hash.startsWith("#minha-conta")) abrirConta(location.hash.split("/")[1]);
+  // Endereço digitado à mão (#minha-conta, #minha-conta/clube...) também troca de página
+  window.addEventListener("hashchange", () => {
+    if (location.hash.startsWith("#minha-conta")) abrirConta(location.hash.split("/")[1]);
+    else if (estado.view === "conta") mostrarPortal();
+  });
+})();
+</script>
+</body>
+</html>
