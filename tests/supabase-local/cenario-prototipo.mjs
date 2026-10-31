@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const AQUI = dirname(fileURLToPath(import.meta.url));
 
 /** Seeds aplicados depois do schema e das migrações. */
-export const seeds = [join(AQUI, "..", "..", "src", "lib", "supabase", "seed-arena-belem.sql"), join(AQUI, "cenario-rafael.sql")];
+export const seeds = [join(AQUI, "..", "..", "src", "lib", "supabase", "seed-arena-belem.sql"), join(AQUI, "cenario-ocupacao.sql"), join(AQUI, "cenario-rafael.sql")];
 
 /**
  * Dados extras do cenário (o atleta do protótipo entra aqui a partir da Fase 4).

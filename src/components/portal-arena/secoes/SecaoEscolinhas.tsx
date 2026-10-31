@@ -1,10 +1,11 @@
 /**
  * @file SecaoEscolinhas.tsx
  * @description Escolinhas (`#escolinhas`, fundo azul): foto do professor, esporte, professor,
- * descrição, turmas (dia, horas, nível) e "Quero uma vaga" com WhatsApp pronto. Sem preço.
+ * descrição, turmas (dia, horas, categoria) e "Quero uma vaga" (WhatsApp com mensagem pronta ou link,
+ * conforme o painel). Sem preço.
  */
 
-import { esporteNaFrase, linkWhatsApp } from "@/lib/portal/formatos";
+import { mensagemPadraoEscolinha } from "@/lib/institucional/escolinhasSite";
 import type { EscolinhaPortal } from "@/lib/portal/types";
 
 export interface SecaoEscolinhasProps {
@@ -12,9 +13,9 @@ export interface SecaoEscolinhasProps {
   escolinhas: EscolinhaPortal[];
 }
 
-/** Mensagem do "Quero uma vaga". */
+/** Mensagem padrão do "Quero uma vaga" (o painel pode trocar por outra). */
 export function mensagemVagaEscolinha(e: Pick<EscolinhaPortal, "esporte" | "professor">): string {
-  return `Olá! Vim pelo site e quero uma vaga no ${esporteNaFrase(e.esporte)} com o Prof. ${e.professor}. Pode me passar os valores e as vagas das turmas?`;
+  return mensagemPadraoEscolinha(e.esporte, e.professor);
 }
 
 /** Id do card da escolinha (usado pelo horário de aula para levar até a turma). */
@@ -40,11 +41,11 @@ export function SecaoEscolinhas({ intro, escolinhas }: SecaoEscolinhasProps) {
               <div className="esc-cab">
                 {/* eslint-disable-next-line @next/next/no-img-element -- recorte do professor, tamanho fixo pelo CSS */}
                 <img className="esc-rosto" src={e.fotoProfessorUrl} alt="" width={220} height={275} loading="lazy" />
-                <h3 id={`${idEscolinha(e.id)}-t`}>{e.esporte}</h3>
+                <h3 id={`${idEscolinha(e.id)}-t`}>{e.titulo}</h3>
                 <p className="esc-prof">{`Prof. ${e.professor}`}</p>
                 {e.descricao && <p className="esc-desc">{e.descricao}</p>}
               </div>
-              <a className="btn-amarelo esc-cta" href={linkWhatsApp(e.whatsappDigitos, mensagemVagaEscolinha(e))} target="_blank" rel="noopener">
+              <a className="btn-amarelo esc-cta" href={e.hrefBotao} target="_blank" rel="noopener">
                 Quero uma vaga
               </a>
               <dl className="turmas">

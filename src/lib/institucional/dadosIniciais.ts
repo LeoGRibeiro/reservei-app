@@ -8,7 +8,7 @@
  * enquanto o usuário não faz upload de suas fotos definitivas.
  */
 
-import type { GaleriaItem, EscolinhaItem } from "./types";
+import type { GaleriaItem } from "./types";
 import type { ContratoRecorrente } from "@/lib/recorrencia/types";
 
 /**
@@ -87,55 +87,6 @@ export const GALERIA_INICIAL: readonly GaleriaItem[] = [
     displayOrder: 6,
     isActive: true,
     createdAt: "2026-10-06T10:25:00.000Z",
-  },
-];
-
-/**
- * Escolinhas e aulas esportivas padrão com professores qualificados,
- * faixas etárias definidas e links diretos para WhatsApp.
- */
-export const ESCOLINHAS_INICIAIS: readonly EscolinhaItem[] = [
-  {
-    id: "esc_tenis_01",
-    sportName: "Tênis de Campo",
-    teacherName: "Prof. Rodrigo Alencar",
-    teacherImageUrl:
-      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
-    scheduleInfo: "Terças e Quintas: 08h às 10h | 17h às 19h",
-    faixaEtaria: "Infantil (6 a 14 anos) e Adulto Iniciante",
-    descricao:
-      "Metodologia focada no desenvolvimento biomecânico, técnicas de saque e jogo de pernas, adaptada tanto para crianças quanto para quem está começando no esporte.",
-    whatsappNumber: "11988887777",
-    isActive: true,
-    createdAt: "2026-10-06T10:00:00.000Z",
-  },
-  {
-    id: "esc_beach_02",
-    sportName: "Beach Tennis",
-    teacherName: "Profª. Camila Duarte",
-    teacherImageUrl:
-      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-    scheduleInfo: "Segundas e Quartas: 07h às 09h | 18h às 20h",
-    faixaEtaria: "Juvenil e Adulto (Turmas Femininas e Mistas)",
-    descricao:
-      "Aulas dinâmicas com ênfase em agilidade na areia, controle de smash e posicionamento tático em duplas. Treinos divertidos que queimam calorias e integram a galera.",
-    whatsappNumber: "11977776666",
-    isActive: true,
-    createdAt: "2026-10-06T10:05:00.000Z",
-  },
-  {
-    id: "esc_society_03",
-    sportName: "Futebol Society Kids",
-    teacherName: "Prof. Marcos Silveira",
-    teacherImageUrl:
-      "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
-    scheduleInfo: "Sábados: 08h às 11h | Quartas: 16h às 18h",
-    faixaEtaria: "Categorias Sub-7, Sub-10 e Sub-14",
-    descricao:
-      "Formação esportiva integral, com fundamentos de passe, condução e cooperação em equipe. Acompanhamento pedagógico atencioso com foco em disciplina e diversão.",
-    whatsappNumber: "11966665555",
-    isActive: true,
-    createdAt: "2026-10-06T10:10:00.000Z",
   },
 ];
 

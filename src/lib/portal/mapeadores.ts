@@ -23,6 +23,7 @@ import type {
   TipoInscricao,
   TipoPostInstagram,
 } from "./types";
+import { hrefBotaoEscolinha, limparNomeProfessor, tituloEscolinha } from "@/lib/institucional/escolinhasSite";
 
 type Linha = Record<string, unknown>;
 
@@ -145,12 +146,16 @@ export function mapearConteudo(row: Linha | null | undefined): ConteudoArena {
   };
 }
 
-/** Linha de `landing_page_schools` → {@link EscolinhaPortal}. */
+/** Linha de `landing_page_schools` → {@link EscolinhaPortal} (título, turmas e botão configurados no painel). */
 export function mapearEscolinha(row: Linha, whatsappArena: string): EscolinhaPortal {
+  const esporte = String(row.sport_name ?? "");
+  const professor = limparNomeProfessor(String(row.teacher_name ?? ""));
+  const whatsappDigitos = digitosWhatsApp(row.whatsapp_number) || whatsappArena;
   return {
     id: String(row.id ?? ""),
-    esporte: String(row.sport_name ?? ""),
-    professor: String(row.teacher_name ?? "").replace(/^prof(\.|ª|a\.)?\s+/i, ""),
+    titulo: tituloEscolinha({ nome: texto(row.nome) ?? "", esporte }),
+    esporte,
+    professor,
     fotoProfessorUrl: texto(row.teacher_image_url) ?? "/arenas/exemplo/professor.svg",
     descricao: texto(row.descricao),
     turmas: lista(row.turmas, (o) => {
@@ -158,7 +163,18 @@ export function mapearEscolinha(row: Linha, whatsappArena: string): EscolinhaPor
       const horas = texto(o.horas);
       return dias && horas ? { dias, horas, nivel: texto(o.nivel) ?? "" } : null;
     }),
-    whatsappDigitos: digitosWhatsApp(row.whatsapp_number) || whatsappArena,
+    whatsappDigitos,
+    hrefBotao: hrefBotaoEscolinha(
+      {
+        tipoBotao: row.botao_tipo === "link" ? "link" : "whatsapp",
+        linkBotao: texto(row.botao_url) ?? "",
+        whatsapp: whatsappDigitos,
+        mensagemWhatsapp: texto(row.mensagem_whatsapp) ?? "",
+        esporte,
+        professor,
+      },
+      whatsappArena
+    ),
     ordem: numero(row.ordem) ?? 0,
   };
 }

@@ -65,6 +65,22 @@ describe("mapearConteudo", () => {
 });
 
 describe("mapearEscolinha", () => {
+  it("usa o nome como título e o botão configurado no painel", () => {
+    const comLink = mapearEscolinha(
+      { id: "e", nome: "CT Falcão 12", sport_name: "Futebol society", teacher_name: "Marcos", botao_tipo: "link", botao_url: "https://forms.gle/x", turmas: [] },
+      "5591984982865"
+    );
+    expect(comLink.titulo).toBe("CT Falcão 12");
+    expect(comLink.hrefBotao).toBe("https://forms.gle/x");
+
+    const semNome = mapearEscolinha(
+      { id: "e", sport_name: "Vôlei", teacher_name: "Lucas", mensagem_whatsapp: "Tem vaga no sábado?", turmas: [] },
+      "5591984982865"
+    );
+    expect(semNome.titulo).toBe("Vôlei");
+    expect(semNome.hrefBotao).toBe(`https://wa.me/5591984982865?text=${encodeURIComponent("Tem vaga no sábado?")}`);
+  });
+
   it("tira o 'Prof.' do nome (o portal escreve) e cai no WhatsApp da arena", () => {
     const e = mapearEscolinha(
       { id: "e", sport_name: "Vôlei", teacher_name: "Prof. Lucas Andrade", whatsapp_number: "", turmas: [{ dias: "Sábado", horas: "9h" }] },

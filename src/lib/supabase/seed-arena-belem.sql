@@ -3,23 +3,11 @@
 -- fotos do protótipo aprovado em 30/10/2026. Pagamento simulado e fora dos buscadores (noindex).
 -- DADOS A CONFIRMAR COM A ARENA: ver SPEC/2026-10-30-handoff-prototipo-portal.md, seção 5.
 --
--- Pré-requisito: migrações 2026-10-22-fase8, 2026-10-30-a-auditoria-rls e 2026-10-30-b-portal-template.
--- Idempotente: rodar de novo renova as reservas de exemplo dos próximos 31 dias.
+-- Pré-requisito: migrações 2026-10-22-fase8, 2026-10-30-a-auditoria-rls, 2026-10-30-b-portal-template e
+-- 2026-10-31-escolinhas-site. Idempotente. Não cria reservas: a agenda começa vazia (a ocupação de
+-- exemplo do protótipo fica só nos testes, em tests/supabase-local/cenario-ocupacao.sql).
 -- A última consulta devolve o link de ativação do dono (só enquanto a arena não tiver proprietário).
 -- ==============================================================================
-
--- Sorteio determinístico do protótipo (FNV-1a de 32 bits), só nesta sessão
-CREATE OR REPLACE FUNCTION pg_temp.sorteio_prototipo(chave TEXT) RETURNS NUMERIC LANGUAGE plpgsql IMMUTABLE AS $$
-DECLARE
-  x BIGINT := 2166136261;
-  b BYTEA := convert_to(chave, 'UTF8');
-BEGIN
-  FOR i IN 0..length(b) - 1 LOOP
-    x := (x # get_byte(b, i)) & 4294967295;
-    x := (x * 16777619) & 4294967295;
-  END LOOP;
-  RETURN (x % 10000) / 10000.0;
-END $$;
 
 -- 1. Arena (demonstração: pagamento simulado e fora dos buscadores)
 INSERT INTO public.arenas (
@@ -116,125 +104,26 @@ ON CONFLICT (arena_id) DO UPDATE SET intro_reserva = EXCLUDED.intro_reserva, int
   intro_eventos = EXCLUDED.intro_eventos, intro_estrutura = EXCLUDED.intro_estrutura,
   destaques_estrutura = EXCLUDED.destaques_estrutura, regras = EXCLUDED.regras, faq = EXCLUDED.faq, atualizado_em = NOW();
 
--- 6. Escolinhas e turmas (dados a confirmar com a arena: ver o handoff do protótipo, seção 5)
-INSERT INTO public.landing_page_schools (id, arena_id, sport_name, teacher_name, teacher_image_url, schedule_info, whatsapp_number, descricao, turmas, ordem, is_active)
+-- 6. Escolinhas do site (exemplo; o dono edita em Painel → Conteúdo Institucional → Escolinhas do site)
+INSERT INTO public.landing_page_schools (id, arena_id, nome, sport_name, teacher_name, teacher_image_url, schedule_info, whatsapp_number, descricao, turmas, ordem, is_active)
 VALUES
-  ('arena-belem-esc-beach', 'arena-belem', 'Beach tennis', 'Italo Bianck', '/arenas/arena-belem/prof-beach.png', 'Seg e Qua 16h; Ter e Qui 7h, 8h e 19h', '91984982865',
+  ('arena-belem-esc-beach', 'arena-belem', NULL, 'Beach tennis', 'Italo Bianck', '/arenas/arena-belem/prof-beach.png', 'Seg e Qua 16h; Ter e Qui 7h, 8h e 19h', '91984982865',
    'Do primeiro saque ao jogo competitivo. Turmas pequenas, com raquete e bolas da arena para quem está começando.',
    '[{"dias": "Seg e Qua", "horas": "16h", "nivel": "Avançado"}, {"dias": "Ter e Qui", "horas": "7h e 8h", "nivel": "Iniciante"}, {"dias": "Ter e Qui", "horas": "19h", "nivel": "Intermediário"}]', 1, true),
-  ('arena-belem-esc-futevolei', 'arena-belem', 'Futevôlei', 'Diego Moraes', '/arenas/arena-belem/prof-futevolei.png', 'Seg a Sex, fim de tarde', '91984982865',
+  ('arena-belem-esc-futevolei', 'arena-belem', NULL, 'Futevôlei', 'Diego Moraes', '/arenas/arena-belem/prof-futevolei.png', 'Seg a Sex, fim de tarde', '91984982865',
    'Fundamentos, dupla e leitura de jogo. A turma juvenil é para quem tem de 12 a 17 anos.',
    '[{"dias": "Seg e Qua", "horas": "17h e 18h", "nivel": "Livre"}, {"dias": "Ter e Qui", "horas": "17h", "nivel": "Juvenil"}, {"dias": "Ter e Qui", "horas": "18h e 19h", "nivel": "Livre"}, {"dias": "Sex", "horas": "17h, 18h e 19h", "nivel": "Livre"}]', 2, true),
-  ('arena-belem-esc-volei', 'arena-belem', 'Vôlei', 'Lucas Andrade', '/arenas/arena-belem/prof-volei.png', 'Sábado 9h a 11h', '91984982865',
+  ('arena-belem-esc-volei', 'arena-belem', NULL, 'Vôlei', 'Lucas Andrade', '/arenas/arena-belem/prof-volei.png', 'Sábado 9h a 11h', '91984982865',
    'Toque, manchete e saque na areia, em duplas e quartetos. Aos sábados, a turma é aberta a todos os níveis.',
    '[{"dias": "Sábado", "horas": "9h, 10h e 11h", "nivel": "Livre"}, {"dias": "Seg e Qua", "horas": "19h", "nivel": "Iniciante"}, {"dias": "Ter e Qui", "horas": "20h", "nivel": "Intermediário"}]', 3, true),
-  ('arena-belem-esc-falcao', 'arena-belem', 'CT Falcão 12', 'Marcos Falcão', '/arenas/arena-belem/prof-falcao.png', 'Ter e Qui e Sábado', '91984982865',
+  ('arena-belem-esc-falcao', 'arena-belem', 'CT Falcão 12', 'Futebol society', 'Marcos Falcão', '/arenas/arena-belem/prof-falcao.png', 'Ter e Qui e Sábado', '91984982865',
    'Futebol society para crianças e adolescentes: técnica, posicionamento e jogo coletivo, com treinos separados por idade e amistosos ao longo do ano.',
    '[{"dias": "Ter e Qui", "horas": "8h e 9h", "nivel": "6 a 10 anos"}, {"dias": "Ter e Qui", "horas": "16h", "nivel": "11 a 14 anos"}, {"dias": "Sábado", "horas": "8h", "nivel": "Todas as idades"}]', 4, true)
-ON CONFLICT (id) DO UPDATE SET sport_name = EXCLUDED.sport_name, teacher_name = EXCLUDED.teacher_name,
+ON CONFLICT (id) DO UPDATE SET nome = EXCLUDED.nome, sport_name = EXCLUDED.sport_name, teacher_name = EXCLUDED.teacher_name,
   teacher_image_url = EXCLUDED.teacher_image_url, descricao = EXCLUDED.descricao, turmas = EXCLUDED.turmas,
   ordem = EXCLUDED.ordem, whatsapp_number = EXCLUDED.whatsapp_number, is_active = true;
 
--- 7. Turmas que ocupam horário na grade (contratos de escolinha), como no protótipo
-INSERT INTO public.contratos_recorrentes (id, arena_id, tipo, nome, esporte, responsavel_nome, contato_whatsapp, quadra_id,
-  dias_semana, hora_inicio, hora_fim, data_inicio, meses, ativo, escolinha_id)
-SELECT c.id, 'arena-belem', 'escolinha', c.nome, c.esporte, c.professor, '91984982865', c.quadra, c.dias, c.inicio, c.fim,
-       (now() AT TIME ZONE 'America/Belem')::date - 30, 6, true, c.escolinha
-FROM (VALUES
-  ('arena-belem-ct-beach',      'Beach tennis', 'Beach Tennis', 'Italo Bianck',  'arena-belem-q1', '{1,3}'::int[], '16:00', '17:00', 'arena-belem-esc-beach'),
-  ('arena-belem-ct-fute-sq',    'Futevôlei',    'Futevôlei',    'Diego Moraes',  'arena-belem-q3', '{1,3}'::int[], '17:00', '19:00', 'arena-belem-esc-futevolei'),
-  ('arena-belem-ct-fute-tq',    'Futevôlei',    'Futevôlei',    'Diego Moraes',  'arena-belem-q3', '{2,4}'::int[], '17:00', '20:00', 'arena-belem-esc-futevolei'),
-  ('arena-belem-ct-fute-sex',   'Futevôlei',    'Futevôlei',    'Diego Moraes',  'arena-belem-q3', '{5}'::int[],   '17:00', '20:00', 'arena-belem-esc-futevolei'),
-  ('arena-belem-ct-volei',      'Vôlei',        'Vôlei',        'Lucas Andrade', 'arena-belem-q3', '{6}'::int[],   '09:00', '12:00', 'arena-belem-esc-volei')
-) AS c(id, nome, esporte, professor, quadra, dias, inicio, fim, escolinha)
-ON CONFLICT (id) DO UPDATE SET quadra_id = EXCLUDED.quadra_id, dias_semana = EXCLUDED.dias_semana,
-  hora_inicio = EXCLUDED.hora_inicio, hora_fim = EXCLUDED.hora_fim, escolinha_id = EXCLUDED.escolinha_id, ativo = true;
-
--- 8. Reservas de exemplo dos próximos 31 dias: aulas, partidas do mural e ocupação sorteada
-DELETE FROM public.reservas WHERE arena_id = 'arena-belem' AND id LIKE 'demo-belem-%';
-
--- 8.1 Aulas (uma reserva por dia de turma, com todas as horas)
-INSERT INTO public.reservas (id, arena_id, quadra_id, data, horarios, hora_inicio, hora_fim, nome_cliente, whatsapp_cliente,
-  telefone_cliente, esporte, tipo_reserva, contrato_id, valor_original, valor_total, valor_sinal, valor_pendente, status,
-  status_whatsapp, metodo_pagamento, gateway_provedor, criada_em)
-SELECT 'demo-belem-aula-' || c.id || '-' || to_char(d.data, 'YYYYMMDD'), 'arena-belem', c.quadra_id, d.data,
-       ARRAY(SELECT lpad(h::text, 2, '0') || ':00' FROM generate_series(split_part(c.hora_inicio, ':', 1)::int, split_part(c.hora_fim, ':', 1)::int - 1) h),
-       c.hora_inicio, c.hora_fim, c.nome, '91984982865', '91984982865', c.esporte, 'escolinha', c.id, 0, 0, 0, 0, 'confirmada',
-       'enviado', 'pix', 'mock', NOW()
-FROM public.contratos_recorrentes c
-CROSS JOIN LATERAL (
-  SELECT ((now() AT TIME ZONE 'America/Belem')::date + n) AS data FROM generate_series(0, 30) n
-) d
-WHERE c.arena_id = 'arena-belem' AND c.tipo = 'escolinha' AND c.ativo AND EXTRACT(DOW FROM d.data)::int = ANY(c.dias_semana);
-
--- 8.2 Partidas procurando jogadores (o mural nunca mostra quantas vagas faltam)
-INSERT INTO public.reservas (id, arena_id, quadra_id, data, horarios, hora_inicio, hora_fim, nome_cliente, whatsapp_cliente,
-  telefone_cliente, esporte, tipo_reserva, valor_original, valor_total, valor_sinal, valor_pendente, status, status_whatsapp,
-  metodo_pagamento, gateway_provedor, permite_vagas, vagas_abertas, pago_em, criada_em)
-SELECT 'demo-belem-partida-' || p.n, 'arena-belem', p.quadra, (now() AT TIME ZONE 'America/Belem')::date + p.em,
-       ARRAY[lpad(p.h::text, 2, '0') || ':00'], lpad(p.h::text, 2, '0') || ':00', lpad((p.h + 1)::text, 2, '0') || ':00',
-       p.nome, p.whats, p.whats, p.esporte, 'avulsa', p.valor, p.valor, p.valor / 2, p.valor / 2, 'pendente', 'enviado', 'pix', 'mock',
-       true, p.faltam, NOW() - interval '1 day', NOW() - interval '1 day'
-FROM (VALUES
-  (1, 0, 'arena-belem-q1', 20, 'Beach Tennis',    'Thiago Barros',  '91900000001', 2, 100::numeric),
-  (2, 1, 'arena-belem-q4', 19, 'Futebol Society', 'Bruno Lima',     '91900000002', 3, 180::numeric),
-  (3, 2, 'arena-belem-q2', 8,  'Beach Tennis',    'Carla Mendes',   '91900000003', 1, 80::numeric),
-  (4, 4, 'arena-belem-q3', 21, 'Futevôlei',       'Diego Pinheiro', '91900000004', 2, 100::numeric)
-) AS p(n, em, quadra, h, esporte, nome, whats, faltam, valor);
-
--- 8.3 Ocupação sorteada (mesma função e mesmas chances do protótipo), sem cobrir aulas e partidas
-WITH quadras AS (
-  SELECT * FROM (VALUES ('arena-belem-q1', 'areia-1', true), ('arena-belem-q2', 'areia-2', true),
-                        ('arena-belem-q3', 'areia-3', true), ('arena-belem-q4', 'society', false)) AS q(id, chave, areia)
-),
-grade AS (
-  SELECT ((now() AT TIME ZONE 'America/Belem')::date + n) AS data, q.id AS quadra_id, q.chave, q.areia, h AS hora
-  FROM generate_series(0, 30) n CROSS JOIN quadras q CROSS JOIN generate_series(7, 22) h
-),
-sorteada AS (
-  SELECT g.*, EXTRACT(DOW FROM g.data)::int AS dow,
-         pg_temp.sorteio_prototipo(to_char(g.data, 'YYYY-MM-DD') || '|' || g.chave || '|' || g.hora) AS sorteio
-  FROM grade g
-),
-nomes AS (
-  SELECT ARRAY['Lucas Moraes', 'Ana Beatriz', 'Rafael Souza', 'Juliana Costa', 'Bruno Lima', 'Camila Rocha',
-               'Diego Pinheiro', 'Fernanda Alves', 'Gustavo Melo', 'Larissa Santos', 'Marcelo Dias',
-               'Patrícia Nunes', 'Thiago Barros', 'Vanessa Cruz', 'Pedro Henrique', 'Bianca Ferreira'] AS lista
-)
-INSERT INTO public.reservas (id, arena_id, quadra_id, data, horarios, hora_inicio, hora_fim, nome_cliente, whatsapp_cliente,
-  telefone_cliente, esporte, tipo_reserva, valor_original, valor_total, valor_sinal, valor_pendente, status, status_whatsapp,
-  metodo_pagamento, gateway_provedor, pago_em, criada_em)
-SELECT 'demo-belem-' || to_char(s.data, 'YYYYMMDD') || '-' || right(s.quadra_id, 2) || '-' || lpad(s.hora::text, 2, '0'),
-       'arena-belem', s.quadra_id, s.data, ARRAY[lpad(s.hora::text, 2, '0') || ':00'], lpad(s.hora::text, 2, '0') || ':00',
-       lpad((s.hora + 1)::text, 2, '0') || ':00',
-       (SELECT lista[1 + (floor(s.sorteio * 10000)::int % array_length(lista, 1))] FROM nomes),
-       '9190000' || lpad((floor(s.sorteio * 10000)::int % 10000)::text, 4, '0'),
-       '9190000' || lpad((floor(s.sorteio * 10000)::int % 10000)::text, 4, '0'),
-       CASE WHEN NOT s.areia THEN 'Futebol Society' WHEN s.quadra_id = 'arena-belem-q3' THEN 'Futevôlei' ELSE 'Beach Tennis' END,
-       'avulsa', v.valor, v.valor, round(v.valor / 2, 2), round(v.valor / 2, 2), 'pendente', 'enviado', 'pix', 'mock',
-       NOW() - interval '1 day', NOW() - interval '1 day'
-FROM sorteada s
-CROSS JOIN LATERAL (
-  SELECT CASE
-    WHEN s.hora >= 18 THEN (CASE WHEN s.areia THEN 100 ELSE 180 END)
-    WHEN s.dow IN (0, 6) THEN (CASE WHEN s.areia THEN 90 ELSE 160 END)
-    ELSE (CASE WHEN s.areia THEN 80 ELSE 150 END)
-  END::numeric AS valor
-) v
-WHERE s.sorteio < CASE
-    WHEN s.hora BETWEEN 18 AND 21 THEN (CASE WHEN s.dow IN (0, 6) THEN 0.5 ELSE 0.6 END)
-    WHEN s.hora = 22 THEN 0.35
-    WHEN s.hora < 10 THEN (CASE WHEN s.dow IN (0, 6) THEN 0.5 ELSE 0.3 END)
-    WHEN s.hora < 16 THEN (CASE WHEN s.dow IN (0, 6) THEN 0.45 ELSE 0.22 END)
-    ELSE 0.4
-  END
-  AND NOT EXISTS (
-    SELECT 1 FROM public.reservas r
-    WHERE r.arena_id = 'arena-belem' AND r.quadra_id = s.quadra_id AND r.data = s.data
-      AND (lpad(s.hora::text, 2, '0') || ':00') = ANY(r.horarios) AND r.status <> 'cancelada'
-  );
-
--- 9. Campeonatos e eventos (dados a confirmar com a arena)
+-- 7. Campeonatos e eventos (dados a confirmar com a arena)
 DELETE FROM public.eventos WHERE arena_id = 'arena-belem' AND id LIKE 'arena-belem-ev-%';
 INSERT INTO public.eventos (id, arena_id, titulo, modalidade, descricao_curta, descricao, data_inicio, data_fim, horario, status, dados,
   inscricao_tipo, inscricao_url, mensagem_whatsapp, chave, link_rotulo, link_url, campeoes, rotulo_campeoes, placar_final,
@@ -274,7 +163,7 @@ VALUES
    'Juliana Costa e Vanessa Cruz', 'Campeãs', '6/3, categoria D',
    '/arenas/arena-belem/society-bar.jpg', NULL, 'Bar da arena enfeitado com bandeirinhas, de frente para o campo', 7, true);
 
--- 10. Estrutura (o bento usa as 4 primeiras fotos ativas)
+-- 8. Estrutura (o bento usa as 4 primeiras fotos ativas)
 DELETE FROM public.landing_page_gallery WHERE arena_id = 'arena-belem' AND id LIKE 'arena-belem-foto-%';
 INSERT INTO public.landing_page_gallery (id, arena_id, image_url, title, description, categoria, display_order, is_active)
 VALUES
@@ -283,7 +172,7 @@ VALUES
   ('arena-belem-foto-3', 'arena-belem', '/arenas/arena-belem/society-bar.jpg', 'O society visto do bar', 'Campo society visto do mezanino do bar', 'bar', 3, true),
   ('arena-belem-foto-4', 'arena-belem', '/arenas/arena-belem/society.jpg', 'Campo society', 'Campo society de grama sintética dentro do galpão', 'quadras', 4, true);
 
--- 11. Instagram (posts cadastrados; contagens simuladas até a integração com a API)
+-- 9. Instagram (posts cadastrados; contagens simuladas até a integração com a API)
 INSERT INTO public.instagram_perfil (arena_id, seguidores, total_posts, contagem_simulada)
 VALUES ('arena-belem', 4120, 312, true)
 ON CONFLICT (arena_id) DO UPDATE SET seguidores = EXCLUDED.seguidores, total_posts = EXCLUDED.total_posts,
@@ -309,7 +198,7 @@ VALUES
   ('arena-belem-post-8', 'arena-belem', '/arenas/arena-belem/bar-corredor.jpg', 382, 510, '50% 50%', 'Corredor do bar da arena',
    'Resenha depois da final, no bar da arena.', 'reels', NULL, NOW() - interval '21 days', false, 8, true);
 
--- 12. Link de ativação do dono (gerado só se a arena ainda não tiver proprietário)
+-- 10. Link de ativação do dono (gerado só se a arena ainda não tiver proprietário)
 WITH novo AS (SELECT gen_random_uuid()::text AS token)
 UPDATE public.arenas a
 SET token_convite = encode(sha256(convert_to(novo.token, 'UTF8')), 'hex'), setup_concluido_em = NULL

@@ -103,6 +103,8 @@ export interface TurmaEscolinha {
 /** Escolinha exibida no site. */
 export interface EscolinhaPortal {
   id: string;
+  /** Título do card: nome da escolinha ou, sem nome, o esporte */
+  titulo: string;
   esporte: string;
   professor: string;
   fotoProfessorUrl: string;
@@ -110,6 +112,8 @@ export interface EscolinhaPortal {
   turmas: TurmaEscolinha[];
   /** WhatsApp da escolinha (dígitos com DDI); cai no da arena */
   whatsappDigitos: string;
+  /** Endereço do botão "Quero uma vaga" (WhatsApp com a mensagem pronta ou link configurado no painel) */
+  hrefBotao: string;
   ordem: number;
 }
 

@@ -32,7 +32,7 @@ async function comoPapel(papel: "anon" | "authenticated", sql: string, params: u
 beforeAll(async () => {
   db = await criarBanco({
     aplicarMigracoesDuasVezes: true,
-    seeds: [join(RAIZ_SRC, "lib", "supabase", "seed-arena-belem.sql")],
+    seeds: [join(RAIZ_SRC, "lib", "supabase", "seed-arena-belem.sql"), join(RAIZ_SRC, "..", "tests", "supabase-local", "cenario-ocupacao.sql")],
   });
 }, 120_000);
 
@@ -125,6 +125,20 @@ describe("tabelas do portal (migração 2026-10-30-b)", () => {
       db.query("UPDATE public.quadras SET foto_posicao = '50%; background:url(x)' WHERE id = 'arena-belem-q1'")
     ).rejects.toThrow(/quadras_foto_posicao_check/);
     await db.query("UPDATE public.quadras SET foto_posicao = '50% 62%' WHERE id = 'arena-belem-q1'");
+  });
+
+  it("botão da escolinha só abre link https e exige o link quando é do tipo link", async () => {
+    const id = "arena-belem-esc-volei";
+    for (const set of [
+      "botao_tipo = 'link', botao_url = NULL",
+      "botao_tipo = 'link', botao_url = 'javascript:alert(1)'",
+      "botao_url = 'http://forms.gle/x'",
+      "botao_tipo = 'telefone'",
+    ]) {
+      await expect(db.query(`UPDATE public.landing_page_schools SET ${set} WHERE id = '${id}'`), set).rejects.toThrow(/landing_page_schools_botao_check/);
+    }
+    await db.query(`UPDATE public.landing_page_schools SET botao_tipo = 'link', botao_url = 'https://forms.gle/x' WHERE id = '${id}'`);
+    await db.query(`UPDATE public.landing_page_schools SET botao_tipo = 'whatsapp', botao_url = NULL, teacher_image_url = NULL, whatsapp_number = NULL WHERE id = '${id}'`);
   });
 
   it("reembolso só aceita os estados previstos", async () => {

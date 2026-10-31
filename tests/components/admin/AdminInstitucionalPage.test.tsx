@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { AdminInstitucionalPage } from "@/components/admin/AdminInstitucionalPage";
 
@@ -9,16 +9,16 @@ describe("AdminInstitucionalPage - Painel de Gestão", () => {
     const heading = await screen.findByRole("heading", { name: "Conteúdo Institucional" });
     expect(heading).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Galeria do Complexo/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Escolinhas da LP/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Escolinhas do site/i })).toBeInTheDocument();
   });
 
   it("abre a aba de escolinhas ao clicar no botão correspondente", async () => {
     render(<AdminInstitucionalPage />);
-    const abaEscolinhas = await screen.findByRole("button", { name: /Escolinhas da LP/i });
+    const abaEscolinhas = await screen.findByRole("button", { name: /Escolinhas do site/i });
     fireEvent.click(abaEscolinhas);
 
-    expect(screen.getByText(/Modalidades e turmas exibidas na seção/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Nova Escolinha/i })).toBeInTheDocument();
+    expect(screen.getByText(/aparecem na seção/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Nova escolinha/i })).toBeInTheDocument();
   });
 
   it("abre o modal de nova foto ao clicar em Adicionar Foto", async () => {
@@ -30,20 +30,14 @@ describe("AdminInstitucionalPage - Painel de Gestão", () => {
     expect(screen.getByPlaceholderText("Ex: Nossas Quadras de Saibro")).toBeInTheDocument();
   });
 
-  it("exibe o botão de sincronização com a agenda e abre o modal de nova escolinha", async () => {
+  it("abre o formulário de nova escolinha com as explicações do botão", async () => {
     render(<AdminInstitucionalPage />);
-    const abaEscolinhas = await screen.findByRole("button", { name: /Escolinhas da LP/i });
-    fireEvent.click(abaEscolinhas);
+    fireEvent.click(await screen.findByRole("button", { name: /Escolinhas do site/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Nova escolinha/i }));
 
-    // Botão de sincronizar
-    const btnSincronizar = screen.getByRole("button", { name: /Sincronizar com Agenda/i });
-    expect(btnSincronizar).toBeInTheDocument();
-
-    // Abrir modal de nova escolinha
-    const btnNovaEscolinha = screen.getByRole("button", { name: /Nova Escolinha/i });
-    fireEvent.click(btnNovaEscolinha);
-
-    expect(screen.getByRole("heading", { name: "Nova Escolinha" })).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Ex: Tênis de Campo")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Nova escolinha" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Esporte *")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /Abrir o WhatsApp/ })).toBeChecked();
+    expect((screen.getByLabelText("Mensagem pronta") as HTMLTextAreaElement).value).toContain("Vim pelo site e quero uma vaga");
   });
 });
