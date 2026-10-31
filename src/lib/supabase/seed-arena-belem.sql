@@ -104,7 +104,7 @@ ON CONFLICT (arena_id) DO UPDATE SET intro_reserva = EXCLUDED.intro_reserva, int
   intro_eventos = EXCLUDED.intro_eventos, intro_estrutura = EXCLUDED.intro_estrutura,
   destaques_estrutura = EXCLUDED.destaques_estrutura, regras = EXCLUDED.regras, faq = EXCLUDED.faq, atualizado_em = NOW();
 
--- 6. Escolinhas do site (exemplo; o dono edita em Painel → Conteúdo Institucional → Escolinhas do site)
+-- 6. Escolinhas do site (exemplo; o dono edita em Painel → Escolinhas → No site)
 INSERT INTO public.landing_page_schools (id, arena_id, nome, sport_name, teacher_name, teacher_image_url, schedule_info, whatsapp_number, descricao, turmas, ordem, is_active)
 VALUES
   ('arena-belem-esc-beach', 'arena-belem', NULL, 'Beach tennis', 'Italo Bianck', '/arenas/arena-belem/prof-beach.png', 'Seg e Qua 16h; Ter e Qui 7h, 8h e 19h', '91984982865',

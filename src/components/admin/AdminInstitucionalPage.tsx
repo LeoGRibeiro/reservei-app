@@ -4,7 +4,7 @@
  * Painel Administrativo para Gerenciamento do Conteúdo Institucional:
  * 1. Galeria de Fotos da Estrutura Física (Quadras, Bar, Vestiários, Lazer)
  *    com upload via Supabase Storage e edição de títulos e descrições.
- * 2. Escolinhas do site (aba própria: {@link AbaEscolinhasSite}).
+ * As escolinhas do site ficam no menu Escolinhas (`AdminEscolinhasPage`).
  *
  * @see SPEC/2026-10-06-lp-conteudo-institucional.md
  */
@@ -15,7 +15,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
   Images,
-  GraduationCap,
   Plus,
   Pencil,
   Trash2,
@@ -30,7 +29,6 @@ import type {
   CategoriaEstrutura,
 } from "@/lib/institucional/types";
 import { useInstitucionalService } from "@/hooks/useInstitucionalService";
-import { AbaEscolinhasSite } from "./institucional/AbaEscolinhasSite";
 import {
   validarItemGaleria,
 } from "@/lib/institucional/institucionalHelpers";
@@ -45,7 +43,7 @@ export function AdminInstitucionalPage() {
     fazerUploadImagem,
   } = useInstitucionalService();
 
-  const [abaAtiva, setAbaAtiva] = useState<"galeria" | "escolinhas">("galeria");
+  const [abaAtiva, setAbaAtiva] = useState<"galeria">("galeria");
 
   // Estado Modal Galeria
   const [modalGaleriaAberto, setModalGaleriaAberto] = useState(false);
@@ -153,7 +151,7 @@ export function AdminInstitucionalPage() {
             Conteúdo Institucional
           </h1>
           <p className="text-slate-400 text-sm mt-1">
-            Gerenciamento das fotos da estrutura física e das escolinhas divulgadas na Landing Page.
+            Fotos da estrutura física divulgadas no site. As escolinhas ficam no menu Escolinhas.
           </p>
         </div>
 
@@ -171,19 +169,6 @@ export function AdminInstitucionalPage() {
           >
             <Images className="w-4 h-4" />
             Galeria do Complexo ({galeria.length})
-          </button>
-          <button
-            type="button"
-            id="admin-aba-escolinhas"
-            onClick={() => setAbaAtiva("escolinhas")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
-              abaAtiva === "escolinhas"
-                ? "bg-emerald-500 text-slate-950 shadow"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <GraduationCap className="w-4 h-4" />
-            Escolinhas do site
           </button>
         </div>
       </div>
@@ -289,9 +274,6 @@ export function AdminInstitucionalPage() {
           </div>
         </div>
       )}
-
-      {/* ── ABA 2: ESCOLINHAS DO SITE ─────────────────────────────────────── */}
-      {abaAtiva === "escolinhas" && <AbaEscolinhasSite />}
 
       {/* ── MODAL FORMULÁRIO GALERIA ───────────────────────────────────────── */}
       {modalGaleriaAberto && (

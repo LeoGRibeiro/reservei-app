@@ -29,7 +29,7 @@ O site novo lia as escolinhas de `landing_page_schools`, mas o painel ("Instituc
 ## Implementação
 - Migração `src/lib/supabase/migracoes/2026-10-31-escolinhas-site.sql` (também no `schema.sql`).
 - Regras puras: `lib/institucional/escolinhasSite.ts`. Repositório: `lib/supabase/escolinhasSiteRepository.ts`. Hook: `hooks/useEscolinhasSite.ts`.
-- Painel: `components/admin/institucional/AbaEscolinhasSite.tsx` e `FormEscolinhaSite.tsx` (explicação em cada campo, prévia "Testar no WhatsApp").
+- Painel: menu **Escolinhas** (`AdminEscolinhasPage`), aba **No site** = `components/admin/institucional/AbaEscolinhasSite.tsx`; aba **Horários na agenda** = contratos e `FormEscolinhaSite.tsx` (explicação em cada campo, prévia "Testar no WhatsApp").
 - Site: `mapearEscolinha` calcula `titulo` e `hrefBotao`; `SecaoEscolinhas` só exibe.
 - O seed da Arena Belém não cria mais reservas nem contratos (agenda começa vazia). A ocupação do protótipo ficou em `tests/supabase-local/cenario-ocupacao.sql`, só para os testes visuais.
 

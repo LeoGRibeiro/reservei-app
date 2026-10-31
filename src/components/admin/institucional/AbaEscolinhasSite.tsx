@@ -63,7 +63,7 @@ export function AbaEscolinhasSite() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-xs text-slate-400 max-w-xl">
           As escolinhas cadastradas aqui aparecem na seção <strong>Escolinhas</strong> do site, com as turmas e o botão
-          &ldquo;Quero uma vaga&rdquo;. Os horários que ocupam quadra continuam na aba <strong>Escolinhas</strong> da agenda.
+          &ldquo;Quero uma vaga&rdquo;. Os horários que ocupam quadra ficam na aba <strong>Horários na agenda</strong>.
         </p>
         <button type="button" id="btn-admin-nova-escolinha" onClick={abrirNova} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-bold shrink-0">
           <Plus className="w-4 h-4" />
