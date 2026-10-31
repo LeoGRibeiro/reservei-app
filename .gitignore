@@ -40,4 +40,5 @@ skills-lock.json
 
 # Build do servidor de testes ponta a ponta e resultados do Playwright
 src/.next-teste/
+src/.next-demo/
 tests/visual/.resultados/
