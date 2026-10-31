@@ -39,12 +39,13 @@ FROM (VALUES
 ) AS r(cod, em, quadra, horarios, esporte, total, pago, status, vagas)
 ON CONFLICT (id) DO NOTHING;
 
--- Pedidos para jogar na partida K7P2 (dois novos, um já chamado)
+-- Pedidos para jogar na partida K7P2 (dois novos, um já chamado). Horários relativos ao relógio da
+-- comparação visual (hoje às 08:30 em Belém): "há 2 horas", "há 5 horas" e "ontem", como no protótipo.
 INSERT INTO public.interesses_vagas (id, reserva_id, usuario_id, nome_usuario, telefone_usuario, status, created_at)
 VALUES
-  ('int_demo_lucas',  'rsv_demo_rafael_k7p2', 'demo-lucas',  'Lucas Moraes',   '5591981112233', 'pendente',  NOW() - interval '2 hours'),
-  ('int_demo_camila', 'rsv_demo_rafael_k7p2', 'demo-camila', 'Camila Rocha',   '5591992224455', 'pendente',  NOW() - interval '5 hours'),
-  ('int_demo_diego',  'rsv_demo_rafael_k7p2', 'demo-diego',  'Diego Pinheiro', '5591983336677', 'contatado', NOW() - interval '1 day')
+  ('int_demo_lucas',  'rsv_demo_rafael_k7p2', 'demo-lucas',  'Lucas Moraes',   '5591981112233', 'pendente',  ((now() AT TIME ZONE 'America/Belem')::date + time '08:30') AT TIME ZONE 'America/Belem' - interval '2 hours'),
+  ('int_demo_camila', 'rsv_demo_rafael_k7p2', 'demo-camila', 'Camila Rocha',   '5591992224455', 'pendente',  ((now() AT TIME ZONE 'America/Belem')::date + time '08:30') AT TIME ZONE 'America/Belem' - interval '5 hours'),
+  ('int_demo_diego',  'rsv_demo_rafael_k7p2', 'demo-diego',  'Diego Pinheiro', '5591983336677', 'contatado', ((now() AT TIME ZONE 'America/Belem')::date + time '08:30') AT TIME ZONE 'America/Belem' - interval '1 day')
 ON CONFLICT (id) DO NOTHING;
 
 -- Clube: 6 carimbos (3 jogos de 2 horas) e 1 hora grátis
@@ -58,4 +59,17 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.fidelidade_vouchers (id, arena_id, codigo, usuario_id, valor_teto, status, expira_em)
 VALUES ('voucher_demo_rafael', 'arena-belem', 'CLUBE-7Q4M', '00000000-0000-4000-8000-0000000000a1', 100, 'disponivel',
         (now() AT TIME ZONE 'America/Belem')::date + 52)
+ON CONFLICT (id) DO NOTHING;
+
+-- Contas de demonstração só para o teste do diálogo de conta (uma por tamanho de tela, por causa do
+-- limite real de envio de código: 1 a cada 30 s e 5 por hora por número)
+INSERT INTO auth.users (id, email, encrypted_password, raw_app_meta_data, raw_user_meta_data, email_confirmed_at)
+SELECT ('00000000-0000-4000-8000-0000000000b' || n)::uuid, '9199000000' || n || '@auth.reservei.com.br', 'senha-local',
+       '{"conta_demo": true}', '{"nome": "Atleta Teste"}', NOW()
+FROM generate_series(1, 3) n
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.usuarios (id, auth_user_id, nome, telefone)
+SELECT '00000000-0000-4000-8000-0000000000b' || n, ('00000000-0000-4000-8000-0000000000b' || n)::uuid, 'Atleta Teste', '9199000000' || n
+FROM generate_series(1, 3) n
 ON CONFLICT (id) DO NOTHING;

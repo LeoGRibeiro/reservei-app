@@ -49,7 +49,7 @@ export async function obterTokenSessao(): Promise<string | null> {
  */
 export async function chamarApi<T extends object>(
   url: string,
-  opcoes: { method?: "GET" | "POST" | "DELETE"; corpo?: unknown } = {}
+  opcoes: { method?: "GET" | "POST" | "PATCH" | "DELETE"; corpo?: unknown } = {}
 ): Promise<RespostaApi<T>> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const token = await obterTokenSessao();

@@ -66,13 +66,15 @@ export async function cancelarReservaDoAtleta(
  * @param usuarioId Atleta autenticado
  * @param vagasAbertas Quantidade de vagas (0 fecha o mural para esta partida)
  * @param agora Instante de referência (testes)
+ * @param completa Fechou porque a partida completou (o portal mostra "Partida completa")
  * @throws ErroHttp 400 (quantidade inválida), 404 (não é do atleta) ou 409 (reserva inativa/iniciada)
  */
 export async function atualizarVagasDoAtleta(
   reservaId: string,
   usuarioId: string,
   vagasAbertas: number,
-  agora: Date = new Date()
+  agora: Date = new Date(),
+  completa = false
 ): Promise<{ permiteVagas: boolean; vagasAbertas: number }> {
   if (!Number.isInteger(vagasAbertas) || vagasAbertas < 0 || vagasAbertas > MAX_VAGAS) {
     throw new ErroHttp("Quantidade de vagas inválida.", 400);
@@ -90,10 +92,13 @@ export async function atualizarVagasDoAtleta(
   }
 
   const resultado = { permiteVagas: vagasAbertas > 0, vagasAbertas };
-  const { error } = await supabaseAdmin
+  const mudanca = { permite_vagas: resultado.permiteVagas, vagas_abertas: vagasAbertas };
+  let { error } = await supabaseAdmin
     .from("reservas")
-    .update({ permite_vagas: resultado.permiteVagas, vagas_abertas: vagasAbertas })
+    .update({ ...mudanca, vagas_completa: completa && vagasAbertas === 0 })
     .eq("id", reservaId);
+  // Banco sem a migração do portal (coluna vagas_completa ausente): grava o resto
+  if (error?.code === "PGRST204") ({ error } = await supabaseAdmin.from("reservas").update(mudanca).eq("id", reservaId));
   if (error) throw new Error(error.message);
   return resultado;
 }

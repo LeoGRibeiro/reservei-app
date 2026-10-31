@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import {
   SELECAO_VAZIA,
   alternarHora,
@@ -26,14 +26,21 @@ import {
 } from "@/lib/portal/agenda";
 import {
   carimbosValidos,
+  horasAteOJogo,
   horasGratisValidas,
   proximasReservas,
   totalCarimbos,
   type AtletaPortal,
+  type PedidoVaga,
+  type ReservaAtleta,
 } from "@/lib/portal/contaAtleta";
 import { pedirVaga } from "@/lib/portal/contaRepository";
+import { excluirMinhaConta, marcarPedido, salvarPerfil, type ModoAcesso } from "@/lib/portal/contaApi";
+import { cancelarReservaDoAtleta, atualizarVagasDoAtleta } from "@/lib/reservas/reservasApi";
+import { diaCurto, esporteNaFrase, hh, plural, primeiroNome, rotuloEsporte } from "@/lib/portal/formatos";
+import { supabase } from "@/lib/supabase/client";
 import { baixarIcs, montarIcs } from "@/lib/portal/ics";
-import { destacar, rolarAte, rolarParaTopo } from "@/lib/portal/rolagem";
+import { destacar, remedirRolagem, rolarAte, rolarParaTopo } from "@/lib/portal/rolagem";
 import { itensDoMenu, secoesVisiveis } from "@/lib/portal/visibilidade";
 import type { DadosPortal } from "@/lib/portal/types";
 import { FUSO_PADRAO_ARENA } from "@/lib/datas/fusoHorario";
@@ -41,6 +48,10 @@ import { useCheckoutPortal } from "@/hooks/portal/useCheckoutPortal";
 import { useGradePortal, useSessaoPortal } from "@/hooks/portal/useContaPortal";
 import { useMidia, useRelogio, useRolagemDaPagina, useSecaoVisivel } from "@/hooks/portal/usePortalBasico";
 import { useAviso } from "./base/Aviso";
+import { DialogoSimples } from "./base/DialogoSimples";
+import { AreaAtleta, type AbaConta } from "./conta/AreaAtleta";
+import { DialogoConta, type ReservaSemConta } from "./conta/DialogoConta";
+import { CorpoCancelar, CorpoExcluirConta, CorpoProcurarJogadores } from "./conta/DialogosConta";
 import { DialogoCheckout } from "./checkout/DialogoCheckout";
 import { BarraTicket } from "./reservar/BarraTicket";
 import { CardQuadra } from "./reservar/CardQuadra";
@@ -61,7 +72,23 @@ import { Icone } from "./Icone";
 
 export interface PortalArenaProps {
   dados: DadosPortal;
+  /** Abre direto na Minha conta (rota /minha-conta) */
+  visaoInicial?: "portal" | "conta";
+  abaInicial?: AbaConta;
+  /** Abre o diálogo de conta ao carregar (/login e /cadastro redirecionam com ?conta=) */
+  contaInicial?: "entrar" | "criar";
 }
+
+/** Diálogo simples aberto. */
+type DialogoAberto =
+  | { tipo: "cancelar"; reserva: ReservaAtleta; cancelada: boolean }
+  | { tipo: "vagas"; reservaId: string; etapa: number }
+  | { tipo: "excluir" };
+
+/** O que rolar depois que a visão (portal ou conta) trocar. */
+type RolagemPendente = { alvo: string; folga?: number } | { topo: true; foco?: string };
+
+const ROTA_ABA: Record<AbaConta, string> = { reservas: "/minha-conta", clube: "/minha-conta/clube", dados: "/minha-conta/dados" };
 
 /**
  * @example
@@ -70,15 +97,15 @@ export interface PortalArenaProps {
  * return <PortalArena dados={dados} />;
  * ```
  */
-export function PortalArena({ dados }: PortalArenaProps) {
+export function PortalArena(props: PortalArenaProps) {
   return (
-    <RaizPortal tema={dados.tema}>
-      <ConteudoPortal dados={dados} />
+    <RaizPortal tema={props.dados.tema}>
+      <ConteudoPortal {...props} />
     </RaizPortal>
   );
 }
 
-function ConteudoPortal({ dados }: PortalArenaProps) {
+function ConteudoPortal({ dados, visaoInicial = "portal", abaInicial = "reservas", contaInicial }: PortalArenaProps) {
   const { arena, quadras, precos, conteudo, clube } = dados;
   const aviso = useAviso();
 
@@ -104,10 +131,25 @@ function ConteudoPortal({ dados }: PortalArenaProps) {
     return mapa;
   }, [sessao.conta.reservas]);
 
+  // ── Visão (portal ou Minha conta) e diálogos da conta ─────────────────
+  const [visao, setVisao] = useState<"portal" | "conta">(visaoInicial);
+  const [aba, setAba] = useState<AbaConta>(abaInicial);
+  const [editando, setEditando] = useState(false);
+  const [dialogoConta, setDialogoConta] = useState<{ aberto: boolean; modo: ModoAcesso; motivo?: string }>({
+    aberto: Boolean(contaInicial),
+    modo: contaInicial ?? "entrar",
+  });
+  const [reservaSemConta, setReservaSemConta] = useState<ReservaSemConta | null>(null);
+  const [dlg, setDlg] = useState<DialogoAberto | null>(null);
+  const [dlgEnviando, setDlgEnviando] = useState(false);
+  const rolarDepois = useRef<RolagemPendente | null>(null);
+  /** Ação pedida por visitante que continua sozinha depois de entrar (ex.: pedir vaga) */
+  const depoisDeEntrar = useRef<((conta: { id: string; nome: string; whatsappDigitos: string }) => Promise<void>) | null>(null);
+
   // ── Seções e menu ──────────────────────────────────────────────────────
   const secoes = useMemo(() => secoesVisiveis(dados), [dados]);
   const itens = useMemo(() => itensDoMenu(secoes), [secoes]);
-  const ativa = useSecaoVisivel(itens.map((i) => i.id));
+  const ativa = useSecaoVisivel(itens.map((i) => i.id), visao === "portal");
   const { rolado, mostrarSubir } = useRolagemDaPagina();
   const muralNaLateral = useMidia("(min-width: 1120px)", true);
   const [menuPerfil, setMenuPerfil] = useState(false);
@@ -141,10 +183,35 @@ function ConteudoPortal({ dados }: PortalArenaProps) {
     [quadraSelecionada, selecao.horas, dia, precos, arena.percentualSinal, integral, atleta, usarHoraGratis, horasGratis.length, tetoHoraGratis]
   );
 
-  // O corpo ganha espaço para a barra do celular enquanto há seleção (igual ao protótipo)
+  // O corpo ganha espaço para a barra do celular enquanto há seleção; na conta, a barra some
   useEffect(() => {
     document.querySelector(".pa")?.classList.toggle("tem-barra", Boolean(resumo));
   }, [resumo]);
+  useEffect(() => {
+    document.querySelector(".pa")?.classList.toggle("em-conta", visao === "conta");
+  }, [visao]);
+
+  // Depois de trocar entre portal e conta (ou de aba), rola para onde a ação pediu
+  useEffect(() => {
+    const pendente = rolarDepois.current;
+    if (!pendente) return;
+    rolarDepois.current = null;
+    remedirRolagem();
+    if ("topo" in pendente) {
+      rolarParaTopo(true);
+      if (pendente.foco) {
+        const foco = pendente.foco;
+        requestAnimationFrame(() => destacar(foco));
+      }
+    } else {
+      rolarAte(pendente.alvo, pendente.folga);
+    }
+  }, [visao, aba, sessao.carregando]);
+
+  // /login e /cadastro chegam com ?conta=: o endereço volta a ser o do portal
+  useEffect(() => {
+    if (contaInicial) history.replaceState(null, "", "/");
+  }, [contaInicial]);
 
   // ── Checkout ───────────────────────────────────────────────────────────
   const [checkoutAberto, setCheckoutAberto] = useState(false);
@@ -174,31 +241,91 @@ function ConteudoPortal({ dados }: PortalArenaProps) {
   }, [checkout, recarregarGrade, sessao]);
 
   // ── Navegação ──────────────────────────────────────────────────────────
-  const navegar = useCallback(
-    (e: MouseEvent<HTMLAnchorElement>, id: string) => {
-      e.preventDefault();
+
+  const abrirDialogoConta = useCallback(
+    (modo: ModoAcesso, motivo?: string) => {
       fecharMenus();
-      if (checkoutAberto) setCheckoutAberto(false);
-      rolarAte(id);
-      history.replaceState(null, "", `#${id}`);
+      setDialogoConta({ aberto: true, modo, motivo });
     },
-    [checkoutAberto, fecharMenus]
+    [fecharMenus]
+  );
+  const entrar = useCallback(() => abrirDialogoConta("entrar"), [abrirDialogoConta]);
+  const criarConta = useCallback(() => abrirDialogoConta("criar"), [abrirDialogoConta]);
+
+  /** Mostra a Minha conta numa aba (e destaca uma reserva, se pedido). */
+  const abrirConta = useCallback(
+    (novaAba: AbaConta = "reservas", codigoReserva?: string) => {
+      fecharMenus();
+      setCheckoutAberto(false);
+      setEditando(false);
+      setVisao("conta");
+      setAba(novaAba);
+      history.replaceState(null, "", ROTA_ABA[novaAba]);
+      rolarDepois.current = { topo: true, foco: codigoReserva ? `rsv-${codigoReserva}` : undefined };
+    },
+    [fecharMenus]
   );
 
-  const entrar = useCallback(() => {
-    window.location.href = "/login";
-  }, []);
-  const criarConta = useCallback(() => {
-    window.location.href = "/cadastro";
-  }, []);
-  const abrirConta = useCallback(() => {
-    window.location.href = "/minha-conta";
-  }, []);
+  /** Volta para o portal (se estava na conta) e rola até a seção. */
+  const irParaSecao = useCallback(
+    (id: string, folga?: number) => {
+      fecharMenus();
+      setCheckoutAberto(false);
+      if (visao === "conta") {
+        setVisao("portal");
+        history.replaceState(null, "", `/#${id}`);
+        rolarDepois.current = { alvo: id, folga };
+      } else {
+        rolarAte(id, folga);
+        history.replaceState(null, "", `#${id}`);
+      }
+    },
+    [fecharMenus, visao]
+  );
+
   const sair = useCallback(async () => {
     fecharMenus();
     await sessao.sair();
+    if (visao === "conta") {
+      setVisao("portal");
+      history.replaceState(null, "", "/");
+      rolarDepois.current = { topo: true };
+    }
     aviso("Você saiu da conta.");
-  }, [aviso, fecharMenus, sessao]);
+  }, [aviso, fecharMenus, sessao, visao]);
+
+  /** Entrou pelo diálogo de conta. */
+  const aoEntrarNaConta = useCallback(
+    async (nome: string, modo: ModoAcesso) => {
+      setDialogoConta((c) => ({ ...c, aberto: false }));
+      const primeiro = primeiroNome(nome);
+      if (modo === "concluir") {
+        const codigo = reservaSemConta ? reservaSemConta.reservaId : undefined;
+        setReservaSemConta(null);
+        aviso("Conta criada. Sua reserva já está em Minhas reservas.");
+        abrirConta("reservas", codigo ? codigo.replace(/[^a-z0-9]/gi, "").slice(-4).toUpperCase() : undefined);
+        return;
+      }
+      aviso(modo === "entrar" ? `Que bom te ver de novo, ${primeiro}!` : `Conta criada. Bem-vindo, ${primeiro}!`);
+      const acao = depoisDeEntrar.current;
+      depoisDeEntrar.current = null;
+      if (acao) {
+        const { data } = await supabase.auth.getSession();
+        const id = data.session?.user.id;
+        const digitos = (data.session?.user.email ?? "").split("@")[0];
+        if (id) await acao({ id, nome, whatsappDigitos: digitos });
+      }
+    },
+    [abrirConta, aviso, reservaSemConta]
+  );
+
+  const navegar = useCallback(
+    (e: MouseEvent<HTMLAnchorElement>, id: string) => {
+      e.preventDefault();
+      irParaSecao(id);
+    },
+    [irParaSecao]
+  );
 
   // Fecha o menu do perfil ao tocar fora dele; Esc fecha os menus e devolve o foco
   useEffect(() => {
@@ -246,19 +373,121 @@ function ConteudoPortal({ dados }: PortalArenaProps) {
 
   const pedir = useCallback(
     async (p: PartidaMural) => {
+      const enviarPedido = async (conta: { id: string; nome: string; whatsappDigitos: string }) => {
+        const atual = grade.find((g) => g.id === p.id);
+        if (atual?.userId === conta.id) {
+          aviso("Essa partida é sua. Os pedidos aparecem em Minhas reservas.");
+          return;
+        }
+        if (await pedirVaga(p.id, conta)) {
+          await sessao.recarregarConta();
+          aviso(`Pedido enviado. ${p.organizador} recebe no WhatsApp e confirma com você.`);
+        } else {
+          aviso("Não foi possível enviar o pedido. Tente de novo.");
+        }
+      };
       if (!atleta) {
-        entrar();
+        depoisDeEntrar.current = enviarPedido;
+        abrirDialogoConta("entrar", `Entre para pedir vaga na partida de ${esporteNaFrase(rotuloEsporte(p.esporte))} com ${p.organizador}.`);
         return;
       }
-      if (await pedirVaga(p.id, atleta)) {
-        await sessao.recarregarConta();
-        aviso(`Pedido enviado. ${p.organizador} recebe no WhatsApp e confirma com você.`);
-      } else {
-        aviso("Não foi possível enviar o pedido. Tente de novo.");
-      }
+      await enviarPedido(atleta);
     },
-    [atleta, aviso, entrar, sessao]
+    [abrirDialogoConta, atleta, aviso, grade, sessao]
   );
+
+  // ── Ações dos diálogos da conta ────────────────────────────────────────
+  const nomeQuadra = useCallback((id: string) => quadras.find((q) => q.id === id)?.nome ?? "", [quadras]);
+  const linhaReserva = (r: ReservaAtleta) =>
+    `${nomeQuadra(r.quadraId)} · ${diaCurto(r.data, hoje)} · ${hh(r.horas[0])} às ${hh(r.horas[r.horas.length - 1] + 1)}`;
+  const recarregarTudo = useCallback(async () => {
+    await Promise.all([sessao.recarregarConta(), recarregarGrade()]);
+  }, [recarregarGrade, sessao]);
+
+  const confirmarCancelamento = useCallback(async () => {
+    if (dlg?.tipo !== "cancelar") return;
+    setDlgEnviando(true);
+    const r = await cancelarReservaDoAtleta(dlg.reserva.id);
+    setDlgEnviando(false);
+    if (!r.ok) {
+      aviso(r.erro ?? "Não foi possível cancelar. Fale com a arena.");
+      return;
+    }
+    setDlg({ ...dlg, cancelada: true });
+    await recarregarTudo();
+  }, [aviso, dlg, recarregarTudo]);
+
+  const mudarVagas = useCallback(
+    async (reservaId: string, vagas: number, completa: boolean, mensagem: string) => {
+      setDlgEnviando(true);
+      const r = await atualizarVagasDoAtleta(reservaId, vagas, completa);
+      setDlgEnviando(false);
+      if (!r.ok) {
+        aviso(r.erro ?? "Não foi possível atualizar o mural.");
+        return;
+      }
+      await recarregarTudo();
+      setDlg((d) => (d?.tipo === "vagas" ? { ...d, etapa: d.etapa + 1 } : d));
+      aviso(mensagem);
+    },
+    [aviso, recarregarTudo]
+  );
+
+  const combinar = useCallback(
+    async (reserva: ReservaAtleta, pedido: PedidoVaga) => {
+      if (!(await marcarPedido(pedido.id, "combinado"))) {
+        aviso("Não foi possível marcar o combinado.");
+        return;
+      }
+      const faltam = reserva.vagasAbertas - 1;
+      const primeiro = pedido.nome.split(" ")[0];
+      if (faltam <= 0) await mudarVagas(reserva.id, 0, true, "Partida completa! Ela saiu do mural.");
+      else await mudarVagas(reserva.id, faltam, false, `Combinado com ${primeiro}. Falta${faltam > 1 ? "m" : ""} ${plural(faltam, "jogador", "jogadores")}.`);
+    },
+    [aviso, mudarVagas]
+  );
+
+  const confirmarExclusao = useCallback(async () => {
+    setDlgEnviando(true);
+    const r = await excluirMinhaConta();
+    setDlgEnviando(false);
+    if (!r.ok) {
+      aviso(r.erro ?? "Não foi possível excluir a conta.");
+      return;
+    }
+    setDlg(null);
+    await sessao.sair();
+    setVisao("portal");
+    history.replaceState(null, "", "/");
+    rolarDepois.current = { topo: true };
+    aviso("Sua conta foi excluída.");
+  }, [aviso, sessao]);
+
+  const salvarDados = useCallback(
+    async (dadosPerfil: { nome: string; telefone: string; nascimento: string }) => {
+      const r = await salvarPerfil(dadosPerfil);
+      if (!r.ok) return r.erro ?? "Não foi possível salvar.";
+      setEditando(false);
+      await sessao.recarregarConta();
+      aviso("Dados salvos.");
+      return null;
+    },
+    [aviso, sessao]
+  );
+
+  const usarHoraGratisAgora = useCallback(() => {
+    setUsarHoraGratis(true);
+    irParaSecao("reservar");
+    aviso("A hora grátis entra no ticket assim que você escolher um horário.");
+  }, [aviso, irParaSecao]);
+
+  const verMural = useCallback(() => {
+    setMuralAberto(true);
+    irParaSecao("partidas", 20);
+  }, [irParaSecao]);
+
+  const reservaPorId = (id: string) => sessao.conta.reservas.find((r) => r.id === id);
+  const abrirVagas = (reservaId: string) => setDlg({ tipo: "vagas", reservaId, etapa: 0 });
 
   // ── Agenda (.ics) ──────────────────────────────────────────────────────
   const baixarAgenda = useCallback(() => {
@@ -312,11 +541,11 @@ function ConteudoPortal({ dados }: PortalArenaProps) {
         aoEntrar={entrar}
         aoCriar={criarConta}
         aoSair={() => void sair()}
-        aoAbrirConta={abrirConta}
+        aoAbrirConta={(novaAba) => abrirConta(novaAba)}
         aoNavegar={navegar}
       />
 
-      <main id="portal">
+      <main id="portal" hidden={visao === "conta"}>
         <SecaoReservar
           intro={conteudo.introReserva}
           dia={dia}
@@ -349,7 +578,7 @@ function ConteudoPortal({ dados }: PortalArenaProps) {
               selecionadas={selecao.quadraId === q.id ? selecao.horas : []}
               aoAlternar={(h) => setSelecao((s) => alternarHora(s, q.id, h))}
               aoVerAula={(escolinhaId) => destacar(escolinhaId ? idEscolinha(escolinhaId) : "escolinhas")}
-              aoVerReserva={() => abrirConta()}
+              aoVerReserva={(reservaId) => abrirConta("reservas", reservaPorId(reservaId)?.codigo)}
             />
           ))}
           ticket={
@@ -378,7 +607,7 @@ function ConteudoPortal({ dados }: PortalArenaProps) {
                 aberto={muralAberto}
                 aoAlternar={setMuralAberto}
                 aoPedir={(p) => void pedir(p)}
-                aoVerPedidos={() => abrirConta()}
+                aoVerPedidos={abrirVagas}
               />
             ) : null
           }
@@ -396,11 +625,7 @@ function ConteudoPortal({ dados }: PortalArenaProps) {
             hoje={hoje}
             atleta={atleta ? { nome: atleta.nome, carimbos, ultimos: ultimosCarimbos, horasGratis } : null}
             aoCriarConta={criarConta}
-            aoUsarHoraGratis={() => {
-              setUsarHoraGratis(true);
-              rolarAte("reservar");
-              aviso("A hora grátis entra no ticket assim que você escolher um horário.");
-            }}
+            aoUsarHoraGratis={usarHoraGratisAgora}
             aoNavegar={navegar}
           />
         )}
@@ -417,6 +642,53 @@ function ConteudoPortal({ dados }: PortalArenaProps) {
           />
         )}
         <SecaoContato arena={arena} />
+      </main>
+
+      <main className="mc" id="conta" aria-labelledby="cc-titulo" hidden={visao !== "conta"}>
+        {visao === "conta" && (
+          <AreaAtleta
+            carregando={sessao.carregando}
+            atleta={atleta}
+            conta={sessao.conta}
+            aba={aba === "clube" && !(secoes.clube && clube) ? "reservas" : aba}
+            hoje={hoje}
+            quadras={quadras}
+            clube={secoes.clube ? clube : null}
+            arena={arena}
+            temMural={secoes.partidas}
+            pedidosFeitos={partidas
+              .filter((p) => p.pedido && !p.propria)
+              .map((p) => ({ id: p.id, esporte: p.esporte, data: p.data, hora: p.inicio, quadraNome: p.quadraNome, organizador: p.organizador }))}
+            editando={editando}
+            aoEditar={setEditando}
+            aoSalvarDados={salvarDados}
+            aoTrocarAba={(novaAba) => {
+              setAba(novaAba);
+              setEditando(false);
+              history.replaceState(null, "", ROTA_ABA[novaAba]);
+              requestAnimationFrame(() => document.getElementById(`aba-${novaAba}`)?.focus());
+            }}
+            aoNavegar={navegar}
+            aoEntrar={entrar}
+            aoCriar={criarConta}
+            aoSair={() => void sair()}
+            aoExcluir={() => setDlg({ tipo: "excluir" })}
+            aoCancelar={(id) => {
+              const r = reservaPorId(id);
+              if (r) setDlg({ tipo: "cancelar", reserva: r, cancelada: false });
+            }}
+            aoVagas={abrirVagas}
+            aoAgenda={(r) => {
+              const endereco = [arena.endereco, arena.bairro, `${arena.cidade} - ${arena.estado}`].filter(Boolean).join(" - ");
+              baixarIcs(
+                montarIcs({ id: r.id, data: r.data, horas: r.horas, quadra: nomeQuadra(r.quadraId), arena: arena.nome, endereco, fuso: FUSO_PADRAO_ARENA }),
+                `reserva-${arena.slug}.ics`
+              );
+            }}
+            aoVerMural={verMural}
+            aoUsarHoraGratis={usarHoraGratisAgora}
+          />
+        )}
       </main>
 
       <RodapeArena arena={arena} itens={itens} ano={Number(hoje.slice(0, 4))} temPerguntas={conteudo.faq.length > 0} aoNavegar={navegar} />
@@ -470,11 +742,91 @@ function ConteudoPortal({ dados }: PortalArenaProps) {
         aoInformarPagamento={() => void checkout.informarPagamento()}
         aoExpirar={checkout.expirar}
         aoVoltar={checkout.voltar}
-        aoEntrar={entrar}
-        aoVerReservas={() => abrirConta()}
-        aoCriarConta={criarConta}
+        aoEntrar={() => abrirDialogoConta("entrar", "Entre para esta reserva virar carimbo no Clube.")}
+        aoVerReservas={(reservaId) => abrirConta("reservas", reservaId.replace(/[^a-z0-9]/gi, "").slice(-4).toUpperCase())}
+        aoCriarConta={() => {
+          const c = checkout.confirmada;
+          if (c) {
+            setReservaSemConta({ nome: c.nome, whatsapp: c.whatsapp, horas: c.resumo.horas.length, reservaId: c.reservaId, checkoutToken: c.checkoutToken });
+          }
+          fecharCheckout();
+          abrirDialogoConta("concluir");
+        }}
         aoBaixarAgenda={baixarAgenda}
       />
+
+      <DialogoConta
+        aberto={dialogoConta.aberto}
+        aoFechar={() => {
+          depoisDeEntrar.current = null;
+          setDialogoConta((c) => ({ ...c, aberto: false }));
+        }}
+        modoInicial={dialogoConta.modo}
+        motivo={dialogoConta.motivo}
+        arena={{ id: arena.id, nome: arena.nome, logoUrl: arena.logoUrl, ddd }}
+        metaClube={secoes.clube && clube ? clube.meta : null}
+        reservaSemConta={reservaSemConta}
+        aoEntrar={(nome, modo) => void aoEntrarNaConta(nome, modo)}
+      />
+
+      <DialogoSimples
+        aberto={Boolean(dlg)}
+        aoFechar={() => setDlg(null)}
+        titulo={dlg?.tipo === "cancelar" ? "Cancelar reserva" : dlg?.tipo === "vagas" ? "Procurar jogadores" : dlg?.tipo === "excluir" ? "Excluir conta" : ""}
+        subtitulo={
+          dlg?.tipo === "cancelar"
+            ? linhaReserva(dlg.reserva)
+            : dlg?.tipo === "vagas" && reservaPorId(dlg.reservaId)
+              ? linhaReserva(reservaPorId(dlg.reservaId) as ReservaAtleta)
+              : dlg?.tipo === "excluir"
+                ? (atleta?.nome ?? "")
+                : ""
+        }
+        chaveFoco={dlg?.tipo === "cancelar" ? String(dlg.cancelada) : dlg?.tipo === "vagas" ? String(dlg.etapa) : dlg?.tipo}
+      >
+        {dlg?.tipo === "cancelar" && (
+          <CorpoCancelar
+            reserva={dlg.reserva}
+            quadraNome={nomeQuadra(dlg.reserva.quadraId)}
+            hoje={hoje}
+            horasAte={horasAteOJogo(dlg.reserva, hoje, agoraMin)}
+            cancelada={dlg.cancelada}
+            enviando={dlgEnviando}
+            aoManter={() => setDlg(null)}
+            aoConfirmar={() => void confirmarCancelamento()}
+          />
+        )}
+        {dlg?.tipo === "vagas" && reservaPorId(dlg.reservaId) && (
+          <CorpoProcurarJogadores
+            key={dlg.reservaId}
+            reserva={reservaPorId(dlg.reservaId) as ReservaAtleta}
+            quadraNome={nomeQuadra((reservaPorId(dlg.reservaId) as ReservaAtleta).quadraId)}
+            nomeArena={arena.nome}
+            hoje={hoje}
+            pedidos={sessao.conta.pedidosRecebidos.filter((p) => p.reservaId === dlg.reservaId && p.status !== "rejeitado")}
+            agora={agora}
+            enviando={dlgEnviando}
+            aoPublicar={(faltam) => void mudarVagas(dlg.reservaId, faltam, false, "Sua partida está no mural.")}
+            aoTirar={() => void mudarVagas(dlg.reservaId, 0, false, "Sua partida saiu do mural.")}
+            aoChamar={(p) => {
+              if (p.status === "pendente") void marcarPedido(p.id, "contatado").then(() => sessao.recarregarConta());
+            }}
+            aoCombinar={(p) => void combinar(reservaPorId(dlg.reservaId) as ReservaAtleta, p)}
+            aoFechar={() => setDlg(null)}
+            aoTrocarEtapa={() => setDlg({ ...dlg, etapa: dlg.etapa + 1 })}
+          />
+        )}
+        {dlg?.tipo === "excluir" && (
+          <CorpoExcluirConta
+            carimbos={carimbos}
+            horasGratis={horasGratis.length}
+            jogosMarcados={proximas}
+            enviando={dlgEnviando}
+            aoManter={() => setDlg(null)}
+            aoConfirmar={() => void confirmarExclusao()}
+          />
+        )}
+      </DialogoSimples>
     </>
   );
 }

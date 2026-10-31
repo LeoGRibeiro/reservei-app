@@ -151,13 +151,15 @@ export function cancelarReservaDoAtleta(reservaId: string): Promise<RespostaApi<
  *
  * @param reservaId Reserva
  * @param vagasAbertas Quantidade de vagas (0 fecha)
+ * @param completa Fechou porque a partida completou
  */
 export function atualizarVagasDoAtleta(
   reservaId: string,
-  vagasAbertas: number
+  vagasAbertas: number,
+  completa = false
 ): Promise<RespostaApi<{ permiteVagas: boolean; vagasAbertas: number }>> {
   return chamarApi(`/api/reservas/${encodeURIComponent(reservaId)}/vagas`, {
     method: "POST",
-    corpo: { vagasAbertas },
+    corpo: { vagasAbertas, completa },
   });
 }

@@ -28,6 +28,11 @@ export type EtapaCheckout = "dados" | "pix" | "ok";
 /** Reserva confirmada (tela final). */
 export interface ReservaConfirmada {
   reservaId: string;
+  /** Prova de autoria da reserva (liga a reserva à conta criada logo depois) */
+  checkoutToken: string;
+  /** Nome e WhatsApp informados (visitante) */
+  nome: string;
+  whatsapp: string;
   resumo: ResumoSelecao;
   dia: string;
   /** O que foi pago no Pix */
@@ -84,6 +89,9 @@ export function useCheckoutPortal(aoErro: (mensagem: string) => void) {
     pararAcompanhamento();
     setConfirmada({
       reservaId: c.reservaId,
+      checkoutToken: c.token,
+      nome: c.dados.nome,
+      whatsapp: c.dados.whatsapp,
       resumo: c.dados.resumo,
       dia: c.dados.dia,
       pago: c.dados.resumo.agora,

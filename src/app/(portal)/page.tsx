@@ -19,8 +19,14 @@ export async function generateViewport(): Promise<Viewport> {
   return viewportDaArena(await dadosDoPortal(await slugDaRequisicao()));
 }
 
-export default async function PaginaInicial() {
+interface PaginaInicialProps {
+  searchParams: Promise<{ conta?: string }>;
+}
+
+export default async function PaginaInicial({ searchParams }: PaginaInicialProps) {
   const dados = await dadosDoPortal(await slugDaRequisicao());
   if (!dados) notFound();
-  return <PortalArena dados={dados} />;
+  // /login e /cadastro redirecionam para cá com o diálogo de conta aberto
+  const conta = (await searchParams).conta;
+  return <PortalArena dados={dados} contaInicial={conta === "entrar" || conta === "criar" ? conta : undefined} />;
 }

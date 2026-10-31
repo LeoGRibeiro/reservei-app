@@ -69,8 +69,8 @@ describe("atualizarVagasDoAtleta", () => {
     expect(await atualizarVagasDoAtleta("r1", "u1", 3, AGORA)).toEqual({ permiteVagas: true, vagasAbertas: 3 });
     expect(await atualizarVagasDoAtleta("r1", "u1", 0, AGORA)).toEqual({ permiteVagas: false, vagasAbertas: 0 });
     expect(updates().map((u) => u.payload)).toEqual([
-      { permite_vagas: true, vagas_abertas: 3 },
-      { permite_vagas: false, vagas_abertas: 0 },
+      { permite_vagas: true, vagas_abertas: 3, vagas_completa: false },
+      { permite_vagas: false, vagas_abertas: 0, vagas_completa: false },
     ]);
   });
 
