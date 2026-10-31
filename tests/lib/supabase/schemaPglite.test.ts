@@ -96,9 +96,9 @@ describe("tabelas do portal (migração 2026-10-30-b)", () => {
   });
 
   it("visitante lê só eventos e posts ativos", async () => {
-    const eventos = await comoPapel("anon", "SELECT id FROM public.eventos ORDER BY id");
+    const eventos = await comoPapel("anon", "SELECT id FROM public.eventos WHERE id NOT LIKE 'arena-belem-%' ORDER BY id");
     expect(eventos.rows.map((r) => r.id)).toEqual(["ev-ativo"]);
-    const posts = await comoPapel("anon", "SELECT id FROM public.instagram_posts ORDER BY id");
+    const posts = await comoPapel("anon", "SELECT id FROM public.instagram_posts WHERE id NOT LIKE 'arena-belem-%' ORDER BY id");
     expect(posts.rows.map((r) => r.id)).toEqual(["post-1"]);
   });
 

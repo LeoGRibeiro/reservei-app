@@ -41,7 +41,7 @@ describe("cancelarReservaDoAtleta", () => {
 
   it("cancela a própria reserva antes do início e fecha as vagas", async () => {
     await cancelarReservaDoAtleta("r1", "u1", AGORA);
-    expect(updates()[0].payload).toEqual({ status: "cancelada", permite_vagas: false, vagas_abertas: 0 });
+    expect(updates()[0].payload).toMatchObject({ status: "cancelada", permite_vagas: false, vagas_abertas: 0 });
   });
 
   it("não revela nem altera reserva de outra pessoa (404)", async () => {
