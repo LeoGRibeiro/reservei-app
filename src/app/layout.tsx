@@ -1,8 +1,14 @@
+/**
+ * @file layout.tsx
+ * @description Layout raiz: só `<html>` e `<body>`. Cada grupo de rotas carrega o próprio CSS:
+ * - `(plataforma)`: painel, super-admin, página comercial e páginas legais (Tailwind + sonner);
+ * - `(portal)`: site público da arena (CSS próprio, portado do protótipo, sem Tailwind).
+ * Assim o preflight do Tailwind não altera o portal, e o CSS do portal não vaza para o painel.
+ */
+
 import { NOME_PRODUTO } from "@/lib/marca";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
-import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,18 +30,6 @@ export default function RootLayout({
     <html lang="pt-BR" className={inter.variable} suppressHydrationWarning>
       <body className="font-sans antialiased bg-slate-950 text-white" suppressHydrationWarning>
         {children}
-        <Toaster
-          position="bottom-center"
-          toastOptions={{
-            classNames: {
-              toast: "bg-slate-800 border border-slate-700 text-white",
-              title: "text-white font-semibold",
-              description: "text-slate-400",
-              success: "!border-emerald-500/50",
-              error: "!border-red-500/50",
-            },
-          }}
-        />
       </body>
     </html>
   );

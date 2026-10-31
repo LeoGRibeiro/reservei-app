@@ -21,6 +21,8 @@ export interface PedidoCheckout {
   voucherIds: string[];
   /** O atleta aceitou os Termos de Uso e a Política de Privacidade */
   aceiteTermos: boolean;
+  /** O atleta aceitou a política de cancelamento (portal da arena; vale como condição para reservar) */
+  aceitePolitica?: boolean;
 }
 
 /** Reserva criada pelo servidor no checkout. */
@@ -149,13 +151,15 @@ export function cancelarReservaDoAtleta(reservaId: string): Promise<RespostaApi<
  *
  * @param reservaId Reserva
  * @param vagasAbertas Quantidade de vagas (0 fecha)
+ * @param completa Fechou porque a partida completou
  */
 export function atualizarVagasDoAtleta(
   reservaId: string,
-  vagasAbertas: number
+  vagasAbertas: number,
+  completa = false
 ): Promise<RespostaApi<{ permiteVagas: boolean; vagasAbertas: number }>> {
   return chamarApi(`/api/reservas/${encodeURIComponent(reservaId)}/vagas`, {
     method: "POST",
-    corpo: { vagasAbertas },
+    corpo: { vagasAbertas, completa },
   });
 }

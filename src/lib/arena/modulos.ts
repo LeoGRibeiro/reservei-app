@@ -13,6 +13,8 @@ export type ModuloArena =
   | "vagas"
   | "escolinhas"
   | "contratos"
+  | "eventos"
+  | "instagram"
   | "whatsapp_ia";
 
 /**
@@ -58,6 +60,16 @@ export const MODULOS_DISPONIVEIS: Record<ModuloArena, ModuloInfo> = {
     id: "contratos",
     nome: "Contratos & Mensalistas",
     descricao: "Gestão de turmas fixas com projeção de 6 meses de agenda.",
+  },
+  eventos: {
+    id: "eventos",
+    nome: "Campeonatos e Eventos",
+    descricao: "Seção do site com torneios em andamento, inscrições abertas e campeões.",
+  },
+  instagram: {
+    id: "instagram",
+    nome: "Instagram no Site",
+    descricao: "Grade de posts e perfil do Instagram da arena no site.",
   },
   whatsapp_ia: {
     id: "whatsapp_ia",

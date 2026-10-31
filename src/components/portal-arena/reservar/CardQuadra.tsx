@@ -1,0 +1,148 @@
+/**
+ * @file CardQuadra.tsx
+ * @description Card de uma quadra: foto com enquadramento, nome, esportes, preço de dia e de noite e
+ * todos os horários do dia em Manhã, Tarde e Noite (no celular, grade de 4 sem rótulo, pelo CSS).
+ */
+
+import { hh, lista, maiuscula, reais, esporteNaFrase } from "@/lib/portal/formatos";
+import type { Periodo, SituacaoHorario } from "@/lib/portal/agenda";
+import type { QuadraPortal } from "@/lib/portal/types";
+import { Icone } from "../Icone";
+
+export interface CardQuadraProps {
+  quadra: QuadraPortal;
+  /** Posição na lista (as duas primeiras fotos carregam já) */
+  indice: number;
+  periodos: Periodo[];
+  /** Situação de cada hora do dia */
+  situacao: (h: number) => SituacaoHorario;
+  /** Preço de cada hora do dia */
+  preco: (h: number) => number;
+  /** Horas selecionadas nesta quadra */
+  selecionadas: number[];
+  /** Toque num horário livre ou selecionado */
+  aoAlternar: (h: number) => void;
+  /** Toque num horário de aula (leva até a turma) */
+  aoVerAula: (escolinhaId?: string) => void;
+  /** Toque em "Sua reserva" (leva até a reserva na conta) */
+  aoVerReserva: (reservaId: string) => void;
+}
+
+/** Texto dos esportes: "Futevôlei, vôlei e beach tennis". */
+export function textoEsportes(esportes: string[]): string {
+  return maiuscula(lista(esportes.map((e) => e.toLowerCase())));
+}
+
+/**
+ * @example
+ * ```tsx
+ * <CardQuadra quadra={q} indice={0} periodos={periodos} situacao={(h) => ...} preco={(h) => ...}
+ *   selecionadas={[19, 20]} aoAlternar={...} aoVerAula={...} aoVerReserva={...} />
+ * ```
+ */
+export function CardQuadra({ quadra, indice, periodos, situacao, preco, selecionadas, aoAlternar, aoVerAula, aoVerReserva }: CardQuadraProps) {
+  const blocos = periodos
+    .map((p) => {
+      const slots = p.horas.flatMap((h) => {
+        const s = situacao(h);
+        if (s.tipo === "passado") return [];
+        const faixa = `${hh(h)} às ${hh(h + 1)}`;
+        if (s.tipo === "livre") {
+          const valor = reais(preco(h));
+          const sel = selecionadas.includes(h);
+          return [
+            <button
+              key={h}
+              type="button"
+              className={`slot ${sel ? "sel" : "livre"}`}
+              data-q={quadra.id}
+              data-h={h}
+              aria-pressed={sel}
+              aria-label={`${faixa}, ${valor}`}
+              onClick={() => aoAlternar(h)}
+            >
+              <b className="num">{hh(h)}</b>
+              <span className="num">
+                <Icone nome="check" className="slot-ok" />
+                {valor}
+              </span>
+            </button>,
+          ];
+        }
+        if (s.tipo === "ocupado") {
+          return [
+            <button key={h} type="button" className="slot ocupado" disabled aria-label={`${faixa}, ocupado`}>
+              <b className="num">{hh(h)}</b>
+              <span>Ocupado</span>
+            </button>,
+          ];
+        }
+        if (s.tipo === "meu") {
+          return [
+            <button key={h} type="button" className="slot meu" aria-label={`${faixa}, sua reserva. Ver em Minhas reservas`}
+              onClick={() => aoVerReserva(s.reservaId)}>
+              <b className="num">{hh(h)}</b>
+              <span>Sua reserva</span>
+            </button>,
+          ];
+        }
+        const nome = esporteNaFrase(s.esporte ? maiuscula(s.esporte.toLowerCase()) : "");
+        return [
+          <button key={h} type="button" className="slot aula" title={`Aula de ${nome}`} aria-label={`${faixa}, aula de ${nome}. Ver a turma`}
+            onClick={() => aoVerAula(s.escolinhaId)}>
+            <b className="num">{hh(h)}</b>
+            <span>
+              <Icone nome="graduation-cap" />
+              Aula
+            </span>
+          </button>,
+        ];
+      });
+      return slots.length ? (
+        <div key={p.nome} className="periodo">
+          <span className="p-nome">{p.nome}</span>
+          <div className="slots">{slots}</div>
+        </div>
+      ) : null;
+    })
+    .filter(Boolean);
+
+  const dia = preco(10);
+  const noite = preco(19);
+
+  return (
+    <article className="quadra" id={`q-${quadra.id}`} aria-labelledby={`qt-${quadra.id}`}>
+      <div className="q-foto">
+        {quadra.fotoUrl && (
+          // eslint-disable-next-line @next/next/no-img-element -- foto em object-fit com enquadramento do banco
+          <img
+            src={quadra.fotoUrl}
+            alt={quadra.fotoDescricao ?? quadra.nome}
+            width={680}
+            height={510}
+            style={quadra.fotoPosicao ? { objectPosition: quadra.fotoPosicao } : undefined}
+            loading={indice > 1 ? "lazy" : undefined}
+          />
+        )}
+      </div>
+      <div className="q-corpo">
+        <div className="q-topo">
+          <div>
+            <h3 id={`qt-${quadra.id}`}>{quadra.nome}</h3>
+            <p className="q-esportes">{textoEsportes(quadra.esportes)}</p>
+          </div>
+          {dia === noite ? (
+            <p className="q-preco num">
+              <b>{reais(dia)}</b> a hora
+            </p>
+          ) : (
+            <p className="q-preco num">
+              <b>{reais(dia)}</b> de dia · <b>{reais(noite)}</b> à noite
+            </p>
+          )}
+        </div>
+        <div className="periodos">{blocos.length ? blocos : <p className="q-sem">Não há mais horários hoje nesta quadra.</p>}</div>
+      </div>
+    </article>
+  );
+}

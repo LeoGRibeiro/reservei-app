@@ -3,7 +3,10 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["../src/*"]
+      "@/*": ["../src/*"],
+      "@playwright/test": ["../src/node_modules/@playwright/test"],
+      "pixelmatch": ["../src/node_modules/pixelmatch"],
+      "pngjs": ["../src/node_modules/pngjs"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"]

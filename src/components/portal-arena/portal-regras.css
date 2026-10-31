@@ -1,0 +1,99 @@
+/* ==========================================================
+   Página de Regras e dúvidas do portal (template multiarena)
+   CSS portado do protótipo aprovado (src/public/preview-portal-regras.html), escopado em
+   .pa-regras. Mesmas cores de papel do portal (arenas.tema).
+   ========================================================== */
+
+.pa-regras {
+  --pa-marca: #1e2d6b;
+  --pa-marca-escura: #131d47;
+  --ink: #161c3a;
+  --pa-destaque: #f4b41a;
+  --pa-destaque-hover: #e3a20c;
+  --pa-fundo-suave: #f4f1ea;
+  --line: #d9d2c2;
+  --muted: #5a6078;
+  --ink-2: #3d4360;
+  --on-navy: #c9d0ee;
+  --header-h: 68px;
+  --gutter: clamp(16px, 3.4vw, 48px);
+  --font: var(--font-archivo, "Archivo"), system-ui, sans-serif;
+}
+.pa-regras, .pa-regras *, .pa-regras *::before, .pa-regras *::after { box-sizing: border-box; }
+html:has(.pa-regras) { -webkit-text-size-adjust: 100%; }
+body:has(.pa-regras) { margin: 0; background: #ffffff; }
+.pa-regras { color: var(--ink); font-family: var(--font); font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+.pa-regras img { display: block; max-width: 100%; height: auto; }
+.pa-regras h1, .pa-regras h2, .pa-regras h3, .pa-regras p, .pa-regras ol, .pa-regras ul { margin: 0; }
+.pa-regras ol, .pa-regras ul { padding: 0; list-style: none; }
+.pa-regras a { color: inherit; text-underline-offset: 3px; }
+.pa-regras ::selection { background: var(--pa-destaque); color: var(--pa-marca-escura); }
+.pa-regras :focus-visible { outline: 3px solid var(--pa-marca); outline-offset: 2px; }
+.pa-regras .topo :focus-visible, .pa-regras .rodape :focus-visible { outline-color: var(--pa-destaque); }
+.pa-regras .ico { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.pa-regras .wrap { width: min(100% - 2 * var(--gutter), 1344px); margin-inline: auto; }
+.pa-regras .estreito { width: min(100% - 2 * var(--gutter), 760px); margin-inline: auto; }
+
+.pa-regras .btn-amarelo, .pa-regras .btn-borda-claro {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; padding: 0 20px; border-radius: 12px; font-weight: 700; text-decoration: none;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.pa-regras .btn-amarelo { background: var(--pa-destaque); color: var(--pa-marca-escura); }
+.pa-regras .btn-amarelo:hover { background: var(--pa-destaque-hover); }
+.pa-regras .btn-borda-claro { border: 1.5px solid rgba(255, 255, 255, 0.5); color: #fff; }
+.pa-regras .btn-borda-claro:hover { background: rgba(255, 255, 255, 0.1); }
+.pa-regras .btn-amarelo:active, .pa-regras .btn-borda-claro:active { transform: scale(0.97); }
+
+.pa-regras .topo { position: sticky; top: 0; z-index: 40; background: var(--pa-marca); color: #fff; }
+.pa-regras .topo-in { display: flex; align-items: center; gap: 16px; height: var(--header-h); }
+.pa-regras .marca { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+.pa-regras .marca img { width: 46px; }
+.pa-regras .marca b { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; }
+.pa-regras .topo .btn-borda-claro { margin-left: auto; min-height: 42px; padding: 0 16px; }
+
+.pa-regras .cab { padding: 48px 0 8px; }
+.pa-regras .cab h1 { font-size: clamp(34px, 3.4vw, 44px); font-weight: 800; line-height: 1.08; letter-spacing: -0.025em; }
+.pa-regras .cab p { margin-top: 10px; color: var(--ink-2); font-size: 18px; }
+.pa-regras .indice { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
+.pa-regras .indice a { display: inline-flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 10px; background: var(--pa-fundo-suave); text-decoration: none; font-weight: 600; transition: background-color 150ms ease; }
+.pa-regras .indice a:hover { background: #e9e4d8; }
+
+.pa-regras .bloco { padding: 40px 0 8px; scroll-margin-top: calc(var(--header-h) + 12px); }
+.pa-regras .bloco h2 { font-size: 27px; font-weight: 800; line-height: 1.15; letter-spacing: -0.015em; }
+.pa-regras .bloco > p { margin-top: 8px; color: var(--ink-2); }
+.pa-regras .regras { counter-reset: r; display: grid; gap: 14px; margin-top: 18px; }
+.pa-regras .regras li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; }
+.pa-regras .regras li::before {
+  counter-increment: r; content: counter(r); width: 34px; height: 34px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--pa-marca); color: var(--pa-destaque); font-weight: 800; font-size: 15px;
+}
+.pa-regras .regras b { display: block; }
+.pa-regras .regras span { color: var(--ink-2); }
+.pa-regras .casos { display: grid; gap: 10px; margin-top: 18px; }
+.pa-regras .casos li { padding: 14px 16px; border-radius: 12px; background: var(--pa-fundo-suave); }
+.pa-regras .casos b { display: block; }
+.pa-regras .casos span { color: var(--ink-2); }
+
+.pa-regras .faq { margin-top: 14px; border-top: 1px solid #e6e1d6; }
+.pa-regras .faq details { border-bottom: 1px solid #e6e1d6; }
+.pa-regras .faq summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 2px; cursor: pointer; font-weight: 650; font-size: 17px; list-style: none; }
+.pa-regras .faq summary::-webkit-details-marker { display: none; }
+.pa-regras .faq summary .ico { color: var(--muted); }
+.pa-regras .faq details[open] summary .ico { transform: rotate(180deg); }
+.pa-regras .faq details p { padding: 0 2px 18px; color: var(--ink-2); max-width: 64ch; }
+
+.pa-regras .duvida { margin: 48px 0 64px; padding: 24px; border-radius: 18px; background: var(--pa-marca); color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; flex-wrap: wrap; }
+.pa-regras .duvida b { display: block; font-size: 21px; }
+.pa-regras .duvida span { color: var(--on-navy); }
+
+.pa-regras .rodape { background: var(--pa-marca-escura); color: var(--on-navy); padding: 24px 0; font-size: 13.5px; }
+.pa-regras .rodape .wrap { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.pa-regras .rodape a { color: #fff; }
+
+@media (max-width: 520px) {
+  .pa-regras .marca b { font-size: 17px; }
+  .pa-regras .marca img { width: 40px; }
+  .pa-regras .topo .btn-borda-claro span { display: none; }
+  .pa-regras .duvida .btn-amarelo { width: 100%; }
+}

@@ -52,6 +52,20 @@ export function proxy(request: NextRequest) {
     }
   }
 
+  // 1b. Raiz do domínio da plataforma (não localhost nem *.vercel.app): página comercial. O portal
+  // da arena e a página comercial ficam em grupos de rota com CSS diferentes, por isso a escolha é aqui.
+  if (
+    !subdominio &&
+    pathname === "/" &&
+    process.env.NEXT_PUBLIC_ROOT_DOMAIN &&
+    hostEhDominioRaiz(host) &&
+    !host?.startsWith("localhost")
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/para-arenas";
+    return NextResponse.rewrite(url);
+  }
+
   const requestHeaders = new Headers(request.headers);
 
   // 2. Acesso via subdomínio de arena (ex: 'arena-central.reservei.com')

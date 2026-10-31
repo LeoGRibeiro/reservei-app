@@ -200,6 +200,8 @@ export const ROTAS_RAIZ_RESERVADAS = new Set([
   "admin",
   "super-admin",
   "minha-conta",
+  "regras",
+  "arenas",
   "termos",
   "privacidade",
   "para-arenas",

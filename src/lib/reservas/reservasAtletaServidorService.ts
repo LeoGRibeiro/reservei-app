@@ -25,6 +25,8 @@ async function carregarReservaDoAtleta(reservaId: string, usuarioId: string) {
     status: string;
     data: string;
     hora_inicio: string;
+    valor_total?: number;
+    valor_pendente?: number;
   };
 }
 
@@ -52,11 +54,24 @@ export async function cancelarReservaDoAtleta(
     throw new ErroHttp("Não é possível cancelar uma partida que já começou.", 409);
   }
 
-  const { error } = await supabaseAdmin
-    .from("reservas")
-    .update({ status: "cancelada", permite_vagas: false, vagas_abertas: 0 })
-    .eq("id", reservaId);
+  const base = { status: "cancelada", permite_vagas: false, vagas_abertas: 0 };
+  // Reembolso (regra de 30/10/2026): com mais de 24 horas, o valor pago volta no Pix. No modo simulado
+  // fica "reembolsado" na hora; nos outros modos, "pendente" para a arena devolver (gateway fica para depois).
+  const pago = Math.max(0, Number(reserva.valor_total ?? 0) - Number(reserva.valor_pendente ?? 0));
+  const inicio = instanteNoFuso(String(reserva.data).slice(0, 10), reserva.hora_inicio, FUSO_PADRAO_ARENA).getTime();
+  const reembolsa = pago > 0 && inicio - agora.getTime() >= 24 * 3_600_000;
+  let reembolso: Record<string, unknown> = { cancelada_em: agora.toISOString() };
+  if (reembolsa) {
+    const { data: arena } = await supabaseAdmin.from("arenas").select("modo_pagamento").eq("id", reserva.arena_id).maybeSingle();
+    const simulado = arena?.modo_pagamento === "simulado";
+    reembolso = { ...reembolso, reembolso_status: simulado ? "reembolsado" : "pendente", reembolso_valor: pago, reembolsado_em: simulado ? agora.toISOString() : null };
+  }
+  let { error } = await supabaseAdmin.from("reservas").update({ ...base, ...reembolso }).eq("id", reservaId);
+  // Banco sem a migração do portal: cancela sem as colunas de reembolso
+  if (error?.code === "PGRST204") ({ error } = await supabaseAdmin.from("reservas").update(base).eq("id", reservaId));
   if (error) throw new Error(error.message);
+  // A reserva cancelada não vale carimbo no Clube (os que já viraram hora grátis ficam)
+  await supabaseAdmin.from("fidelidade_selos").delete().eq("reserva_id", reservaId).eq("resgatado", false);
 }
 
 /**
@@ -66,13 +81,15 @@ export async function cancelarReservaDoAtleta(
  * @param usuarioId Atleta autenticado
  * @param vagasAbertas Quantidade de vagas (0 fecha o mural para esta partida)
  * @param agora Instante de referência (testes)
+ * @param completa Fechou porque a partida completou (o portal mostra "Partida completa")
  * @throws ErroHttp 400 (quantidade inválida), 404 (não é do atleta) ou 409 (reserva inativa/iniciada)
  */
 export async function atualizarVagasDoAtleta(
   reservaId: string,
   usuarioId: string,
   vagasAbertas: number,
-  agora: Date = new Date()
+  agora: Date = new Date(),
+  completa = false
 ): Promise<{ permiteVagas: boolean; vagasAbertas: number }> {
   if (!Number.isInteger(vagasAbertas) || vagasAbertas < 0 || vagasAbertas > MAX_VAGAS) {
     throw new ErroHttp("Quantidade de vagas inválida.", 400);
@@ -90,10 +107,13 @@ export async function atualizarVagasDoAtleta(
   }
 
   const resultado = { permiteVagas: vagasAbertas > 0, vagasAbertas };
-  const { error } = await supabaseAdmin
+  const mudanca = { permite_vagas: resultado.permiteVagas, vagas_abertas: vagasAbertas };
+  let { error } = await supabaseAdmin
     .from("reservas")
-    .update({ permite_vagas: resultado.permiteVagas, vagas_abertas: vagasAbertas })
+    .update({ ...mudanca, vagas_completa: completa && vagasAbertas === 0 })
     .eq("id", reservaId);
+  // Banco sem a migração do portal (coluna vagas_completa ausente): grava o resto
+  if (error?.code === "PGRST204") ({ error } = await supabaseAdmin.from("reservas").update(mudanca).eq("id", reservaId));
   if (error) throw new Error(error.message);
   return resultado;
 }

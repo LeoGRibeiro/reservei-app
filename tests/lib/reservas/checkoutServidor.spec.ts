@@ -90,6 +90,7 @@ const PEDIDO: SolicitacaoCheckout = {
   whatsappCliente: "91981234567",
   tipoPagamento: "sinal",
   voucherIds: [],
+  aceiteTermos: true,
 };
 
 /** Corpo bruto como o navegador envia (inclui o aceite dos termos). */
@@ -142,8 +143,8 @@ describe("validarSolicitacaoCheckout", () => {
     [{ ...ENTRADA, horarios: ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"] }, /no máximo/],
     [{ ...ENTRADA, nomeCliente: "A" }, /nome/],
     [{ ...ENTRADA, whatsappCliente: "1234" }, /WhatsApp/],
-    [{ ...PEDIDO }, /Termos de Uso/],
-    [{ ...ENTRADA, aceiteTermos: "sim" }, /Termos de Uso/],
+    [{ ...PEDIDO, aceiteTermos: undefined }, /política de cancelamento/],
+    [{ ...ENTRADA, aceiteTermos: "sim" }, /política de cancelamento/],
   ])("rejeita entrada inválida (%#)", (entrada, mensagem) => {
     expect(() => validarSolicitacaoCheckout(entrada)).toThrow(mensagem);
   });
@@ -189,6 +190,14 @@ describe("criarReservaCheckout", () => {
       checkout_token: checkoutToken,
       valor_total: 240,
     });
+  });
+
+  it("aceita só a política de cancelamento (portal da arena) sem registrar os termos", async () => {
+    const dados = validarSolicitacaoCheckout({ ...PEDIDO, aceiteTermos: undefined, aceitePolitica: true });
+    expect(dados.aceiteTermos).toBe(false);
+    mocks.arena = { ...ARENA, modo_pagamento: "manual" };
+    await criarReservaCheckout(dados, null, AGORA);
+    expect(inserts()[0].payload).not.toHaveProperty("termos_aceitos_em");
   });
 
   it("registra o aceite dos termos com a versão vigente (bancos com a Fase 8)", async () => {
