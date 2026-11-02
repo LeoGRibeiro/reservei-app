@@ -3,8 +3,9 @@
  * @description Agenda do painel (`/admin/agenda?data=AAAA-MM-DD&visao=dia|mes`).
  *
  * - **Dia**: uma coluna por quadra e uma linha por horário, com o nome do cliente legível e a cor do
- *   status. Clicar numa reserva abre o detalhe; clicar num horário livre abre "Nova reserva" ou
- *   "Bloquear" já preenchidos; clicar num bloqueio permite liberar.
+ *   status. Clicar numa reserva abre o detalhe; clicar num horário livre abre a escolha rápida
+ *   ({@link EscolhaHorarioLivre}: "Nova reserva" ou "Bloquear horário", já com quadra, dia e hora);
+ *   clicar num bloqueio permite liberar.
  * - **Mês**: calendário com o total de reservas por dia; clicar no dia abre o Dia.
  *
  * A data e a visão ficam no endereço (F5, Voltar e link compartilhado funcionam).
@@ -19,8 +20,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { cn } from "cn";
-import { ChevronLeft, ChevronRight, Lock, Plus } from "lucide-react";
-import { Abas, Botao, CabecalhoPagina, Confirmacao, Etiqueta } from "@/components/admin/ui";
+import { CalendarPlus, ChevronLeft, ChevronRight, Lock, Plus } from "lucide-react";
+import { Abas, Botao, CabecalhoPagina, Confirmacao, Etiqueta, Janela } from "@/components/admin/ui";
 import { useReservasService } from "@/hooks/useReservasService";
 import { useHorariosCatalogo, useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { LockService } from "@/lib/pagamento/lockService";
@@ -144,6 +145,58 @@ function GradeDia({
   );
 }
 
+/**
+ * Escolha rápida ao clicar num horário livre da grade: reservar ou bloquear, as duas já com a quadra,
+ * o dia e a hora clicados.
+ *
+ * @example
+ * ```tsx
+ * <EscolhaHorarioLivre selecao={{ quadraId: "q1", data: "2026-11-02", horario: "19:00" }} aoEscolher={abrir} aoFechar={fechar} />
+ * ```
+ */
+export function EscolhaHorarioLivre({
+  selecao,
+  aoEscolher,
+  aoFechar,
+}: {
+  selecao: SelecaoInicial | null;
+  aoEscolher: (tipo: "reserva" | "bloqueio", selecao: SelecaoInicial) => void;
+  aoFechar: () => void;
+}) {
+  const quadras = useQuadrasCatalogo();
+  const quadra = quadras.find((q) => q.id === selecao?.quadraId);
+  const opcao =
+    "flex w-full items-start gap-3 rounded-lg border border-painel-linha-forte bg-painel-superficie p-4 text-left transition-colors hover:border-painel-destaque hover:bg-painel-destaque-suave focus-visible:outline-2 focus-visible:outline-painel-foco";
+  return (
+    <Janela
+      aberta={!!selecao}
+      largura="sm"
+      titulo="O que fazer neste horário?"
+      descricao={selecao ? `${quadra?.descricao ?? "Quadra"} · ${dataExtensa(selecao.data ?? "")} · ${selecao.horario}` : undefined}
+      aoFechar={aoFechar}
+    >
+      {selecao && (
+        <div className="space-y-3">
+          <button type="button" className={opcao} onClick={() => aoEscolher("reserva", selecao)}>
+            <CalendarPlus aria-hidden className="mt-0.5 size-5 shrink-0 text-painel-destaque" />
+            <span>
+              <span className="block font-semibold text-painel-tinta">Nova reserva</span>
+              <span className="block text-xs text-painel-suave">Cliente que ligou ou chegou no balcão.</span>
+            </span>
+          </button>
+          <button type="button" className={opcao} onClick={() => aoEscolher("bloqueio", selecao)}>
+            <Lock aria-hidden className="mt-0.5 size-5 shrink-0 text-painel-suave" />
+            <span>
+              <span className="block font-semibold text-painel-tinta">Bloquear horário</span>
+              <span className="block text-xs text-painel-suave">Manutenção, evento ou torneio. Ninguém reserva por cima.</span>
+            </span>
+          </button>
+        </div>
+      )}
+    </Janela>
+  );
+}
+
 function CalendarioMes({ ano, mes, reservas, aoEscolherDia }: { ano: number; mes: number; reservas: Reserva[]; aoEscolherDia: (data: string) => void }) {
   const dias = useMemo(() => gerarDiasCalendarioMensal(ano, mes, reservas, getHoje()), [ano, mes, reservas]);
   return (
@@ -186,6 +239,7 @@ export function PaginaAgenda() {
   const [ano, mes] = data.split("-").map(Number);
   const [janela, setJanela] = useState<{ tipo: "reserva" | "bloqueio"; inicial: SelecaoInicial } | null>(null);
   const [bloqueio, setBloqueio] = useState<Reserva | null>(null);
+  const [escolha, setEscolha] = useState<SelecaoInicial | null>(null);
 
   useEffect(() => {
     void carregarReservasDoMes(ano, mes);
@@ -260,7 +314,7 @@ export function PaginaAgenda() {
           <GradeDia
             data={data}
             reservas={reservas}
-            aoClicarLivre={(s) => setJanela({ tipo: "reserva", inicial: s })}
+            aoClicarLivre={(s) => setEscolha(s)}
             aoClicarBloqueio={(r) => setBloqueio(r)}
           />
           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-painel-suave">
@@ -276,6 +330,14 @@ export function PaginaAgenda() {
         <CalendarioMes ano={ano} mes={mes} reservas={reservas} aoEscolherDia={(d) => navegar(d, "dia")} />
       )}
 
+      <EscolhaHorarioLivre
+        selecao={escolha}
+        aoFechar={() => setEscolha(null)}
+        aoEscolher={(tipo, inicial) => {
+          setEscolha(null);
+          setJanela({ tipo, inicial });
+        }}
+      />
       {janela?.tipo === "reserva" && (
         <JanelaNovaReserva
           aberta

@@ -310,7 +310,7 @@ export function JanelaBloqueio({ aberta, inicial, aoFechar, aoBloquear }: { aber
       aberta={aberta}
       aoFechar={aoFechar}
       titulo="Bloquear horário"
-      descricao="O horário some do site e ninguém consegue reservar. Use para manutenção ou evento."
+      descricao="No site o horário aparece como Ocupado e ninguém consegue reservar. Use para manutenção ou evento."
       rodape={
         <>
           <Botao variante="secundario" onClick={aoFechar}>Cancelar</Botao>
