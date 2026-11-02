@@ -170,6 +170,65 @@ export async function fetchSessoesDeContratosSupabase(desde: string): Promise<Re
   }
 }
 
+/**
+ * Uma reserva da arena ativa pelo id (o detalhe abre mesmo fora da janela carregada).
+ *
+ * @param id Reserva
+ * @returns Reserva, null se não existir ou não for visível, undefined se a leitura falhar
+ */
+export async function buscarReservaSupabase(id: string): Promise<Reserva | null | undefined> {
+  if (!isSupabaseConfigured()) return undefined;
+  try {
+    const arenaId = await obterArenaAtivaId();
+    if (!arenaId) return null;
+    const { data, error } = await supabase.from(TABELA_RESERVAS).select("*").eq("id", id).eq("arena_id", arenaId).maybeSingle();
+    if (error) {
+      console.error(`[Supabase] Erro ao carregar a reserva ${id}:`, error.message);
+      return undefined;
+    }
+    return data ? rowToReserva(data as ReservaDbRow) : null;
+  } catch (err) {
+    console.error(`[Supabase] Falha inesperada ao carregar a reserva ${id}:`, err);
+    return undefined;
+  }
+}
+
+/** Um evento da linha do tempo da reserva (quem quitou, cancelou, remarcou...). */
+export interface EventoReserva {
+  id: string;
+  tipo: "quitada" | "cancelada" | "remarcada" | "nao_compareceu" | "compareceu" | "devolucao_registrada";
+  detalhes: Record<string, unknown>;
+  autorNome: string | null;
+  criadoEm: string;
+}
+
+/**
+ * Histórico de uma reserva, do mais antigo ao mais novo (lido pela equipe da arena; a RLS filtra).
+ *
+ * @param reservaId Reserva
+ * @returns Eventos (lista vazia sem banco, sem migração ou se a leitura falhar)
+ */
+export async function listarEventosReservaSupabase(reservaId: string): Promise<EventoReserva[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const { data, error } = await supabase
+      .from("reservas_eventos")
+      .select("id, tipo, detalhes, autor_nome, criado_em")
+      .eq("reserva_id", reservaId)
+      .order("criado_em", { ascending: true });
+    if (error) return [];
+    return ((data ?? []) as Record<string, unknown>[]).map((e) => ({
+      id: String(e.id),
+      tipo: e.tipo as EventoReserva["tipo"],
+      detalhes: (e.detalhes as Record<string, unknown>) ?? {},
+      autorNome: (e.autor_nome as string | null) ?? null,
+      criadoEm: String(e.criado_em),
+    }));
+  } catch {
+    return [];
+  }
+}
+
 /** Resultado de uma gravação, com a mensagem do banco traduzida para o operador. */
 export type ResultadoGravacao = { ok: true } | { ok: false; erro: string };
 

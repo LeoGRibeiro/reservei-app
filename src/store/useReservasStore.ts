@@ -86,6 +86,18 @@ export interface Reserva {
   pagamentoInformadoEm?: string;
   /** Valor efetivamente cobrado no Pix (sinal ou integral) */
   pixValor?: number;
+
+  // Balcão (somente leitura no navegador: gravados pelo servidor)
+  /** Como o restante foi pago no balcão */
+  formaPagamentoRestante?: "dinheiro" | "pix" | "cartao";
+  quitadaEm?: string;
+  canceladaEm?: string;
+  motivoCancelamento?: string;
+  /** O cliente não apareceu */
+  naoCompareceu?: boolean;
+  /** Devolução do sinal num cancelamento: a fazer, feita ou retida pela arena */
+  reembolsoStatus?: "pendente" | "reembolsado" | "retido";
+  reembolsoValor?: number;
 }
 
 // ─── State & Actions ──────────────────────────────────────────────────────────

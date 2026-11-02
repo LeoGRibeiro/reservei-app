@@ -69,6 +69,14 @@ export interface ReservaDbRow {
   gatewayTransacaoId?: string | null;
   pagamento_informado_em?: string | null;
   pix_valor?: number | string | null;
+  // Balcão e cancelamento (migrações do portal e 2026-11-02-c)
+  forma_pagamento_restante?: string | null;
+  quitada_em?: string | null;
+  cancelada_em?: string | null;
+  motivo_cancelamento?: string | null;
+  nao_compareceu?: boolean | null;
+  reembolso_status?: string | null;
+  reembolso_valor?: number | string | null;
 }
 
 /**
@@ -199,6 +207,13 @@ export function rowToReserva(row: ReservaDbRow): Reserva {
     gatewayTransacaoId: row.gateway_transacao_id ?? row.gatewayTransacaoId ?? undefined,
     pagamentoInformadoEm: row.pagamento_informado_em ?? undefined,
     pixValor: row.pix_valor !== null && row.pix_valor !== undefined ? Number(row.pix_valor) : undefined,
+    formaPagamentoRestante: (row.forma_pagamento_restante as Reserva["formaPagamentoRestante"]) ?? undefined,
+    quitadaEm: row.quitada_em ?? undefined,
+    canceladaEm: row.cancelada_em ?? undefined,
+    motivoCancelamento: row.motivo_cancelamento ?? undefined,
+    naoCompareceu: row.nao_compareceu === true ? true : undefined,
+    reembolsoStatus: (row.reembolso_status as Reserva["reembolsoStatus"]) ?? undefined,
+    reembolsoValor: row.reembolso_valor !== null && row.reembolso_valor !== undefined ? Number(row.reembolso_valor) : undefined,
   };
 }
 

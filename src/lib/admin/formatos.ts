@@ -20,7 +20,8 @@ import type { Reserva } from "@/store/useReservasStore";
  */
 export function moeda(valor: number | string | null | undefined): string {
   const num = Number(valor);
-  return (Number.isFinite(num) ? num : 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  // Espaço comum no lugar do não separável do Intl: igual na tela, nos testes e ao copiar
+  return (Number.isFinite(num) ? num : 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace(/ /g, " ");
 }
 
 function dataLocal(iso: string): Date {
