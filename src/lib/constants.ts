@@ -20,8 +20,11 @@ export const PRECOS = {
 
 // ─── Agendamento ──────────────────────────────────────────────────────────────
 
-/** Quantidade de dias no futuro disponíveis para agendamento (hoje + 7) */
-export const DIAS_AGENDAMENTO_FUTURO = 7;
+/**
+ * Quantidade de dias no futuro disponíveis para agendamento online (hoje + 30). Fonte única: o
+ * portal mostra as mesmas fichas de data (`DIAS_A_FRENTE`) e o checkout do servidor recusa depois disso.
+ */
+export const DIAS_AGENDAMENTO_FUTURO = 30;
 
 // ─── Complexo ─────────────────────────────────────────────────────────────────
 

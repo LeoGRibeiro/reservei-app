@@ -269,6 +269,13 @@ describe("criarReservaCheckout", () => {
     await expect(criarReservaCheckout(PEDIDO, null, AGORA)).resolves.toBeDefined();
   });
 
+  it("aceita qualquer data que o site mostra (até hoje + 30) e recusa o dia seguinte", async () => {
+    const { DIAS_A_FRENTE } = await import("@/lib/portal/agenda");
+    expect(DIAS_A_FRENTE).toBe(30);
+    await expect(criarReservaCheckout({ ...PEDIDO, data: "2026-11-20" }, null, AGORA)).resolves.toBeDefined();
+    expect((await erroDe(criarReservaCheckout({ ...PEDIDO, data: "2026-11-21" }, null, AGORA))).status).toBe(422);
+  });
+
   it("recusa telefone bloqueado (403)", async () => {
     mocks.bloqueados = [{ id: "u-bloq" }];
     expect((await erroDe(criarReservaCheckout(PEDIDO, null, AGORA))).status).toBe(403);

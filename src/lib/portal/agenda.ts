@@ -5,14 +5,15 @@
  */
 
 import { calcularPrecoReserva } from "@/lib/arena/arenaService";
+import { DIAS_AGENDAMENTO_FUTURO } from "@/lib/constants";
 import type { Quadra, QuadraPreco } from "@/lib/arena/types";
 import { hh, horaDe, somarDias } from "./formatos";
 import type { LinhaGrade, QuadraPortal } from "./types";
 
 export type { LinhaGrade };
 
-/** Hoje + 30 dias nas fichas de data. */
-export const DIAS_A_FRENTE = 30;
+/** Hoje + 30 dias nas fichas de data (o mesmo limite do checkout no servidor). */
+export const DIAS_A_FRENTE = DIAS_AGENDAMENTO_FUTURO;
 
 /** Data ISO de hoje no fuso da arena. */
 export function hojeNoFusoArena(agora: Date, fuso = "America/Belem"): string {
