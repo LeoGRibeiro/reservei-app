@@ -11,6 +11,7 @@ import { useContratosStore } from "@/store/useContratosStore";
 import { useReservasStore, type Reserva } from "@/store/useReservasStore";
 import { useReservasService } from "@/hooks/useReservasService";
 import { getHoje } from "@/lib/constants";
+import { somarDias } from "@/lib/datas/fusoHorario";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   fetchContratosSupabase,
@@ -19,7 +20,9 @@ import {
 } from "@/lib/supabase/contratosService";
 import {
   atualizarReservaSupabase,
-  atualizarReservasEmLoteSupabase,
+  atualizarReservasDoContratoSupabase,
+  fetchReservasPeriodoSupabase,
+  fetchSessoesDeContratosSupabase,
   inserirReservasEmLoteSupabase,
 } from "@/lib/supabase/reservasService";
 import {
@@ -42,7 +45,6 @@ import type {
   DadosNovoContrato,
   TipoContrato,
 } from "@/lib/recorrencia/types";
-import type { Esporte } from "@/lib/quadras";
 
 // ─── Tipos de resultado ───────────────────────────────────────────────────────
 
@@ -125,6 +127,15 @@ export function useContratosService() {
     [reservas]
   );
 
+  /**
+   * Carrega do banco todas as sessões de turmas e grupos dos últimos 60 dias em diante (as telas de
+   * Escolinhas e Grupos mostram as sessões futuras inteiras, além da janela da agenda).
+   */
+  const carregarSessoes = useCallback(async (): Promise<void> => {
+    const sessoes = await fetchSessoesDeContratosSupabase(somarDias(getHoje(), -60));
+    if (sessoes) useReservasStore.getState().mesclarReservas(sessoes);
+  }, []);
+
   // ── Mutations ──────────────────────────────────────────────────────────────
 
   /**
@@ -137,7 +148,17 @@ export function useContratosService() {
       const erros = validarDadosContrato(dados, getHoje());
       if (erros.length > 0) return { ok: false, erros };
 
-      const reservasAtuais = useReservasStore.getState().reservas;
+      // Conflitos contra o banco no período inteiro do contrato (a tela só carrega alguns meses)
+      let reservasAtuais = useReservasStore.getState().reservas;
+      if (isSupabaseConfigured()) {
+        const previa = gerarReservasDoContrato({ ...dados, id: "previa", ativo: true, criadoEm: "" } as ContratoRecorrente);
+        if (previa.length > 0) {
+          const doBanco = await fetchReservasPeriodoSupabase(previa[0].data, previa[previa.length - 1].data, { quadraId: dados.quadraId });
+          if (!doBanco) return { ok: false, erros: ["Não foi possível conferir a agenda no banco. Tente de novo."] };
+          const ids = new Set(doBanco.map((r) => r.id));
+          reservasAtuais = [...doBanco, ...reservasAtuais.filter((r) => !ids.has(r.id))];
+        }
+      }
       const conflitos = encontrarConflitosDoContrato(dados, reservasAtuais);
       if (conflitos.length > 0) {
         return {
@@ -203,7 +224,7 @@ export function useContratosService() {
    * Libera o horário ao público e classifica o aviso (sem ônus × tardio).
    */
   const registrarCancelamentoGrupo = useCallback(
-    (reservaId: string, dataAviso: string = getHoje()): ResultadoCancelamento => {
+    async (reservaId: string, dataAviso: string = getHoje()): Promise<ResultadoCancelamento> => {
       const ocorrencia = useReservasStore.getState().getReservaById(reservaId);
       if (!ocorrencia) return { ok: false, motivo: "Ocorrência não encontrada." };
 
@@ -214,8 +235,10 @@ export function useContratosService() {
         status: "cancelada",
         avisoCancelamentoEm: dataAviso,
       };
+      if (isSupabaseConfigured() && !(await atualizarReservaSupabase(reservaId, atualizacao))) {
+        return { ok: false, motivo: "O banco não confirmou o cancelamento. Tente de novo." };
+      }
       useReservasStore.getState().atualizarReserva(reservaId, atualizacao);
-      void atualizarReservaSupabase(reservaId, atualizacao);
 
       return { ok: true, classificacao: classificarAviso(dataAviso, ocorrencia.data) };
     },
@@ -226,8 +249,9 @@ export function useContratosService() {
    * Desfaz o cancelamento de uma sessão de grupo, desde que o horário
    * ainda esteja livre (ninguém reservou nesse meio-tempo).
    */
-  const reativarOcorrenciaGrupo = useCallback((reservaId: string): ResultadoSimples => {
-    const { reservas: atuais, getReservaById } = useReservasStore.getState();
+  const reativarOcorrenciaGrupo = useCallback(async (reservaId: string): Promise<ResultadoSimples> => {
+    const { getReservaById } = useReservasStore.getState();
+    let atuais = useReservasStore.getState().reservas;
     const ocorrencia = getReservaById(reservaId);
 
     if (!ocorrencia || ocorrencia.tipoReserva !== "grupo") {
@@ -238,6 +262,10 @@ export function useContratosService() {
     }
     if (ocorrencia.data < getHoje()) {
       return { ok: false, motivo: "Não é possível reativar uma sessão que já passou." };
+    }
+    if (isSupabaseConfigured()) {
+      const doDia = await fetchReservasPeriodoSupabase(ocorrencia.data, ocorrencia.data, { quadraId: ocorrencia.quadraId });
+      if (doDia) atuais = doDia;
     }
     const conflitos = encontrarConflitosDoBloco(
       ocorrencia.quadraId,
@@ -251,8 +279,10 @@ export function useContratosService() {
     }
 
     const atualizacao: Partial<Reserva> = { status: "pendente", avisoCancelamentoEm: null };
+    if (isSupabaseConfigured() && !(await atualizarReservaSupabase(reservaId, atualizacao))) {
+      return { ok: false, motivo: "O horário já foi reservado por outro cliente." };
+    }
     useReservasStore.getState().atualizarReserva(reservaId, atualizacao);
-    void atualizarReservaSupabase(reservaId, atualizacao);
     return { ok: true };
   }, []);
 
@@ -269,16 +299,14 @@ export function useContratosService() {
           (r) => r.contratoId === contratoId && r.data >= hoje && r.status !== "cancelada"
         );
       const ids = futuras.map((r) => r.id);
+      let sessoesCanceladas = ids.length;
 
       if (isSupabaseConfigured()) {
         const contratoAtualizado = await atualizarContratoSupabase(contratoId, { ativo: false });
         if (!contratoAtualizado) return { ok: false, sessoesCanceladas: 0 };
-        if (ids.length > 0) {
-          const reservasAtualizadas = await atualizarReservasEmLoteSupabase(ids, {
-            status: "cancelada",
-          });
-          if (!reservasAtualizadas) return { ok: false, sessoesCanceladas: 0 };
-        }
+        const canceladas = await atualizarReservasDoContratoSupabase(contratoId, { status: "cancelada" }, { desde: hoje, ativas: true });
+        if (canceladas === null) return { ok: false, sessoesCanceladas: 0 };
+        sessoesCanceladas = canceladas;
       }
 
       useContratosStore.getState().atualizarContrato(contratoId, { ativo: false });
@@ -289,7 +317,7 @@ export function useContratosService() {
         ),
       }));
 
-      return { ok: true, sessoesCanceladas: ids.length };
+      return { ok: true, sessoesCanceladas };
     },
     []
   );
@@ -334,18 +362,17 @@ export function useContratosService() {
           return { ok: false, motivo: "Não foi possível salvar as alterações no banco de dados." };
         }
 
-        const futuras = useReservasStore
-          .getState()
-          .reservas.filter((r) => r.contratoId === contratoId);
-        const ids = futuras.map((r) => r.id);
-        if (ids.length > 0) {
-          const updateReserva: Partial<Reserva> = {
-            ...(dados.nome !== undefined ? { nomeCliente: dados.nome.trim() } : {}),
-            ...(dados.esporte !== undefined ? { esporte: dados.esporte } : {}),
-            ...(dados.contatoWhatsapp !== undefined ? { whatsappCliente: dados.contatoWhatsapp } : {}),
-            ...(dados.descricao !== undefined ? { observacoes: dados.descricao.trim() || undefined } : {}),
-          };
-          await atualizarReservasEmLoteSupabase(ids, updateReserva);
+        const updateReserva: Partial<Reserva> = {
+          ...(dados.nome !== undefined ? { nomeCliente: dados.nome.trim() } : {}),
+          ...(dados.esporte !== undefined ? { esporte: dados.esporte } : {}),
+          ...(dados.contatoWhatsapp !== undefined ? { whatsappCliente: dados.contatoWhatsapp } : {}),
+          ...(dados.descricao !== undefined ? { observacoes: dados.descricao.trim() || undefined } : {}),
+        };
+        if (Object.keys(updateReserva).length > 0) {
+          const atualizadas = await atualizarReservasDoContratoSupabase(contratoId, updateReserva);
+          if (atualizadas === null) {
+            return { ok: false, motivo: "O contrato foi salvo, mas as sessões na agenda não foram atualizadas. Tente de novo." };
+          }
         }
       }
 
@@ -377,6 +404,7 @@ export function useContratosService() {
       getOcorrencias,
       getAvisosEscolinha,
       getSituacaoCobranca,
+      carregarSessoes,
       // Mutations
       criarContrato,
       atualizarContrato,
@@ -391,6 +419,7 @@ export function useContratosService() {
       getOcorrencias,
       getAvisosEscolinha,
       getSituacaoCobranca,
+      carregarSessoes,
       criarContrato,
       atualizarContrato,
       registrarCancelamentoGrupo,

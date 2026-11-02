@@ -332,6 +332,8 @@ export async function criarReservaCheckout(
   };
 
   const { error: erroInsert } = await supabaseAdmin.from("reservas").insert(linha);
+  // Trava do banco contra reserva dupla (migração 2026-11-02-b): outro checkout ganhou o horário
+  if (erroInsert?.code === "23P01") throw new ErroHttp("Esse horário acabou de ser reservado. Escolha outro.", 409);
   if (erroInsert) throw new Error(erroInsert.message);
 
   // 7. Defesa contra corrida: se outro checkout gravou o mesmo horário ao mesmo tempo, o mais

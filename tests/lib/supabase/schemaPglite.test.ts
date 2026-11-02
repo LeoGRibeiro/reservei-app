@@ -216,6 +216,64 @@ describe("tabelas do portal (migração 2026-10-30-b)", () => {
     });
   });
 
+  describe("trava contra reserva dupla e números do painel (migração 2026-11-02-b)", () => {
+    const DIA = "2031-03-10";
+    const inserir = (id: string, horarios: string[], extra = "") =>
+      db.query(
+        `INSERT INTO public.reservas (id, arena_id, quadra_id, data, horarios, hora_inicio, hora_fim, nome_cliente, whatsapp_cliente,
+           cpf_cliente, valor_total, valor_sinal, valor_pendente, status, criada_em ${extra ? ", " + extra.split("=")[0] : ""})
+         VALUES ($1, 'arena-belem', 'arena-belem-q1', '${DIA}', $2, $3, '23:00', 'Ana Souza', '(91) 99999-0001', '', 100, 50, 50, 'pendente', now()
+           ${extra ? ", " + extra.split("=")[1] : ""})`,
+        [id, horarios, horarios[0]]
+      );
+
+    it("não deixa gravar duas reservas no mesmo horário da mesma quadra", async () => {
+      await inserir("dup-1", ["19:00", "20:00"]);
+      await expect(inserir("dup-2", ["20:00"])).rejects.toThrow(/Horário já ocupado/);
+      await inserir("dup-3", ["21:00"]);
+    });
+
+    it("Pix com prazo vencido ou reserva cancelada liberam o horário", async () => {
+      await db.query(
+        `UPDATE public.reservas SET status = 'em_processamento', expira_em = now() - interval '1 minute' WHERE id = 'dup-3'`
+      );
+      await inserir("dup-4", ["21:00"]);
+      await db.query("UPDATE public.reservas SET status = 'cancelada' WHERE id = 'dup-1'");
+      await inserir("dup-5", ["19:00"]);
+    });
+
+    it("remarcar para um horário ocupado é barrado; quitar quem já ocupava não", async () => {
+      await expect(db.query("UPDATE public.reservas SET horarios = '{19:00}' WHERE id = 'dup-4'")).rejects.toThrow(/Horário já ocupado/);
+      await db.query("UPDATE public.reservas SET status = 'confirmada', valor_pendente = 0 WHERE id = 'dup-4'");
+    });
+
+    it("reativar uma reserva cancelada cujo horário foi ocupado é barrado", async () => {
+      await expect(db.query("UPDATE public.reservas SET status = 'pendente' WHERE id = 'dup-1'")).rejects.toThrow(/Horário já ocupado/);
+    });
+
+    it("resumo_financeiro soma só o período, separa recebido e a receber e ignora canceladas", async () => {
+      const { rows } = await db.query("SELECT public.resumo_financeiro('arena-belem', $1, $1) AS r", [DIA]);
+      const r = rows[0].r as Record<string, unknown>;
+      // dup-4 quitada (100 recebido) + dup-5 sinal pago (50 recebido, 50 a receber); dup-1 cancelada
+      expect(r).toMatchObject({ reservas: 2, recebido: 150, a_receber: 50, canceladas: 1 });
+      expect(r.por_quadra).toEqual([{ quadra_id: "arena-belem-q1", reservas: 2, recebido: 150, a_receber: 50 }]);
+    });
+
+    it("clientes_da_arena agrupa pelo WhatsApp com ou sem o 55 e guarda os outros nomes", async () => {
+      await db.query(
+        `UPDATE public.reservas SET whatsapp_cliente = '5591999990001', nome_cliente = 'Ana S.' WHERE id = 'dup-5'`
+      );
+      const { rows } = await db.query("SELECT * FROM public.clientes_da_arena('arena-belem') WHERE telefone = '91999990001'");
+      expect(rows).toHaveLength(1);
+      expect(rows[0]).toMatchObject({ reservas: 2, canceladas: 1 });
+      expect([rows[0].nome, ...(rows[0].outros_nomes as string[])].sort()).toEqual(["Ana S.", "Ana Souza"]);
+    });
+
+    it("visitante não chama as funções do painel", async () => {
+      await expect(comoPapel("anon", "SELECT public.resumo_financeiro('arena-belem', CURRENT_DATE, CURRENT_DATE)")).rejects.toThrow(/permission denied/);
+    });
+  });
+
   it("pedidos de vaga e Clube entram na publicação do tempo real", async () => {
     const { rows } = await db.query(
       "SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime' ORDER BY tablename"

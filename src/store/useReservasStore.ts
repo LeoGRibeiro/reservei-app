@@ -7,6 +7,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { isSupabaseConfigured } from "@/lib/supabase/client";
 import type { Esporte } from "@/lib/quadras";
 import type { TipoReserva } from "@/lib/recorrencia/types";
 
@@ -95,6 +96,8 @@ interface ReservasState {
 
   // Mutations
   setReservas: (reservas: Reserva[]) => void;
+  /** Junta uma leitura do banco ao que já está carregado (mesmo id = substitui) */
+  mesclarReservas: (reservas: Reserva[]) => void;
   adicionarReserva: (reserva: Reserva) => void;
   atualizarReserva: (id: string, dados: Partial<Reserva>) => void;
   removerReserva: (id: string) => void;
@@ -114,6 +117,13 @@ export const useReservasStore = create<ReservasState>()(
 
       setReservas: (reservas) =>
         set({ reservas, isLoadedFromDb: true }),
+
+      mesclarReservas: (novas) =>
+        set((state) => {
+          const porId = new Map(state.reservas.map((r) => [r.id, r]));
+          for (const r of novas) porId.set(r.id, r);
+          return { reservas: Array.from(porId.values()), isLoadedFromDb: true };
+        }),
 
       adicionarReserva: (reserva) =>
         set((state) => {
@@ -147,7 +157,9 @@ export const useReservasStore = create<ReservasState>()(
     }),
     {
       name: "reservei-v2", // versão da chave no LocalStorage (usada como cache/fallback)
-      partialize: (state) => ({ reservas: state.reservas }),
+      // Com banco, nada de reservas no navegador: são dados pessoais de clientes e o banco é a fonte.
+      // O cache local só existe no modo sem banco (testes e demonstração offline).
+      partialize: (state) => ({ reservas: isSupabaseConfigured() ? [] : state.reservas }),
     }
   )
 );

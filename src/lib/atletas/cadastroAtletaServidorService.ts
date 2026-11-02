@@ -9,6 +9,7 @@
  */
 
 import { VERSAO_TERMOS } from "@/lib/legal/termos";
+import { vincularReservasAoAtleta } from "@/lib/atletas/vinculoReservas";
 import { supabaseAdmin } from "@/lib/supabase/adminClient";
 import { emailSinteticoDoTelefone } from "@/lib/supabase/authService";
 import { validarSenhaForte } from "@/lib/constants";
@@ -98,6 +99,9 @@ export async function cadastrarAtleta(dados: DadosCadastroAtleta): Promise<{ use
     if (erroPerfil.code === "23505") throw new ErroHttp(MSG_TELEFONE_DUPLICADO, 409);
     throw new Error(erroPerfil.message);
   }
+
+  // Reservas feitas antes sem conta (mesmo WhatsApp) passam a aparecer na conta
+  await vincularReservasAoAtleta(userId, dados.telefone);
 
   return { userId };
 }

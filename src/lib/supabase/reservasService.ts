@@ -51,83 +51,174 @@ function mesclarGradePublica(reservas: Reserva[], grade: Reserva[]): Reserva[] {
   return [...reservas, ...grade.filter((g) => !ids.has(g.id))];
 }
 
+/** Tamanho da página de leitura (o PostgREST do Supabase devolve no máximo 1.000 linhas por pedido). */
+const TAMANHO_PAGINA = 1000;
+
+/** Opções da leitura por período. */
+export interface OpcoesPeriodo {
+  /** Só uma quadra */
+  quadraId?: string;
+  /** Acrescenta os slots da grade pública que o usuário não enxerga (padrão: sim) */
+  incluirGradePublica?: boolean;
+}
+
 /**
- * Busca as reservas da arena ativa visíveis ao usuário atual (próprias, ou todas se for operador),
- * completadas pelos slots ocupados da grade pública.
+ * Reservas da arena ativa num intervalo de datas, lidas em páginas de 1.000 até o fim. Nunca traz o
+ * histórico inteiro: o painel pede só a janela que mostra (dia, mês, período do financeiro).
+ *
+ * @param dataInicio Primeiro dia (YYYY-MM-DD)
+ * @param dataFim Último dia (YYYY-MM-DD)
+ * @param opcoes Filtro de quadra e grade pública
+ * @returns Reservas do período, ou null se a leitura falhar
+ *
+ * @example
+ * ```ts
+ * const novembro = await fetchReservasPeriodoSupabase("2026-11-01", "2026-11-30");
+ * ```
  */
-export async function fetchReservasSupabase(): Promise<Reserva[] | null> {
-  if (!isSupabaseConfigured()) {
-    return null;
-  }
+export async function fetchReservasPeriodoSupabase(
+  dataInicio: string,
+  dataFim: string,
+  opcoes: OpcoesPeriodo = {}
+): Promise<Reserva[] | null> {
+  if (!isSupabaseConfigured()) return null;
 
   try {
     const arenaId = await obterArenaAtivaId();
     if (!arenaId) return [];
 
-    const { data, error } = await supabase
-      .from(TABELA_RESERVAS)
-      .select("*")
-      .eq("arena_id", arenaId)
-      .order("criada_em", { ascending: false });
+    const linhas: ReservaDbRow[] = [];
+    for (let inicio = 0; ; inicio += TAMANHO_PAGINA) {
+      let consulta = supabase
+        .from(TABELA_RESERVAS)
+        .select("*")
+        .eq("arena_id", arenaId)
+        .gte("data", dataInicio)
+        .lte("data", dataFim);
+      if (opcoes.quadraId) consulta = consulta.eq("quadra_id", opcoes.quadraId);
+      const { data, error } = await consulta
+        .order("data", { ascending: true })
+        .order("id", { ascending: true })
+        .range(inicio, inicio + TAMANHO_PAGINA - 1);
 
-    if (error) {
-      console.error("[Supabase] Erro ao carregar reservas:", error.message);
-      return null;
+      if (error) {
+        console.error(`[Supabase] Erro ao carregar reservas de ${dataInicio} a ${dataFim}:`, error.message);
+        return null;
+      }
+      const pagina = (data ?? []) as ReservaDbRow[];
+      linhas.push(...pagina);
+      if (pagina.length < TAMANHO_PAGINA) break;
     }
 
-    const proprias = (data as ReservaDbRow[]).map(rowToReserva);
-    return mesclarGradePublica(proprias, await fetchGradePublicaSupabase());
+    const proprias = linhas.map(rowToReserva);
+    if (opcoes.incluirGradePublica === false) return proprias;
+    const grade = await fetchGradePublicaSupabase(dataInicio, dataFim);
+    return mesclarGradePublica(proprias, opcoes.quadraId ? grade.filter((g) => g.quadraId === opcoes.quadraId) : grade);
   } catch (err) {
-    console.error("[Supabase] Falha inesperada ao buscar reservas:", err);
+    console.error(`[Supabase] Falha inesperada ao buscar reservas de ${dataInicio} a ${dataFim}:`, err);
     return null;
   }
 }
 
 /**
- * Busca reservas de um determinado mês e ano no Supabase (Lazy Loading).
- * @param ano Ano com 4 dígitos (ex.: 2026)
- * @param mes Mês de 1 a 12 (ex.: 10 para Outubro)
- * @returns Lista de reservas do mês ou null em caso de erro/não configurado.
+ * Reservas de um mês inteiro da arena ativa.
+ *
+ * @param ano Ano (ex.: 2026)
+ * @param mes Mês de 1 a 12
  */
-export async function fetchReservasPorMesSupabase(
-  ano: number,
-  mes: number
-): Promise<Reserva[] | null> {
-  if (!isSupabaseConfigured()) {
-    return null;
-  }
+export async function fetchReservasPorMesSupabase(ano: number, mes: number): Promise<Reserva[] | null> {
+  const ultimoDia = new Date(ano, mes, 0).getDate();
+  const mm = String(mes).padStart(2, "0");
+  return fetchReservasPeriodoSupabase(`${ano}-${mm}-01`, `${ano}-${mm}-${String(ultimoDia).padStart(2, "0")}`);
+}
 
+/**
+ * Sessões de turmas e grupos (reservas com contrato) a partir de uma data, em páginas de 1.000.
+ * As telas de Escolinhas e Grupos listam todas as sessões futuras, não só as da janela da agenda.
+ *
+ * @param desde Primeiro dia (YYYY-MM-DD)
+ * @returns Sessões, ou null se a leitura falhar
+ */
+export async function fetchSessoesDeContratosSupabase(desde: string): Promise<Reserva[] | null> {
+  if (!isSupabaseConfigured()) return null;
   try {
     const arenaId = await obterArenaAtivaId();
     if (!arenaId) return [];
+    const linhas: ReservaDbRow[] = [];
+    for (let inicio = 0; ; inicio += TAMANHO_PAGINA) {
+      const { data, error } = await supabase
+        .from(TABELA_RESERVAS)
+        .select("*")
+        .eq("arena_id", arenaId)
+        .not("contrato_id", "is", null)
+        .gte("data", desde)
+        .order("data", { ascending: true })
+        .order("id", { ascending: true })
+        .range(inicio, inicio + TAMANHO_PAGINA - 1);
+      if (error) {
+        console.error("[Supabase] Erro ao carregar as sessões dos contratos:", error.message);
+        return null;
+      }
+      const pagina = (data ?? []) as ReservaDbRow[];
+      linhas.push(...pagina);
+      if (pagina.length < TAMANHO_PAGINA) break;
+    }
+    return linhas.map(rowToReserva);
+  } catch (err) {
+    console.error("[Supabase] Falha inesperada ao carregar as sessões dos contratos:", err);
+    return null;
+  }
+}
 
-    const ultimoDia = new Date(ano, mes, 0).getDate();
-    const dataInicio = `${ano}-${String(mes).padStart(2, "0")}-01`;
-    const dataFim = `${ano}-${String(mes).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
+/** Resultado de uma gravação, com a mensagem do banco traduzida para o operador. */
+export type ResultadoGravacao = { ok: true } | { ok: false; erro: string };
 
-    const { data, error } = await supabase
-      .from(TABELA_RESERVAS)
-      .select("*")
-      .eq("arena_id", arenaId)
-      .gte("data", dataInicio)
-      .lte("data", dataFim)
-      .order("data", { ascending: true });
+/**
+ * Mensagem amigável para um erro do banco ao gravar reservas.
+ *
+ * @param erro Erro do PostgREST
+ */
+export function mensagemErroReserva(erro: { code?: string; message: string }): string {
+  if (erro.code === "23P01" || /Horário já ocupado/i.test(erro.message)) {
+    return "Esse horário já está ocupado nesta quadra. Atualize a agenda e escolha outro.";
+  }
+  if (erro.code === "42501" || /row-level security|permission denied/i.test(erro.message)) {
+    return "Sem permissão para esta ação. Sua sessão pode ter expirado: saia e entre de novo.";
+  }
+  return `Não foi possível salvar no banco: ${erro.message}`;
+}
 
-    if (error) {
-      console.error(
-        `[Supabase] Erro ao carregar reservas do mês ${mes}/${ano}:`,
-        error.message
-      );
+/**
+ * Aplica o mesmo update a todas as reservas de um contrato (filtro no banco, sem depender do que a
+ * tela carregou). Ex.: encerrar uma turma cancela todas as sessões futuras, inclusive as de meses
+ * que o painel nunca abriu.
+ *
+ * @param contratoId Contrato
+ * @param dados Campos a gravar
+ * @param filtro `desde`: só a partir desta data; `ativas`: ignora as já canceladas
+ * @returns Quantas reservas mudaram, ou null se o banco recusar
+ */
+export async function atualizarReservasDoContratoSupabase(
+  contratoId: string,
+  dados: Partial<Reserva>,
+  filtro: { desde?: string; ativas?: boolean } = {}
+): Promise<number | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const payload: Record<string, unknown> = { ...reservaToRow(dados) };
+    for (let tentativa = 0; tentativa < 6; tentativa++) {
+      let consulta = supabase.from(TABELA_RESERVAS).update(payload).eq("contrato_id", contratoId);
+      if (filtro.desde) consulta = consulta.gte("data", filtro.desde);
+      if (filtro.ativas) consulta = consulta.neq("status", "cancelada");
+      const { data, error } = await consulta.select("id");
+      if (!error) return (data ?? []).length;
+      if (expurgarColunaIncompativel(payload, error.message)) continue;
+      console.error(`[Supabase] Erro ao atualizar as reservas do contrato ${contratoId}:`, error.message);
       return null;
     }
-
-    const proprias = (data as ReservaDbRow[]).map(rowToReserva);
-    return mesclarGradePublica(proprias, await fetchGradePublicaSupabase(dataInicio, dataFim));
+    return null;
   } catch (err) {
-    console.error(
-      `[Supabase] Falha inesperada ao buscar reservas do mês ${mes}/${ano}:`,
-      err
-    );
+    console.error(`[Supabase] Falha inesperada ao atualizar as reservas do contrato ${contratoId}:`, err);
     return null;
   }
 }
@@ -171,36 +262,27 @@ async function comArenaAtiva(row: Record<string, unknown>): Promise<Record<strin
  * Insere uma nova reserva no banco de dados Supabase (uso do painel administrativo:
  * reservas manuais e bloqueios). Visitantes e atletas usam `POST /api/reservas/checkout`.
  * Trata graciosamente eventuais colunas ausentes no schema cache com retry automático resiliente.
+ *
+ * @returns `{ ok: true }` ou a mensagem do banco traduzida (ex.: horário já ocupado)
  */
-export async function inserirReservaSupabase(reserva: Reserva): Promise<boolean> {
+export async function inserirReservaSupabase(reserva: Reserva): Promise<ResultadoGravacao> {
   if (!isSupabaseConfigured()) {
-    return false;
+    return { ok: false, erro: "Banco de dados não configurado." };
   }
 
   try {
     const payload: Record<string, unknown> = await comArenaAtiva({ ...reservaToRow(reserva) });
-    let tentativa = 0;
-
-    while (tentativa < 6) {
+    for (let tentativa = 0; tentativa < 6; tentativa++) {
       const { error } = await supabase.from(TABELA_RESERVAS).insert([payload]);
-
-      if (!error) {
-        return true;
-      }
-
-      if (expurgarColunaIncompativel(payload, error.message)) {
-        tentativa++;
-        continue;
-      }
-
+      if (!error) return { ok: true };
+      if (expurgarColunaIncompativel(payload, error.message)) continue;
       console.error("[Supabase] Erro ao inserir reserva:", error.message);
-      return false;
+      return { ok: false, erro: mensagemErroReserva(error) };
     }
-
-    return false;
+    return { ok: false, erro: "Não foi possível salvar a reserva." };
   } catch (err) {
     console.error("[Supabase] Falha inesperada ao inserir reserva:", err);
-    return false;
+    return { ok: false, erro: "Falha de conexão ao salvar a reserva. Tente de novo." };
   }
 }
 

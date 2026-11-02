@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   ocupantesAposInsert: null as Record<string, unknown>[] | null,
   vouchers: [] as Record<string, unknown>[],
   reservaDoToken: null as Record<string, unknown> | null,
+  erroInsert: null as { message: string; code?: string } | null,
   consultas: [] as ConsultaRegistrada[],
 }));
 
@@ -24,7 +25,10 @@ vi.mock("@/lib/supabase/adminClient", async () => {
   const { criarSupabaseMock } = await import("../../helpers/supabaseMock");
   let inseriu = false;
   const { cliente, consultas } = criarSupabaseMock((c) => {
-    if (c.operacao === "insert" && c.tabela === "reservas") inseriu = true;
+    if (c.operacao === "insert" && c.tabela === "reservas") {
+      if (mocks.erroInsert) return { data: null, error: mocks.erroInsert };
+      inseriu = true;
+    }
     if (c.operacao !== "select") return { data: [{ id: "x" }] };
     switch (c.tabela) {
       case "arenas":
@@ -266,6 +270,15 @@ describe("criarReservaCheckout", () => {
     expect(erro.status).toBe(409);
     const cancelamento = mocks.consultas.find((c) => c.tabela === "reservas" && c.operacao === "update");
     expect(cancelamento?.payload).toEqual({ status: "cancelada" });
+  });
+
+  it("a trava do banco contra reserva dupla vira 'horário ocupado' (409), não erro 500", async () => {
+    mocks.erroInsert = { code: "23P01", message: "Horário já ocupado nesta quadra (reserva r-1)." };
+    const erro = await erroDe(criarReservaCheckout(PEDIDO, null, AGORA));
+    mocks.erroInsert = null;
+
+    expect(erro.status).toBe(409);
+    expect(erro.message).toMatch(/acabou de ser reservado/);
   });
 
   it("aplica vouchers validados no banco e confirma de imediato a reserva 100% coberta", async () => {

@@ -52,8 +52,8 @@ export function PainelOcorrenciasGrupo({
     setDataAviso(hoje);
   }
 
-  function confirmarCancelamento(id: string) {
-    const resultado = registrarCancelamentoGrupo(id, dataAviso);
+  async function confirmarCancelamento(id: string) {
+    const resultado = await registrarCancelamentoGrupo(id, dataAviso);
     if (!resultado.ok) {
       toast.error("Não foi possível cancelar", { description: resultado.motivo });
       return;
@@ -73,8 +73,8 @@ export function PainelOcorrenciasGrupo({
     }
   }
 
-  function reativar(id: string) {
-    const resultado = reativarOcorrenciaGrupo(id);
+  async function reativar(id: string) {
+    const resultado = await reativarOcorrenciaGrupo(id);
     if (resultado.ok) {
       toast.success("Sessão reativada");
     } else {

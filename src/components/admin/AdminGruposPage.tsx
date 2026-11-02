@@ -6,7 +6,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Pencil, Plus, Users } from "lucide-react";
 import { useContratosService } from "@/hooks/useContratosService";
@@ -21,6 +21,7 @@ export function AdminGruposPage() {
   const {
     getContratosPorTipo,
     getOcorrencias,
+    carregarSessoes,
     getSituacaoCobranca,
     criarContrato,
     atualizarContrato,
@@ -28,6 +29,10 @@ export function AdminGruposPage() {
     reativarOcorrenciaGrupo,
     encerrarContrato,
   } = useContratosService();
+  // Sessões futuras completas (não só as da janela da agenda)
+  useEffect(() => {
+    void carregarSessoes();
+  }, [carregarSessoes]);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set());
   const [contratoEmEdicao, setContratoEmEdicao] = useState<ContratoRecorrente | null>(null);

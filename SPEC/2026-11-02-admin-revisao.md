@@ -1,7 +1,7 @@
 # SPEC — Revisão completa do painel administrativo
 
 - **Data:** 02/11/2026
-- **Status:** em execução. Planos A e B (rotas, layout e kit) concluídos em 02/11/2026
+- **Status:** em execução. Planos A, B e C concluídos em 02/11/2026
 - **Origem:** revisão das 12 telas no navegador (desktop e celular) e do código em `src/components/admin`, `src/hooks`, `src/lib/supabase` e `schema.sql`
 - **Objetivo:** o painel tem que funcionar sem surpresas para o dono e o balcão, mostrar números corretos e ter aparência sóbria e igual para todas as arenas (só o nome da arena muda)
 
@@ -50,6 +50,9 @@
 | D2 | `enriquecerReservasComUsuarios` grava no banco durante a leitura (`atualizarReservaSupabase`) | Toda abertura do painel dispara escritas; ligação de reserva com conta feita pelo navegador de quem estiver logado |
 | D3 | Telas gigantes que misturam dados, regra e visual: Usuários (1.140), Detalhe (765), Agenda (729), Quadras (707), Financeiro (704) | Manutenção cara e bugs como o B2 se repetindo |
 | D4 | Lint de `components/admin` e `hooks`: 16 erros e 58 avisos | Ruído que esconde problemas reais |
+| D5 | **Nenhuma trava no banco contra reserva dupla.** O checkout se defende de corrida, mas balcão, bloqueios, contratos e reativações só conferiam a memória do navegador | Dois atendimentos ao mesmo tempo (ou uma tela desatualizada) gravam o mesmo horário. **Resolvido no Plano C** com trigger `impedir_reserva_dupla` |
+| D6 | "Encerrar contrato" e "editar contrato" só alteravam as sessões que a tela tinha carregado | Com a janela de datas, sessões de meses não abertos ficariam bloqueando a agenda. **Resolvido no Plano C** (filtro por `contrato_id` no banco) |
+| D7 | O store guardava todas as reservas (nome e WhatsApp de clientes) no `localStorage` do navegador | Dados pessoais fora do banco e risco de estourar a cota. **Resolvido no Plano C** (só no modo sem banco) |
 
 ### 1.4 Lacunas de função (o balcão precisa e não tem)
 

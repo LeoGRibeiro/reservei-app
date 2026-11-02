@@ -11,6 +11,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
+import { vincularReservasAoAtleta } from "@/lib/atletas/vinculoReservas";
 import { supabaseAdmin } from "@/lib/supabase/adminClient";
 import { emailSinteticoDoTelefone } from "@/lib/supabase/authService";
 import { normalizarModoPagamento } from "@/lib/arena/arenaRepository";
@@ -169,6 +170,8 @@ async function criarConta(telefone: string, nome: string, nascimento: string | n
     if (erroPerfil.code === "23505") throw new ErroHttp("Esse WhatsApp já tem conta. Entre com ele.", 409);
     throw new Error(erroPerfil.message);
   }
+  // Reservas feitas antes sem conta (mesmo WhatsApp) passam a aparecer na conta
+  await vincularReservasAoAtleta(id, telefone);
   return id;
 }
 

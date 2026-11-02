@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CalendarClock, Globe, GraduationCap, Pencil, Plus } from "lucide-react";
 import { useContratosService } from "@/hooks/useContratosService";
@@ -61,8 +61,13 @@ export function AdminEscolinhasPage() {
 
 /** Contratos de escolinha que bloqueiam horários na agenda. */
 function HorariosNaAgenda() {
-  const { getContratosPorTipo, getOcorrencias, criarContrato, atualizarContrato, encerrarContrato } =
+  const { getContratosPorTipo, getOcorrencias,
+    carregarSessoes, criarContrato, atualizarContrato, encerrarContrato } =
     useContratosService();
+  // Sessões futuras completas (não só as da janela da agenda)
+  useEffect(() => {
+    void carregarSessoes();
+  }, [carregarSessoes]);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [contratoEmEdicao, setContratoEmEdicao] = useState<ContratoRecorrente | null>(null);
 

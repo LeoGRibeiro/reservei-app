@@ -12,6 +12,9 @@ const mocks = vi.hoisted(() => ({
   grade: { data: [] as unknown[], error: null as { message: string } | null },
   filtros: [] as string[],
   rpc: [] as Array<{ funcao: string; args: Record<string, unknown> }>,
+  /** Páginas devolvidas em sequência (quando definido, substitui `reservas`) */
+  paginas: null as unknown[][] | null,
+  ranges: [] as Array<[number, number]>,
 }));
 
 function cadeia(resultado: () => unknown) {
@@ -20,6 +23,11 @@ function cadeia(resultado: () => unknown) {
     gte: (col: string, v: string) => (mocks.filtros.push(`gte:${col}:${v}`), c),
     lte: (col: string, v: string) => (mocks.filtros.push(`lte:${col}:${v}`), c),
     order: () => c,
+    range: (de: number, ate: number) => {
+      mocks.ranges.push([de, ate]);
+      if (mocks.paginas) return Promise.resolve({ data: mocks.paginas.shift() ?? [], error: null });
+      return Promise.resolve(resultado());
+    },
     then: (resolve: (v: unknown) => unknown) => Promise.resolve(resultado()).then(resolve),
   };
   return c;
@@ -42,8 +50,8 @@ vi.mock("@/lib/supabase/client", () => ({
 
 import {
   fetchGradePublicaSupabase,
+  fetchReservasPeriodoSupabase,
   fetchReservasPorMesSupabase,
-  fetchReservasSupabase,
 } from "@/lib/supabase/reservasService";
 
 const slot = (id: string) => ({
@@ -65,6 +73,8 @@ describe("grade pública (função grade_publica)", () => {
     mocks.grade = { data: [], error: null };
     mocks.filtros = [];
     mocks.rpc = [];
+    mocks.paginas = null;
+    mocks.ranges = [];
   });
 
   it("converte os slots em reservas sem dados pessoais, sempre na arena ativa", async () => {
@@ -88,7 +98,7 @@ describe("grade pública (função grade_publica)", () => {
     mocks.arenaId = null;
 
     expect(await fetchGradePublicaSupabase()).toEqual([]);
-    expect(await fetchReservasSupabase()).toEqual([]);
+    expect(await fetchReservasPeriodoSupabase("2026-10-01", "2026-10-31")).toEqual([]);
     expect(mocks.rpc).toHaveLength(0);
   });
 
@@ -96,7 +106,7 @@ describe("grade pública (função grade_publica)", () => {
     mocks.reservas = { data: [{ ...slot("minha"), nome_cliente: "Eu" }], error: null };
     mocks.grade = { data: [slot("minha"), slot("de-terceiro")], error: null };
 
-    const todas = await fetchReservasSupabase();
+    const todas = await fetchReservasPeriodoSupabase("2026-10-01", "2026-10-31");
 
     expect(todas?.map((r) => r.id)).toEqual(["minha", "de-terceiro"]);
     expect(todas?.find((r) => r.id === "minha")?.nomeCliente).toBe("Eu");
@@ -118,6 +128,30 @@ describe("grade pública (função grade_publica)", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.reservas = { data: [], error: { message: "erro" } };
 
-    expect(await fetchReservasSupabase()).toBeNull();
+    expect(await fetchReservasPeriodoSupabase("2026-10-01", "2026-10-31")).toBeNull();
+  });
+
+  it("lê em páginas de 1.000 até o fim (passa do limite do Supabase sem perder linhas)", async () => {
+    const pagina = (n: number, prefixo: string) => Array.from({ length: n }, (_, i) => slot(`${prefixo}-${i}`));
+    mocks.paginas = [pagina(1000, "a"), pagina(1000, "b"), pagina(5, "c")];
+
+    const todas = await fetchReservasPeriodoSupabase("2026-10-01", "2026-12-31", { incluirGradePublica: false });
+
+    expect(todas).toHaveLength(2005);
+    expect(mocks.ranges).toEqual([
+      [0, 999],
+      [1000, 1999],
+      [2000, 2999],
+    ]);
+    expect(mocks.rpc).toHaveLength(0);
+  });
+
+  it("filtra por quadra também na grade pública", async () => {
+    mocks.grade = { data: [slot("q1-slot"), { ...slot("q2-slot"), quadra_id: "q2" }], error: null };
+
+    const todas = await fetchReservasPeriodoSupabase("2026-10-30", "2026-10-30", { quadraId: "q1" });
+
+    expect(todas?.map((r) => r.id)).toEqual(["q1-slot"]);
+    expect(mocks.filtros).toContain("eq:quadra_id:q1");
   });
 });
