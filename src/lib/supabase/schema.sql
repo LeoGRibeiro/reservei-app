@@ -1919,7 +1919,7 @@ CREATE TABLE IF NOT EXISTS public.reservas_eventos (
   autor_nome TEXT,
   criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CONSTRAINT reservas_eventos_tipo_check CHECK (
-    tipo IN ('quitada', 'cancelada', 'remarcada', 'nao_compareceu', 'compareceu', 'devolucao_registrada')
+    tipo IN ('criada', 'quitada', 'cancelada', 'remarcada', 'nao_compareceu', 'compareceu', 'devolucao_registrada')
   )
 );
 

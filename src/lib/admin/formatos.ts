@@ -113,7 +113,7 @@ export interface DescricaoStatus {
  * ```
  */
 export function descreverStatus(
-  reserva: Pick<Reserva, "status" | "valorPendente" | "tipoReserva" | "pagamentoInformadoEm">
+  reserva: Pick<Reserva, "status" | "valorPendente" | "tipoReserva" | "pagamentoInformadoEm"> & { valorTotal?: number }
 ): DescricaoStatus {
   if (reserva.tipoReserva === "manutencao_bloqueio") return { rotulo: "Bloqueado", tom: "bloqueio" };
   if (reserva.status === "cancelada") return { rotulo: "Cancelada", tom: "cancelada" };
@@ -125,7 +125,10 @@ export function descreverStatus(
       : { rotulo: "Aguardando Pix", tom: "aguardando" };
   }
   const falta = Number(reserva.valorPendente) || 0;
-  if (reserva.status === "pendente" && falta > 0) return { rotulo: `Sinal pago · falta ${moeda(falta)}`, tom: "sinal" };
+  if (reserva.status === "pendente" && falta > 0) {
+    const nadaPago = (Number(reserva.valorTotal) || 0) - falta <= 0.009;
+    return { rotulo: `${nadaPago ? "A pagar" : "Sinal pago"} · falta ${moeda(falta)}`, tom: "sinal" };
+  }
   return { rotulo: "Quitada", tom: "quitada" };
 }
 

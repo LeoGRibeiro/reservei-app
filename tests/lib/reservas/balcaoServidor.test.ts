@@ -12,6 +12,8 @@ import type { ConsultaRegistrada } from "../../helpers/supabaseMock";
 const estado = vi.hoisted(() => ({
   reserva: null as Record<string, unknown> | null,
   erroUpdate: null as { message: string; code?: string } | null,
+  erroInsert: null as { message: string; code?: string } | null,
+  conta: null as Record<string, unknown> | null,
   consultas: [] as ConsultaRegistrada[],
 }));
 
@@ -33,13 +35,19 @@ vi.mock("@/lib/supabase/adminClient", async () => {
     }
     if (c.tabela === "quadras") return { data: { id: "q2", arena_id: "a1", numero: 2, nome: "Areia 2", valor_hora_padrao: 80, ativa: true, esportes: [] } };
     if (c.tabela === "quadras_precos") return { data: [] };
+    if (c.tabela === "usuarios") return { data: estado.conta };
+    if (c.tabela === "reservas" && c.operacao === "insert") {
+      if (estado.erroInsert) return { data: null, error: estado.erroInsert };
+      estado.reserva = { ...(c.payload as Record<string, unknown>) };
+      return { data: null };
+    }
     return { data: null };
   });
   estado.consultas = consultas;
   return { supabaseAdmin: cliente, isAdminClientConfigured: () => true };
 });
 
-import { executarAcaoBalcao, horaFim, validarAcaoBalcao } from "@/lib/reservas/balcaoServidorService";
+import { criarReservaBalcao, executarAcaoBalcao, horaFim, validarAcaoBalcao, validarNovaReservaBalcao } from "@/lib/reservas/balcaoServidorService";
 
 const MEMBRO = { userId: "u-op", email: "ana@arena.com", arenaId: "a1", role: "operador" as const };
 const AGORA = new Date("2026-11-02T15:00:00Z");
@@ -68,6 +76,8 @@ const updates = () => estado.consultas.filter((c) => c.tabela === "reservas" && 
 beforeEach(() => {
   estado.reserva = reservaBase();
   estado.erroUpdate = null;
+  estado.erroInsert = null;
+  estado.conta = null;
   estado.consultas.length = 0;
 });
 
@@ -167,5 +177,45 @@ describe("executarAcaoBalcao", () => {
     await executarAcaoBalcao(MEMBRO, "r1", { acao: "registrar_devolucao" }, AGORA);
     expect(updates()[0]).toMatchObject({ reembolso_status: "reembolsado" });
     expect(eventos()[0]).toMatchObject({ tipo: "devolucao_registrada", detalhes: { valor: 50 } });
+  });
+});
+
+describe("reserva feita no balcão", () => {
+  const PEDIDO = { quadraId: "q2", data: "2026-11-05", horarios: ["20:00", "19:00"], nomeCliente: "Cliente Balcão", whatsappCliente: "(91) 98888-7777", pagamento: "sinal", forma: "dinheiro" };
+  const inserida = () => estado.consultas.find((c) => c.tabela === "reservas" && c.operacao === "insert")?.payload as Record<string, unknown>;
+
+  it("valida e normaliza o pedido", () => {
+    expect(validarNovaReservaBalcao(PEDIDO)).toMatchObject({ horarios: ["19:00", "20:00"], whatsappCliente: "91988887777", pagamento: "sinal", forma: "dinheiro" });
+    expect(() => validarNovaReservaBalcao({ ...PEDIDO, forma: undefined })).toThrow(/como o cliente pagou/);
+    expect(() => validarNovaReservaBalcao({ ...PEDIDO, nomeCliente: "A" })).toThrow(/nome do cliente/);
+  });
+
+  it("cobra pela tabela da quadra, registra o sinal recebido e liga à conta do cliente", async () => {
+    estado.conta = { id: "perfil-1", auth_user_id: "atleta-1" };
+    await criarReservaBalcao(MEMBRO, validarNovaReservaBalcao(PEDIDO), AGORA);
+    // 2h × R$ 80 = 160; sinal de 50% = 80
+    expect(inserida()).toMatchObject({
+      arena_id: "a1",
+      user_id: "atleta-1",
+      tipo_reserva: "admin_manual",
+      metodo_pagamento: "balcao",
+      valor_total: 160,
+      valor_sinal: 80,
+      valor_pendente: 80,
+      status: "pendente",
+      hora_fim: "21:00",
+    });
+    expect(eventos()[0]).toMatchObject({ tipo: "criada", detalhes: { pagamento: "sinal", forma: "dinheiro", valor: 80 } });
+  });
+
+  it("pagou tudo nasce quitada; valor combinado substitui a tabela", async () => {
+    await criarReservaBalcao(MEMBRO, validarNovaReservaBalcao({ ...PEDIDO, pagamento: "integral", valorCombinado: 120 }), AGORA);
+    expect(inserida()).toMatchObject({ valor_total: 120, valor_pendente: 0, status: "confirmada", forma_pagamento_restante: "dinheiro", quitada_por: "u-op" });
+  });
+
+  it("horário ocupado vira 409 e data passada 422", async () => {
+    estado.erroInsert = { code: "23P01", message: "Horário já ocupado" };
+    await expect(criarReservaBalcao(MEMBRO, validarNovaReservaBalcao(PEDIDO), AGORA)).rejects.toMatchObject({ status: 409 });
+    await expect(criarReservaBalcao(MEMBRO, validarNovaReservaBalcao({ ...PEDIDO, data: "2026-11-01" }), AGORA)).rejects.toMatchObject({ status: 422 });
   });
 });

@@ -1,16 +1,14 @@
 "use client";
 
-import { AdminAgendaPage } from "@/components/admin/AdminAgendaPage";
-import { PainelPagamentosAConfirmar } from "@/components/admin/PainelPagamentosAConfirmar";
-import { LegadoEscuro } from "@/components/admin/painel/LegadoEscuro";
-import { usePainel } from "@/components/admin/painel/ContextoPainel";
+import { Suspense } from "react";
+import { PaginaAgenda } from "@/components/admin/agenda/PaginaAgenda";
+import { Carregando } from "@/components/admin/ui";
 
-export default function PaginaAgenda() {
-  const { arenaSlug } = usePainel();
+/** Agenda: dia por quadra e mês. */
+export default function Agenda() {
   return (
-    <LegadoEscuro>
-      <PainelPagamentosAConfirmar arenaSlug={arenaSlug} />
-      <AdminAgendaPage />
-    </LegadoEscuro>
+    <Suspense fallback={<Carregando />}>
+      <PaginaAgenda />
+    </Suspense>
   );
 }

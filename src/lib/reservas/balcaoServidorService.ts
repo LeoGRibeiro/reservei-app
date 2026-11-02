@@ -18,6 +18,8 @@ import { rowToReserva, type ReservaDbRow } from "@/lib/supabase/types";
 import { saoConsecutivos } from "@/lib/constants";
 import { FUSO_PADRAO_ARENA, hojeNoFuso } from "@/lib/datas/fusoHorario";
 import { ErroHttp } from "@/lib/servidor/autenticacaoServidor";
+import { variacoesDoTelefone } from "@/lib/atletas/vinculoReservas";
+import { ESPORTES, type Esporte } from "@/lib/quadras";
 import type { MembroArena } from "@/lib/servidor/autorizacaoArena";
 import type { Reserva } from "@/store/useReservasStore";
 import type { FormaPagamento } from "./formasPagamento";
@@ -269,4 +271,154 @@ export async function executarAcaoBalcao(membro: MembroArena, reservaId: string,
   }
 
   return (await carregarReserva(membro, reservaId)).reserva;
+}
+
+// ─── Reserva feita no balcão ─────────────────────────────────────────────────
+
+/** Quanto o cliente já pagou ao reservar no balcão. */
+export type PagamentoNaReserva = "nada" | "sinal" | "integral";
+
+/** Dados de uma reserva feita pelo balcão. */
+export interface NovaReservaBalcao {
+  quadraId: string;
+  data: string;
+  horarios: string[];
+  nomeCliente: string;
+  whatsappCliente: string;
+  esporte?: Esporte;
+  observacoes?: string;
+  pagamento: PagamentoNaReserva;
+  forma?: FormaPagamento;
+  /** Valor combinado diferente da tabela (ex.: pacote); ausente = tabela da quadra */
+  valorCombinado?: number;
+}
+
+/**
+ * Valida a reserva feita no balcão.
+ *
+ * @param corpo Corpo bruto
+ * @returns Dados normalizados
+ * @throws ErroHttp 400 com a mensagem para o operador
+ */
+export function validarNovaReservaBalcao(corpo: unknown): NovaReservaBalcao {
+  const b = (corpo ?? {}) as Record<string, unknown>;
+  const quadraId = texto(b.quadraId, 120);
+  if (!quadraId) throw new ErroHttp("Escolha a quadra.", 400);
+  const data = texto(b.data, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) throw new ErroHttp("Escolha a data.", 400);
+  const horarios = Array.isArray(b.horarios) ? [...new Set(b.horarios.filter((h): h is string => typeof h === "string" && /^\d{2}:\d{2}$/.test(h)))].sort() : [];
+  if (horarios.length === 0) throw new ErroHttp("Escolha o horário.", 400);
+  if (!saoConsecutivos(horarios)) throw new ErroHttp("Os horários precisam ser seguidos.", 400);
+  const nomeCliente = texto(b.nomeCliente, 120);
+  if (nomeCliente.length < 2) throw new ErroHttp("Informe o nome do cliente.", 400);
+  const whatsappCliente = typeof b.whatsappCliente === "string" ? b.whatsappCliente.replace(/\D/g, "") : "";
+  if (whatsappCliente && (whatsappCliente.length < 10 || whatsappCliente.length > 13)) throw new ErroHttp("WhatsApp inválido: use DDD + número.", 400);
+  const pagamento = b.pagamento === "sinal" || b.pagamento === "integral" ? b.pagamento : "nada";
+  const forma = b.forma === "dinheiro" || b.forma === "pix" || b.forma === "cartao" ? b.forma : undefined;
+  if (pagamento !== "nada" && !forma) throw new ErroHttp("Diga como o cliente pagou.", 400);
+  let valorCombinado: number | undefined;
+  if (b.valorCombinado !== undefined && b.valorCombinado !== null && b.valorCombinado !== "") {
+    valorCombinado = Number(b.valorCombinado);
+    if (!Number.isFinite(valorCombinado) || valorCombinado < 0) throw new ErroHttp("Valor combinado inválido.", 400);
+    valorCombinado = arred(valorCombinado);
+  }
+  return {
+    quadraId,
+    data,
+    horarios,
+    nomeCliente,
+    whatsappCliente,
+    esporte: ESPORTES.includes(b.esporte as Esporte) ? (b.esporte as Esporte) : undefined,
+    observacoes: texto(b.observacoes, 500) || undefined,
+    pagamento,
+    forma,
+    valorCombinado,
+  };
+}
+
+/**
+ * Cria uma reserva pelo balcão com o preço da tabela da quadra (ou o valor combinado), já ligada à
+ * conta do cliente quando o WhatsApp tem conta. A trava do banco impede horário ocupado.
+ *
+ * @param membro Operador da arena
+ * @param dados Dados validados por {@link validarNovaReservaBalcao}
+ * @param agora Instante de referência (testes)
+ * @returns Reserva criada
+ * @throws ErroHttp 404 (quadra), 409 (horário ocupado), 422 (data ou horário fora do funcionamento)
+ */
+export async function criarReservaBalcao(membro: MembroArena, dados: NovaReservaBalcao, agora: Date = new Date()): Promise<Reserva> {
+  if (dados.data < hojeNoFuso(FUSO_PADRAO_ARENA, agora)) throw new ErroHttp("Escolha uma data de hoje em diante.", 422);
+
+  const [{ data: linhaArena }, { data: linhaQuadra }, { data: linhasPrecos }] = await Promise.all([
+    supabaseAdmin.from("arenas").select("*").eq("id", membro.arenaId).maybeSingle(),
+    supabaseAdmin.from("quadras").select("*").eq("id", dados.quadraId).eq("arena_id", membro.arenaId).eq("ativa", true).maybeSingle(),
+    supabaseAdmin.from("quadras_precos").select("*").eq("arena_id", membro.arenaId).eq("quadra_id", dados.quadraId).eq("ativo", true),
+  ]);
+  if (!linhaArena) throw new ErroHttp("Arena não encontrada.", 404);
+  if (!linhaQuadra) throw new ErroHttp("Quadra não encontrada.", 404);
+  const arena = mapearLinhaParaArena(linhaArena as Record<string, unknown>);
+  const quadra = mapearLinhaParaQuadra(linhaQuadra as Record<string, unknown>);
+  const operacionais = gerarHorariosOperacionais(arena.horarioAbertura, arena.horarioFechamento, arena.intervaloMinutos || 60);
+  if (!dados.horarios.every((h) => operacionais.includes(h))) throw new ErroHttp("Horário fora do funcionamento da arena.", 422);
+
+  const preco = calcularPrecoReserva({
+    quadra,
+    precos: (linhasPrecos ?? []).map((p) => mapearLinhaParaPreco(p as Record<string, unknown>)),
+    data: dados.data,
+    horarios: dados.horarios,
+    percentualSinal: arena.percentualSinalMinimo,
+  });
+  const total = dados.valorCombinado ?? preco.valorTotal;
+  const sinal = arred(total * (Math.max(0, Math.min(100, arena.percentualSinalMinimo)) / 100));
+  const pago = dados.pagamento === "integral" ? total : dados.pagamento === "sinal" ? sinal : 0;
+
+  // Cliente com conta (mesmo WhatsApp): a reserva aparece na conta dele
+  let userId: string | null = null;
+  const variacoes = dados.whatsappCliente ? variacoesDoTelefone(dados.whatsappCliente) : [];
+  if (variacoes.length > 0) {
+    const { data: conta } = await supabaseAdmin.from("usuarios").select("id, auth_user_id").in("telefone", variacoes).limit(1).maybeSingle();
+    if (conta) userId = String(conta.auth_user_id ?? conta.id);
+  }
+
+  const id = `rsv_adm_${agora.getTime()}_${Math.random().toString(36).slice(2, 7)}`;
+  const instante = agora.toISOString();
+  const { error } = await supabaseAdmin.from("reservas").insert({
+    id,
+    arena_id: membro.arenaId,
+    user_id: userId,
+    quadra_id: quadra.id,
+    data: dados.data,
+    horarios: dados.horarios,
+    hora_inicio: dados.horarios[0],
+    hora_fim: horaFim(dados.horarios, arena.intervaloMinutos || 60),
+    nome_cliente: dados.nomeCliente,
+    whatsapp_cliente: dados.whatsappCliente,
+    telefone_cliente: dados.whatsappCliente,
+    cpf_cliente: "",
+    esporte: dados.esporte ?? null,
+    observacoes: dados.observacoes ?? null,
+    tipo_reserva: "admin_manual",
+    metodo_pagamento: "balcao",
+    valor_original: preco.valorTotal,
+    valor_total: total,
+    valor_sinal: pago,
+    valor_pendente: arred(total - pago),
+    status: pago >= total - CENTAVO ? "confirmada" : "pendente",
+    status_whatsapp: "nao_enviado",
+    forma_pagamento_restante: dados.pagamento === "integral" ? dados.forma : null,
+    quitada_em: dados.pagamento === "integral" ? instante : null,
+    quitada_por: dados.pagamento === "integral" ? membro.userId : null,
+    pago_em: pago > 0 ? instante : null,
+    criada_em: instante,
+  });
+  if (error?.code === "23P01") throw new ErroHttp("Esse horário já está ocupado nesta quadra. Escolha outro.", 409);
+  if (error) throw new Error(error.message);
+
+  await registrarEvento(membro, id, "criada", {
+    pagamento: dados.pagamento,
+    ...(dados.forma && dados.pagamento !== "nada" ? { forma: dados.forma, valor: pago } : {}),
+    ...(dados.valorCombinado !== undefined ? { valorCombinado: dados.valorCombinado, valorTabela: preco.valorTotal } : {}),
+  });
+
+  return (await carregarReserva(membro, id)).reserva;
 }

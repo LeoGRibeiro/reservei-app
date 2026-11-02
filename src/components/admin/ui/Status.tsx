@@ -33,7 +33,13 @@ export function Etiqueta({ tom = "neutro", children, className }: { tom?: TomSta
 /**
  * Status da reserva com nome de negócio ("Sinal pago · falta R$ 50,00", "Quitada", "Aguardando Pix").
  */
-export function StatusReserva({ reserva, className }: { reserva: Pick<Reserva, "status" | "valorPendente" | "tipoReserva" | "pagamentoInformadoEm">; className?: string }) {
+export function StatusReserva({
+  reserva,
+  className,
+}: {
+  reserva: Pick<Reserva, "status" | "valorPendente" | "tipoReserva" | "pagamentoInformadoEm"> & { valorTotal?: number };
+  className?: string;
+}) {
   const { rotulo, tom } = descreverStatus(reserva);
   return (
     <Etiqueta tom={tom} className={className}>
