@@ -3,7 +3,7 @@
  * @description Tela Pagamentos (somente proprietário): define como a arena recebe o Pix das reservas online.
  * - Chave Pix da arena (manual): sem taxas e sem integração; o balcão confere o extrato.
  * - Conta Asaas da arena: confirmação automática; o dono cola a chave de API e o resto é configurado sozinho.
- * - Demonstração: pagamento simulado (só em ambientes de demonstração).
+ * - Demonstração: pagamento simulado, ligado só pelo suporte (Super Admin); aqui é apenas informativo.
  * O dinheiro sempre cai na conta da própria arena.
  */
 
@@ -295,27 +295,20 @@ export function AdminPagamentosPage({ arenaSlug }: Props) {
         )}
       </section>
 
-      {/* ── Demonstração ───────────────────────────────────────────── */}
-      {resumo.simuladoDisponivel && (
+      {/* ── Demonstração (ligada só pelo suporte da plataforma) ─────────── */}
+      {modoAtual === "simulado" && (
         <section className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-bold text-white flex items-center gap-2">
               <FlaskConical className="w-4 h-4 text-amber-400" /> Demonstração
             </h2>
-            {modoAtual === "simulado" && <SeloEmUso />}
+            <SeloEmUso />
           </div>
           <p className="text-xs text-slate-400">
-            O atleta vê um botão “Simular pagamento”. Nenhum dinheiro é movimentado. Use só para apresentações.
+            Ativado pelo suporte para apresentações: o atleta vê um botão “Simular pagamento” e nenhum dinheiro
+            é movimentado. Para receber de verdade, cadastre a chave Pix ou conecte o Asaas acima e toque em
+            “Usar este modo”.
           </p>
-          {modoAtual !== "simulado" && (
-            <button
-              disabled={ocupado !== null}
-              onClick={() => executar("modo-simulado", () => definirModo("simulado"), "Modo demonstração ativado.")}
-              className="px-4 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-200 text-sm font-bold"
-            >
-              Usar este modo
-            </button>
-          )}
         </section>
       )}
     </div>

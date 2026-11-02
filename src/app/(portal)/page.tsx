@@ -5,9 +5,8 @@
  */
 
 import type { Metadata, Viewport } from "next";
-import { notFound } from "next/navigation";
 import { PortalArena } from "@/components/portal-arena/PortalArena";
-import { dadosDoPortal, metadadosDaArena, slugDaRequisicao, viewportDaArena } from "@/lib/portal/paginaPortal";
+import { arenaNaoEncontrada, dadosDoPortal, metadadosDaArena, slugDaRequisicao, viewportDaArena } from "@/lib/portal/paginaPortal";
 
 export const dynamic = "force-dynamic";
 
@@ -24,8 +23,9 @@ interface PaginaInicialProps {
 }
 
 export default async function PaginaInicial({ searchParams }: PaginaInicialProps) {
-  const dados = await dadosDoPortal(await slugDaRequisicao());
-  if (!dados) notFound();
+  const slug = await slugDaRequisicao();
+  const dados = await dadosDoPortal(slug);
+  if (!dados) return arenaNaoEncontrada(slug);
   // /login e /cadastro redirecionam para cá com o diálogo de conta aberto
   const conta = (await searchParams).conta;
   return <PortalArena dados={dados} contaInicial={conta === "entrar" || conta === "criar" ? conta : undefined} />;

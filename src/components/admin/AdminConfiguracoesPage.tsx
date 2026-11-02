@@ -32,7 +32,6 @@ export function AdminConfiguracoesPage() {
 
   // Estados locais do formulário
   const [nome, setNome] = useState("");
-  const [slug, setSlug] = useState("");
   const [cnpjCpf, setCnpjCpf] = useState("");
   const [telefone, setTelefone] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -53,7 +52,6 @@ export function AdminConfiguracoesPage() {
   useEffect(() => {
     if (arena) {
       setNome(arena.nome || "");
-      setSlug(arena.slug || "");
       setCnpjCpf(arena.cnpjCpf || "");
       setTelefone(arena.telefone || "");
       setWhatsapp(arena.whatsapp || "");
@@ -70,7 +68,8 @@ export function AdminConfiguracoesPage() {
     }
   }, [arena]);
 
-  const urlArena = construirUrlArena(slug || "sua-arena");
+  // O endereço (subdomínio) é da plataforma: só o suporte muda (SPEC/2026-11-02-admin-revisao.md)
+  const urlArena = construirUrlArena(arena?.slug || "sua-arena");
 
   const copiarUrl = () => {
     navigator.clipboard.writeText(urlArena);
@@ -79,8 +78,8 @@ export function AdminConfiguracoesPage() {
 
   const handleSalvar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nome.trim() || !slug.trim()) {
-      toast.error("Nome da arena e subdomínio/slug são obrigatórios.");
+    if (!nome.trim()) {
+      toast.error("Informe o nome da arena.");
       return;
     }
 
@@ -89,7 +88,6 @@ export function AdminConfiguracoesPage() {
       const atualizada = await ArenaRepository.salvarArena({
         id: arena.id,
         nome: nome.trim(),
-        slug: slug.trim().toLowerCase(),
         cnpjCpf: cnpjCpf.trim(),
         telefone: telefone.trim(),
         whatsapp: whatsapp.trim(),
@@ -140,7 +138,7 @@ export function AdminConfiguracoesPage() {
           </h1>
         </div>
         <p className="text-slate-400 text-xs sm:text-sm mt-1">
-          Defina as informações comerciais, subdomínio de acesso e regras operacionais da sua arena.
+          Defina as informações comerciais e as regras operacionais da sua arena.
         </p>
       </div>
 
@@ -154,7 +152,7 @@ export function AdminConfiguracoesPage() {
             {urlArena}
           </p>
           <p className="text-xs text-slate-400 mt-1">
-            Este é o link direto exclusivo para seus clientes agendarem horários online.
+            Este é o link para seus clientes agendarem online. Para mudar o endereço, fale com o suporte.
           </p>
         </div>
 
@@ -181,7 +179,7 @@ export function AdminConfiguracoesPage() {
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
             <Building2 className="w-4 h-4 text-emerald-400" />
-            Identificação Comercial & Subdomínio
+            Identificação Comercial
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -197,27 +195,6 @@ export function AdminConfiguracoesPage() {
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
                 required
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
-                Subdomínio (Slug para a URL)
-              </label>
-              <div className="flex items-center">
-                <input
-                  type="text"
-                  value={slug}
-                  onChange={(e) =>
-                    setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
-                  }
-                  placeholder="ex: arena-central"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-l-xl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-emerald-500"
-                  required
-                />
-                <span className="bg-slate-800 text-slate-400 border border-l-0 border-slate-800 px-3 py-2 rounded-r-xl text-xs font-mono select-none">
-                  .reservei.com
-                </span>
-              </div>
             </div>
 
             <div>

@@ -22,14 +22,12 @@ import {
   MessageCircle,
   Eye,
   Edit2,
-  Trash2,
   RefreshCw,
   Sparkles,
   Cake,
   Clock,
   MapPin,
   ExternalLink,
-  ShieldAlert,
   Loader2,
   ChevronRight,
   TrendingUp,
@@ -44,7 +42,6 @@ import { chamarApi } from "@/lib/api/clienteApi";
 import {
   listarUsuariosCadastrados,
   atualizarPerfilSupabase,
-  excluirContaSupabase,
   toggleBloqueioUsuario,
 } from "@/lib/supabase/authService";
 import type { UserProfile } from "@/lib/supabase/types";
@@ -109,7 +106,6 @@ export function AdminUsuariosPage({ arenaSlug = "", podeRedefinirSenha = false }
   // Modais
   const [usuarioDetalhes, setUsuarioDetalhes] = useState<UserProfile | null>(null);
   const [usuarioEditar, setUsuarioEditar] = useState<UserProfile | null>(null);
-  const [usuarioExcluir, setUsuarioExcluir] = useState<UserProfile | null>(null);
   const [usuarioBloqueio, setUsuarioBloqueio] = useState<UserProfile | null>(null);
   const [motivoBloqueio, setMotivoBloqueio] = useState("");
   const [alterandoBloqueio, setAlterandoBloqueio] = useState(false);
@@ -119,7 +115,6 @@ export function AdminUsuariosPage({ arenaSlug = "", podeRedefinirSenha = false }
   const [telefoneEdit, setTelefoneEdit] = useState("");
   const [dataNascimentoEdit, setDataNascimentoEdit] = useState("");
   const [salvando, setSalvando] = useState(false);
-  const [excluindo, setExcluindo] = useState(false);
 
   // Carrega a lista de usuários cadastrados
   const carregarUsuarios = useCallback(async () => {
@@ -276,31 +271,6 @@ export function AdminUsuariosPage({ arenaSlug = "", podeRedefinirSenha = false }
     }
   };
 
-  // Exclui conta do usuário
-  const handleConfirmarExclusao = async () => {
-    if (!usuarioExcluir) return;
-
-    setExcluindo(true);
-    try {
-      const ok = await excluirContaSupabase(usuarioExcluir.id);
-      if (ok) {
-        toast.success(`Conta de ${usuarioExcluir.nome} excluída com sucesso.`);
-        setUsuarioExcluir(null);
-        if (usuarioDetalhes?.id === usuarioExcluir.id) {
-          setUsuarioDetalhes(null);
-        }
-        await carregarUsuarios();
-        await recarregarReservas();
-      } else {
-        toast.error("Não foi possível excluir a conta.");
-      }
-    } catch (err) {
-      console.error("Erro ao excluir usuário:", err);
-      toast.error("Falha na exclusão da conta.");
-    } finally {
-      setExcluindo(false);
-    }
-  };
 
   // Link para contato via WhatsApp
   const gerarLinkWhatsApp = (u: UserProfile) => {
@@ -600,14 +570,6 @@ export function AdminUsuariosPage({ arenaSlug = "", podeRedefinirSenha = false }
                             )}
                           </button>
 
-                          {/* Excluir */}
-                          <button
-                            onClick={() => setUsuarioExcluir(u)}
-                            title="Excluir usuário"
-                            className="w-8 h-8 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 flex items-center justify-center transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -880,16 +842,6 @@ export function AdminUsuariosPage({ arenaSlug = "", podeRedefinirSenha = false }
                 >
                   <Edit2 className="w-3.5 h-3.5" /> Editar
                 </Button>
-                <Button
-                  onClick={() => {
-                    setUsuarioExcluir(usuarioDetalhes);
-                    setUsuarioDetalhes(null);
-                  }}
-                  variant="destructive"
-                  className="bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 gap-1.5"
-                >
-                  <Trash2 className="w-3.5 h-3.5" /> Excluir
-                </Button>
               </div>
             </DialogFooter>
           </DialogContent>
@@ -979,62 +931,6 @@ export function AdminUsuariosPage({ arenaSlug = "", podeRedefinirSenha = false }
                 </Button>
               </DialogFooter>
             </form>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* ── MODAL: Confirmação de Exclusão (LGPD) ── */}
-      {usuarioExcluir && (
-        <Dialog
-          open={Boolean(usuarioExcluir)}
-          onOpenChange={(v) => !v && setUsuarioExcluir(null)}
-        >
-          <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md p-6">
-            <DialogHeader>
-              <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-400 border border-red-500/20 flex items-center justify-center mb-2 mx-auto">
-                <ShieldAlert className="w-6 h-6" />
-              </div>
-              <DialogTitle className="text-lg font-black text-center text-white">
-                Excluir Conta de Usuário?
-              </DialogTitle>
-              <DialogDescription className="text-slate-300 text-center text-xs mt-1">
-                Esta ação é irreversível. A conta de{" "}
-                <strong className="text-white">{usuarioExcluir.nome}</strong>{" "}
-                ({usuarioExcluir.telefone}) será apagada permanentemente do sistema em conformidade com a LGPD.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3 my-2 text-xs text-slate-400 space-y-1">
-              <p>• As reservas já existentes continuarão registradas para controle financeiro da quadra.</p>
-              <p>• O usuário não conseguirá mais realizar login com esta senha.</p>
-            </div>
-
-            <DialogFooter className="pt-3 gap-2 sm:gap-0">
-              <Button
-                variant="outline"
-                onClick={() => setUsuarioExcluir(null)}
-                disabled={excluindo}
-                className="border-slate-700 text-slate-300"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleConfirmarExclusao}
-                disabled={excluindo}
-                variant="destructive"
-                className="bg-red-600 hover:bg-red-500 text-white font-bold gap-2"
-              >
-                {excluindo ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Excluindo...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4" /> Sim, Excluir Conta
-                  </>
-                )}
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

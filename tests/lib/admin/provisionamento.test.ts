@@ -345,6 +345,7 @@ describe("criarArena", () => {
   };
 
   beforeEach(() => {
+    mocks.arena = { data: null, error: null };
     mocks.insertArena = { error: null };
     mocks.insertQuadras = { error: null };
     mocks.inserts = [];
@@ -371,6 +372,13 @@ describe("criarArena", () => {
     const quadras = mocks.inserts.find((i) => i.tabela === "quadras")?.linhas as Record<string, unknown>[];
     expect(quadras).toHaveLength(2);
     expect(quadras[0]).toMatchObject({ arena_id: r.arenaId, numero: 1, nome: "Quadra 1" });
+  });
+
+  it("recusa o endereço antigo de outra arena (ele redireciona para ela)", async () => {
+    mocks.arena = { data: { id: "arena-antiga" }, error: null };
+    await expect(criarArena(INPUT)).rejects.toMatchObject({ status: 409 });
+    expect(mocks.inserts).toEqual([]);
+    mocks.arena = { data: null, error: null };
   });
 
   it("gera um token diferente a cada arena", async () => {

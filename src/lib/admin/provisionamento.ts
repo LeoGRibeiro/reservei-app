@@ -277,6 +277,30 @@ export interface NovaArenaInput {
   quantidadeQuadras: number;
 }
 
+/**
+ * Valida o subdomínio (slug) de uma arena: só letras minúsculas, números e hífens, até 40
+ * caracteres, fora da lista de nomes reservados do sistema.
+ *
+ * @param bruto Slug digitado
+ * @returns Slug normalizado (minúsculo, sem espaços nas pontas)
+ * @throws ErroProvisionamento 400 se for inválido ou reservado
+ *
+ * @example
+ * ```ts
+ * validarSlugArena(" Arena-Central "); // "arena-central"
+ * ```
+ */
+export function validarSlugArena(bruto: string): string {
+  const slug = bruto.trim().toLowerCase();
+  if (!slug || slug.length > 40 || !REGEX_SLUG.test(slug)) {
+    throw new ErroProvisionamento("Slug inválido. Use apenas letras minúsculas, números e hífens.", 400);
+  }
+  if (SUBDOMINIOS_RESERVADOS.has(slug) || ROTAS_RAIZ_RESERVADAS.has(slug) || slug === "super-admin") {
+    throw new ErroProvisionamento("Este slug é reservado pelo sistema.", 400);
+  }
+  return slug;
+}
+
 /** Limite superior de quadras criadas automaticamente no onboarding. */
 export const MAX_QUADRAS_INICIAIS = 20;
 
@@ -301,15 +325,7 @@ export function validarNovaArena(input: unknown): NovaArenaInput {
   if (!nome || !slug || !cidade || !estado || !whatsapp) {
     throw new ErroProvisionamento("Preencha nome, slug, cidade, estado e WhatsApp.", 400);
   }
-  if (!REGEX_SLUG.test(slug)) {
-    throw new ErroProvisionamento(
-      "Slug inválido. Use apenas letras minúsculas, números e hífens.",
-      400
-    );
-  }
-  if (SUBDOMINIOS_RESERVADOS.has(slug) || ROTAS_RAIZ_RESERVADAS.has(slug) || slug === "super-admin") {
-    throw new ErroProvisionamento("Este slug é reservado pelo sistema.", 400);
-  }
+  validarSlugArena(slug);
   if (!/^[A-Z]{2}$/.test(estado)) {
     throw new ErroProvisionamento("Estado deve ser a sigla com 2 letras (ex: PA).", 400);
   }
@@ -344,6 +360,15 @@ export async function criarArena(
   tokenConvite: string;
   urlConvite: string;
 }> {
+  // Endereço antigo de outra arena também está ocupado (ele redireciona para ela)
+  const { data: ocupado, error: erroOcupado } = await supabaseAdmin
+    .from("arenas")
+    .select("id")
+    .eq("slug_anterior", input.slug)
+    .maybeSingle();
+  if (erroOcupado) throw new Error(erroOcupado.message);
+  if (ocupado) throw new ErroProvisionamento("Já existe uma arena com este slug.", 409);
+
   const arenaId = crypto.randomUUID();
   const tokenConvite = crypto.randomUUID();
 

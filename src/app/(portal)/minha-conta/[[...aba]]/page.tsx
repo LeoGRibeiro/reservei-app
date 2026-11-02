@@ -5,10 +5,9 @@
  */
 
 import type { Metadata, Viewport } from "next";
-import { notFound } from "next/navigation";
 import { PortalArena } from "@/components/portal-arena/PortalArena";
 import type { AbaConta } from "@/components/portal-arena/conta/AreaAtleta";
-import { dadosDoPortal, metadadosDaArena, slugDaRequisicao, viewportDaArena } from "@/lib/portal/paginaPortal";
+import { arenaNaoEncontrada, dadosDoPortal, metadadosDaArena, slugDaRequisicao, viewportDaArena } from "@/lib/portal/paginaPortal";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +27,10 @@ export async function generateViewport(): Promise<Viewport> {
 }
 
 export default async function MinhaConta({ params }: PaginaContaProps) {
-  const dados = await dadosDoPortal(await slugDaRequisicao());
-  if (!dados) notFound();
+  const slug = await slugDaRequisicao();
+  const dados = await dadosDoPortal(slug);
   const pedida = (await params).aba?.[0] as AbaConta | undefined;
+  if (!dados) return arenaNaoEncontrada(slug, pedida ? `/minha-conta/${pedida}` : "/minha-conta");
   const aba = pedida && ABAS.includes(pedida) ? pedida : "reservas";
   return <PortalArena dados={dados} visaoInicial="conta" abaInicial={aba} />;
 }

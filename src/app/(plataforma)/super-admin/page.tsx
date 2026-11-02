@@ -1,7 +1,8 @@
 /**
  * @file page.tsx
- * @description Tela simples de Super Admin para cadastrar uma nova arena em ~1 minuto.
- * Protegida pela senha SUPER_ADMIN_SECRET (validada no servidor).
+ * @description Tela de Super Admin: cadastra uma nova arena em ~1 minuto e gerencia as existentes
+ * (endereço, módulos, status, modo demonstração e senha do dono). Protegida pela senha
+ * SUPER_ADMIN_SECRET (validada no servidor).
  */
 
 "use client";
@@ -9,6 +10,7 @@
 import { useState } from "react";
 import { MODULOS_DISPONIVEIS, MODULOS_PADRAO, type ModuloArena } from "@/lib/arena/modulos";
 import { DOMINIO_RAIZ_PADRAO } from "@/lib/arena/subdomain";
+import { ArenasSuperAdmin } from "@/components/super-admin/ArenasSuperAdmin";
 
 /** Módulos opcionais exibidos como checkbox (o core é sempre ativo). */
 const MODULOS_OPCIONAIS = (Object.keys(MODULOS_DISPONIVEIS) as ModuloArena[]).filter(
@@ -18,75 +20,6 @@ const MODULOS_OPCIONAIS = (Object.keys(MODULOS_DISPONIVEIS) as ModuloArena[]).fi
 interface Resultado {
   tipo: "sucesso" | "erro";
   mensagem: string;
-}
-
-/**
- * Redefinição assistida da senha do proprietário (quando o e-mail de recuperação não chega).
- */
-function RedefinirSenhaProprietario({ segredo }: { segredo: string }) {
-  const [slugArena, setSlugArena] = useState("");
-  const [carregando, setCarregando] = useState(false);
-  const [mensagem, setMensagem] = useState<Resultado | null>(null);
-
-  async function handleRedefinir(e: React.FormEvent) {
-    e.preventDefault();
-    if (!window.confirm(`Gerar nova senha para o proprietário de "${slugArena}"? A senha atual deixa de valer.`)) return;
-    setCarregando(true);
-    setMensagem(null);
-    try {
-      const resposta = await fetch("/api/super-admin/acesso", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-super-admin-secret": segredo },
-        body: JSON.stringify({ slug: slugArena }),
-      });
-      const corpo: { error?: string; email?: string; senhaTemporaria?: string } = await resposta.json().catch(() => ({}));
-      setMensagem(
-        resposta.ok
-          ? {
-              tipo: "sucesso",
-              mensagem: `Login: ${corpo.email} · Senha temporária: ${corpo.senhaTemporaria} (troca obrigatória no próximo acesso)`,
-            }
-          : { tipo: "erro", mensagem: corpo.error ?? "Não foi possível redefinir." }
-      );
-    } catch {
-      setMensagem({ tipo: "erro", mensagem: "Falha de conexão. Tente novamente." });
-    } finally {
-      setCarregando(false);
-    }
-  }
-
-  return (
-    <form
-      onSubmit={handleRedefinir}
-      className="w-full max-w-md bg-slate-900 border border-slate-700/60 rounded-xl p-6 space-y-3"
-    >
-      <h2 className="text-base font-bold text-white">Redefinir senha do proprietário</h2>
-      <p className="text-xs text-slate-500">Usa a senha de Super Admin informada acima.</p>
-      <input
-        aria-label="Slug da arena"
-        value={slugArena}
-        onChange={(e) => setSlugArena(e.target.value.toLowerCase())}
-        placeholder="slug-da-arena"
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500"
-        required
-      />
-      {mensagem && (
-        <p
-          role={mensagem.tipo === "erro" ? "alert" : "status"}
-          className={`text-sm break-all ${mensagem.tipo === "erro" ? "text-red-400" : "text-emerald-400"}`}
-        >
-          {mensagem.mensagem}
-        </p>
-      )}
-      <button
-        type="submit"
-        disabled={carregando || !segredo}
-        className="w-full bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white font-semibold rounded-lg py-2.5 text-sm"
-      >
-        {carregando ? "Gerando..." : "Gerar senha temporária"}
-      </button>
-    </form>
-  );
 }
 
 /**
@@ -340,7 +273,7 @@ export default function SuperAdminPage() {
         </button>
       </form>
 
-      <RedefinirSenhaProprietario segredo={segredo} />
+      <ArenasSuperAdmin segredo={segredo} />
     </div>
   );
 }

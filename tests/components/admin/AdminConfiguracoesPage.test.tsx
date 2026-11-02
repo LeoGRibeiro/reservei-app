@@ -16,7 +16,7 @@ describe("AdminConfiguracoesPage - Painel de Configurações da Arena", () => {
       await screen.findByRole("heading", { name: "Configurações da Arena" })
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/Identificação Comercial & Subdomínio/i)
+      screen.getByText(/Identificação Comercial/i)
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Contatos & Localização Física/i)
@@ -38,6 +38,14 @@ describe("AdminConfiguracoesPage - Painel de Configurações da Arena", () => {
     expect(
       screen.getByRole("link", { name: /Acessar Portal/i })
     ).toBeInTheDocument();
+  });
+
+  it("o subdomínio não é editável pelo dono (só o suporte muda o endereço)", async () => {
+    render(<AdminConfiguracoesPage />);
+
+    expect(await screen.findByText(/fale com o suporte/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Subdomínio/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/arena-central/i)).not.toBeInTheDocument();
   });
 
   it("renderiza o botão de salvar alterações", async () => {

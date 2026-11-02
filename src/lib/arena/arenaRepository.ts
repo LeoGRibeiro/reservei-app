@@ -198,6 +198,35 @@ export const ArenaRepository = {
   },
 
   /**
+   * Endereço atual de uma arena que trocou de subdomínio: procura o slug informado em
+   * `slug_anterior` (só arenas ativas).
+   *
+   * @param slugAntigo Subdomínio acessado que não existe mais como atual
+   * @returns Slug atual da arena, ou null se o endereço nunca foi de nenhuma arena
+   *
+   * @example
+   * ```ts
+   * await ArenaRepository.buscarSlugAtualPorAnterior("arenabelem"); // "belemarena"
+   * ```
+   */
+  async buscarSlugAtualPorAnterior(slugAntigo: string): Promise<string | null> {
+    if (!slugAntigo || !isSupabaseConfigured()) return null;
+    try {
+      const { data, error } = await supabase
+        .from("arenas")
+        .select("slug")
+        .eq("slug_anterior", slugAntigo)
+        .eq("ativo", true)
+        .maybeSingle();
+      // Banco sem a migração 2026-11-02-a (coluna inexistente) ou falha: segue para o 404 normal
+      if (error || !data?.slug) return null;
+      return String(data.slug);
+    } catch {
+      return null;
+    }
+  },
+
+  /**
    * Localiza uma arena pelo seu identificador primário único (ID).
    * @param id Chave primária da arena
    * @returns Arena correspondente ou null se inexistente

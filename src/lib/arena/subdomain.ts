@@ -177,7 +177,9 @@ export function construirUrlArena(
   const proto = protocolo || (isDev ? "http" : "https");
 
   if (isDev) {
-    return `${proto}://${slug}.localhost:3000`;
+    // Porta real do servidor de desenvolvimento (no navegador, a da aba; no servidor, PORT)
+    const porta = (typeof window !== "undefined" && window.location.port) || process.env.PORT || "3000";
+    return `${proto}://${slug}.localhost:${porta}`;
   }
 
   // Sem domínio próprio, a arena raiz é servida no endereço de produção da Vercel (ex.: projeto.vercel.app)

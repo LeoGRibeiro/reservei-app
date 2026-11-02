@@ -4,10 +4,9 @@
  */
 
 import type { Metadata, Viewport } from "next";
-import { notFound } from "next/navigation";
 import { PaginaRegras } from "@/components/portal-arena/regras/PaginaRegras";
 import { hojeNoFusoArena } from "@/lib/portal/agenda";
-import { dadosDoPortal, metadadosDaArena, slugDaRequisicao, viewportDaArena } from "@/lib/portal/paginaPortal";
+import { arenaNaoEncontrada, dadosDoPortal, metadadosDaArena, slugDaRequisicao, viewportDaArena } from "@/lib/portal/paginaPortal";
 import { FUSO_PADRAO_ARENA } from "@/lib/datas/fusoHorario";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +21,8 @@ export async function generateViewport(): Promise<Viewport> {
 }
 
 export default async function Regras() {
-  const dados = await dadosDoPortal(await slugDaRequisicao());
-  if (!dados) notFound();
+  const slug = await slugDaRequisicao();
+  const dados = await dadosDoPortal(slug);
+  if (!dados) return arenaNaoEncontrada(slug, "/regras");
   return <PaginaRegras dados={dados} ano={Number(hojeNoFusoArena(new Date(), FUSO_PADRAO_ARENA).slice(0, 4))} />;
 }

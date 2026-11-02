@@ -108,22 +108,24 @@ export async function salvarPixManual(membro: MembroArena, pix: PixManualArena):
 }
 
 /**
- * Troca o modo de recebimento, exigindo o pré-requisito de cada modo.
+ * Troca o modo de recebimento entre Pix direto e Asaas, exigindo o pré-requisito de cada modo.
+ * O modo demonstração (simulado) é exclusivo do Super Admin.
  *
  * @param membro Proprietário autorizado
  * @param modo Novo modo
- * @throws ErroHttp 400 (modo inválido) ou 409 (pré-requisito ausente)
+ * @throws ErroHttp 400 (modo inválido), 403 (demonstração) ou 409 (pré-requisito ausente)
  */
 export async function definirModoPagamento(membro: MembroArena, modo: unknown): Promise<void> {
-  if (modo !== "asaas" && modo !== "manual" && modo !== "simulado") {
+  if (modo === "simulado") {
+    // Demonstração é ligada pelo suporte da plataforma (Super Admin), nunca pelo dono
+    throw new ErroHttp("O modo demonstração só é ativado pelo suporte da plataforma.", 403);
+  }
+  if (modo !== "asaas" && modo !== "manual") {
     throw new ErroHttp("Modo de pagamento inválido.", 400);
   }
   const resumo = await obterResumoPagamentos(membro.arenaId);
   if (modo === "manual" && !resumo.pixManual) throw new ErroHttp("Cadastre a chave Pix da arena antes.", 409);
   if (modo === "asaas" && !resumo.asaas) throw new ErroHttp("Conecte a conta Asaas antes.", 409);
-  if (modo === "simulado" && !resumo.simuladoDisponivel) {
-    throw new ErroHttp("O modo simulado só está disponível em ambientes de demonstração.", 409);
-  }
 
   const { error } = await supabaseAdmin.from("arenas").update({ modo_pagamento: modo }).eq("id", membro.arenaId);
   if (error) throw new Error(error.message);

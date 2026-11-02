@@ -21,7 +21,8 @@ export type AcaoAuditada =
   | "pagamento.recusa_manual"
   | "pagamento.credencial_conectada"
   | "pagamento.credencial_removida"
-  | "pagamento.configuracao_pix";
+  | "pagamento.configuracao_pix"
+  | "superadmin.alterar_arena";
 
 /** Registro de auditoria. */
 export interface EventoAuditoria {

@@ -6,8 +6,10 @@
 
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import { notFound, permanentRedirect } from "next/navigation";
 import { cache } from "react";
-import { SLUG_ARENA_RAIZ } from "@/lib/arena/subdomain";
+import { ArenaRepository } from "@/lib/arena/arenaRepository";
+import { SLUG_ARENA_RAIZ, construirUrlArena } from "@/lib/arena/subdomain";
 import { carregarDadosPortal } from "./portalRepository";
 import type { DadosPortal } from "./types";
 
@@ -18,6 +20,24 @@ export async function slugDaRequisicao(): Promise<string> {
 
 /** Dados do portal, uma única leitura por requisição (metadados e página usam a mesma). */
 export const dadosDoPortal = cache((slug: string): Promise<DadosPortal | null> => carregarDadosPortal(slug));
+
+/**
+ * Arena inexistente no endereço acessado: se o endereço é o antigo de uma arena que trocou de
+ * subdomínio, redireciona (301) para o novo, no mesmo caminho; senão, responde 404.
+ *
+ * @param slug Subdomínio acessado
+ * @param caminho Caminho da página (ex.: "/regras"), mantido no endereço novo
+ *
+ * @example
+ * ```ts
+ * if (!dados) return arenaNaoEncontrada(slug, "/regras");
+ * ```
+ */
+export async function arenaNaoEncontrada(slug: string, caminho: string = "/"): Promise<never> {
+  const atual = await ArenaRepository.buscarSlugAtualPorAnterior(slug);
+  if (atual && atual !== slug) permanentRedirect(`${construirUrlArena(atual)}${caminho === "/" ? "" : caminho}`);
+  notFound();
+}
 
 /**
  * Metadados da página da arena. Arenas em demonstração (pagamento simulado) ficam fora dos buscadores.

@@ -147,6 +147,75 @@ describe("tabelas do portal (migração 2026-10-30-b)", () => {
     ).rejects.toThrow(/reservas_reembolso_status_check/);
   });
 
+  describe("campos da plataforma em arenas (só o suporte altera)", () => {
+    const DONO = "6f1c2a52-0000-4000-8000-00000000d0e0";
+
+    beforeAll(async () => {
+      await db.query(`INSERT INTO auth.users (id, email) VALUES ($1, 'dono-trava@teste.local') ON CONFLICT DO NOTHING`, [DONO]);
+      await db.query(
+        `INSERT INTO public.arena_usuarios (arena_id, user_id, role, ativo) VALUES ('arena-belem', $1, 'proprietario', true)
+         ON CONFLICT DO NOTHING`,
+        [DONO]
+      );
+    });
+
+    it("o dono altera nome e contatos da própria arena", async () => {
+      const { rows } = await comoPapel(
+        "authenticated",
+        "WITH m AS (UPDATE public.arenas SET nome = nome, telefone = telefone WHERE id = 'arena-belem' RETURNING 1) SELECT count(*)::int AS n FROM m",
+        [],
+        DONO
+      );
+      expect(rows[0].n).toBe(1);
+    });
+
+    it.each([
+      ["subdomínio", "slug = 'outra-arena'"],
+      ["endereço antigo", "slug_anterior = 'qualquer'"],
+      ["módulos contratados", "modulos_ativos = '{agendamento_core,ia_concierge}'"],
+      ["arena ativa", "ativo = false"],
+      ["convite", "token_convite = 'x'"],
+    ])("o dono não altera %s", async (_rotulo, set) => {
+      await expect(
+        comoPapel("authenticated", `UPDATE public.arenas SET ${set} WHERE id = 'arena-belem'`, [], DONO)
+      ).rejects.toThrow(/suporte da plataforma/);
+    });
+
+    it("o dono não liga o modo demonstração (sair dele pode)", async () => {
+      const { rows } = await db.query("SELECT modo_pagamento FROM public.arenas WHERE id = 'arena-belem'");
+      await db.query("UPDATE public.arenas SET modo_pagamento = 'manual' WHERE id = 'arena-belem'");
+      await expect(
+        comoPapel("authenticated", "UPDATE public.arenas SET modo_pagamento = 'simulado' WHERE id = 'arena-belem'", [], DONO)
+      ).rejects.toThrow(/suporte da plataforma/);
+      await db.query("UPDATE public.arenas SET modo_pagamento = 'simulado' WHERE id = 'arena-belem'");
+      await comoPapel("authenticated", "UPDATE public.arenas SET modo_pagamento = 'manual' WHERE id = 'arena-belem'", [], DONO);
+      await db.query("UPDATE public.arenas SET modo_pagamento = $1 WHERE id = 'arena-belem'", [rows[0].modo_pagamento]);
+    });
+
+    it("o servidor (service_role) troca o subdomínio e guarda o endereço antigo", async () => {
+      await db.transaction(async (tx) => {
+        await tx.query("SELECT set_config('request.jwt.claims', $1::text, true)", [JSON.stringify({ role: "service_role" })]);
+        await tx.query("SET LOCAL ROLE service_role");
+        await tx.query("UPDATE public.arenas SET slug_anterior = slug, slug = 'arena-belem-nova' WHERE id = 'arena-belem'");
+      });
+      const { rows } = await db.query("SELECT slug, slug_anterior FROM public.arenas WHERE id = 'arena-belem'");
+      expect(rows[0]).toEqual({ slug: "arena-belem-nova", slug_anterior: "arena-belem" });
+      await db.query("UPDATE public.arenas SET slug = 'arena-belem', slug_anterior = NULL WHERE id = 'arena-belem'");
+    });
+
+    it("dois endereços antigos iguais não convivem", async () => {
+      await db.query("UPDATE public.arenas SET slug_anterior = 'endereco-velho' WHERE id = 'arena-belem'");
+      await db.query(
+        "INSERT INTO public.arenas (id, slug, nome) VALUES ('arena-trava-teste', 'arena-trava-teste', 'Teste') ON CONFLICT DO NOTHING"
+      );
+      await expect(
+        db.query("UPDATE public.arenas SET slug_anterior = 'endereco-velho' WHERE id = 'arena-trava-teste'")
+      ).rejects.toThrow(/idx_arenas_slug_anterior/);
+      await db.query("UPDATE public.arenas SET slug_anterior = NULL WHERE id = 'arena-belem'");
+      await db.query("DELETE FROM public.arenas WHERE id = 'arena-trava-teste'");
+    });
+  });
+
   it("pedidos de vaga e Clube entram na publicação do tempo real", async () => {
     const { rows } = await db.query(
       "SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime' ORDER BY tablename"

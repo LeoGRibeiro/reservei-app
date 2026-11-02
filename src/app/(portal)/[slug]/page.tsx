@@ -5,9 +5,8 @@
  */
 
 import type { Metadata, Viewport } from "next";
-import { notFound } from "next/navigation";
 import { PortalArena } from "@/components/portal-arena/PortalArena";
-import { dadosDoPortal, metadadosDaArena, viewportDaArena } from "@/lib/portal/paginaPortal";
+import { arenaNaoEncontrada, dadosDoPortal, metadadosDaArena, viewportDaArena } from "@/lib/portal/paginaPortal";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +23,8 @@ export async function generateViewport({ params }: PaginaArenaProps): Promise<Vi
 }
 
 export default async function PaginaArena({ params }: PaginaArenaProps) {
-  const dados = await dadosDoPortal((await params).slug);
-  if (!dados) notFound();
+  const { slug } = await params;
+  const dados = await dadosDoPortal(slug);
+  if (!dados) return arenaNaoEncontrada(slug);
   return <PortalArena dados={dados} />;
 }
