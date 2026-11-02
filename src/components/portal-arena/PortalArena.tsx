@@ -553,6 +553,13 @@ function ConteudoPortal({ dados, visaoInicial = "portal", abaInicial = "reservas
           hoje={hoje}
           aviso={avisoDoDia({ dia, hoje, agoraMin, antecedenciaMin: arena.antecedenciaMinimaMinutos, periodos })}
           muralNaLateral={muralNaLateral}
+          tambem={[
+            ...(secoes.escolinhas ? [{ id: "escolinhas", rotulo: "Escolinhas" }] : []),
+            ...(secoes.eventos ? [{ id: "eventos", rotulo: "Campeonatos" }] : []),
+            ...(secoes.clube && clube ? [{ id: "clube", rotulo: clube.nome }] : []),
+            ...(secoes.estrutura ? [{ id: "estrutura", rotulo: "Estrutura" }] : []),
+            { id: "contato", rotulo: "Contato e endereço" },
+          ]}
           clube={secoes.clube && clube ? { nome: clube.nome, meta } : null}
           aoNavegar={navegar}
           fichas={

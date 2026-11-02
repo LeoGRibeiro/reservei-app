@@ -3,6 +3,9 @@
  * @description Seção Reservar (`#reservar`): título, fichas de data, linha do dia com aviso e
  * legenda, cards das quadras e, ao lado, o ticket, os textos de cancelamento e do Clube, o link das
  * regras e o mural de partidas (no celular, o mural vai para depois das quadras).
+ *
+ * No celular, depois das quadras, a faixa "Também na arena" mostra que a página continua e leva
+ * direto às outras seções (a seção de reserva é longa e escondia o resto do site).
  */
 
 import Link from "next/link";
@@ -24,6 +27,8 @@ export interface SecaoReservarProps {
   /** Clube (fidelidade) da arena, para o texto embaixo do ticket */
   clube: { nome: string; meta: number } | null;
   aoNavegar: (e: MouseEvent<HTMLAnchorElement>, id: string) => void;
+  /** Outras seções do site (para a faixa "Também na arena" no celular) */
+  tambem?: { id: string; rotulo: string }[];
 }
 
 /**
@@ -33,7 +38,7 @@ export interface SecaoReservarProps {
  * ```
  */
 export function SecaoReservar(props: SecaoReservarProps) {
-  const { intro, fichas, dia, hoje, aviso, quadras, ticket, mural, muralNaLateral, clube, aoNavegar } = props;
+  const { intro, fichas, dia, hoje, aviso, quadras, ticket, mural, muralNaLateral, clube, aoNavegar, tambem = [] } = props;
   return (
     <section className="reservar" id="reservar" aria-labelledby="titulo-reserva">
       <div className="wrap">
@@ -77,6 +82,20 @@ export function SecaoReservar(props: SecaoReservarProps) {
               {quadras}
             </div>
             {!muralNaLateral && mural}
+            {tambem.length > 0 && (
+              <nav className="tambem" aria-label="Também na arena">
+                <p className="tambem-h">Também na arena</p>
+                <ul>
+                  {tambem.map((s) => (
+                    <li key={s.id}>
+                      <a href={`#${s.id}`} onClick={(e) => aoNavegar(e, s.id)}>
+                        {s.rotulo}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )}
           </div>
 
           <aside className="r-ticket" aria-label="Seu ticket">

@@ -3,8 +3,10 @@
  * @description Card de uma quadra: foto com enquadramento, nome, esportes, preço de dia e de noite e
  * todos os horários do dia em Manhã, Tarde e Noite (no celular, grade de 4 sem rótulo, pelo CSS).
  *
- * A grade tem sempre o mesmo tamanho: horários que já começaram aparecem como "Encerrado" e os que
- * estão dentro da antecedência da arena como "Indisponível" (tocar mostra o motivo).
+ * No computador a grade tem sempre o mesmo tamanho: horários que já começaram aparecem como
+ * "Encerrado" e os que estão dentro da antecedência da arena como "Indisponível" (tocar mostra o
+ * motivo). No celular os encerrados somem (CSS) e fica uma linha dizendo até que horas já passou,
+ * para a seção não ocupar várias telas.
  */
 
 "use client";
@@ -140,6 +142,9 @@ export function CardQuadra({ quadra, indice, periodos, situacao, preco, selecion
 
   const dia = preco(10);
   const noite = preco(19);
+  const encerrados = periodos.flatMap((p) => p.horas).filter((h) => situacao(h).tipo === "encerrado");
+  const ultimoEncerrado = encerrados.length ? Math.max(...encerrados) : null;
+  const todosEncerrados = encerrados.length > 0 && encerrados.length === periodos.reduce((n, p) => n + p.horas.length, 0);
 
   return (
     <article className="quadra" id={`q-${quadra.id}`} aria-labelledby={`qt-${quadra.id}`}>
@@ -172,6 +177,11 @@ export function CardQuadra({ quadra, indice, periodos, situacao, preco, selecion
             </p>
           )}
         </div>
+        {ultimoEncerrado !== null && (
+          <p className="q-passados">
+            {todosEncerrados ? "Os horários de hoje já passaram nesta quadra." : `Horários até ${hh(ultimoEncerrado)} já passaram.`}
+          </p>
+        )}
         <div className="periodos">{blocos.length ? blocos : <p className="q-sem">Não há mais horários hoje nesta quadra.</p>}</div>
         {motivo && (
           <p className="q-motivo" role="status">
