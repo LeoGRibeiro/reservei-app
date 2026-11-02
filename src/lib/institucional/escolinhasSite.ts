@@ -2,8 +2,12 @@
  * @module institucional/escolinhasSite
  *
  * Escolinha como aparece no site da arena (`landing_page_schools`), editada pelo dono no painel:
- * nome, esporte, professor, foto, descrição, turmas (dias, horários e categoria) e o botão
- * "Quero uma vaga", que abre o WhatsApp com mensagem pronta ou um link (formulário, site etc.).
+ * nome, esporte, professor, foto, descrição, turmas e o botão "Quero uma vaga", que abre o WhatsApp
+ * com mensagem pronta ou um link (formulário, site etc.).
+ *
+ * Cada turma tem dias da semana, início e fim; o texto do site ("Ter e Qui", "8h e 9h") é montado a
+ * partir deles. Com "Bloquear na agenda", a turma vira um contrato recorrente na quadra escolhida
+ * (`contratos_recorrentes`, ligado à escolinha por `escolinha_id`), como no cadastro antigo.
  *
  * Funções puras: usadas pelo painel (formulário e validação), pelo repositório e pelo site.
  *
@@ -11,6 +15,8 @@
  */
 
 import { esporteNaFrase, linkWhatsApp } from "@/lib/portal/formatos";
+import { ESPORTES, type Esporte } from "@/lib/quadras";
+import { DIAS_SEMANA, type DiaSemana } from "@/lib/recorrencia/types";
 
 /** Máximo de turmas por escolinha (o banco recusa mais que isso). */
 export const MAX_TURMAS = 12;
@@ -22,14 +28,172 @@ export const MAX_MENSAGEM = 500;
 /** O que o botão "Quero uma vaga" faz. */
 export type TipoBotaoEscolinha = "whatsapp" | "link";
 
-/** Turma exibida no card: dias, horários e categoria (nível, idade ou público). */
+/** Turma: dias da semana, horário e categoria; opcionalmente bloqueia a quadra na agenda. */
 export interface TurmaSite {
-  /** Ex.: "Seg e Qua" */
+  /** Texto dos dias no site (ex.: "Ter e Qui"), montado a partir de `diasSemana` */
   dias: string;
-  /** Ex.: "7h e 8h" */
+  /** Texto dos horários no site (ex.: "8h e 9h"), montado a partir de início e fim */
   horas: string;
   /** Ex.: "Iniciante", "6 a 10 anos" (opcional) */
   categoria: string;
+  /** Dias da semana (0 = domingo) */
+  diasSemana: DiaSemana[];
+  /** Início da primeira aula ("08:00") */
+  horaInicio: string;
+  /** Fim da última aula ("10:00") */
+  horaFim: string;
+  /** Bloqueia a quadra nesses dias e horários (cria o contrato na agenda) */
+  bloquearAgenda: boolean;
+  /** Quadra bloqueada na agenda */
+  quadraId: string;
+  /** Contrato da agenda já criado para esta turma (vazio = ainda não bloqueada) */
+  contratoId: string;
+}
+
+/** Turma em branco (bloqueia a agenda por padrão, na quadra informada). */
+export function turmaVazia(quadraId = ""): TurmaSite {
+  return { dias: "", horas: "", categoria: "", diasSemana: [], horaInicio: "", horaFim: "", bloquearAgenda: true, quadraId, contratoId: "" };
+}
+
+/** Ordem de leitura dos dias: segunda primeiro, domingo por último. */
+const ORDEM_DIAS: DiaSemana[] = [1, 2, 3, 4, 5, 6, 0];
+const curto = (d: DiaSemana) => DIAS_SEMANA.find((x) => x.valor === d)?.curto ?? "";
+
+/**
+ * Texto dos dias como o aluno lê.
+ *
+ * @example
+ * textoDias([4, 2]); // "Ter e Qui"
+ * textoDias([1, 2, 3, 4, 5]); // "Seg a Sex"
+ * textoDias([6]); // "Sábado"
+ */
+export function textoDias(dias: readonly DiaSemana[]): string {
+  const ordenados = ORDEM_DIAS.filter((d) => dias.includes(d));
+  if (ordenados.length === 0) return "";
+  if (ordenados.length === 1) {
+    const d = ordenados[0];
+    return d === 6 ? "Sábado" : d === 0 ? "Domingo" : curto(d);
+  }
+  const posicoes = ordenados.map((d) => ORDEM_DIAS.indexOf(d));
+  const seguidos = posicoes.every((p, i) => i === 0 || p === posicoes[i - 1] + 1);
+  if (seguidos && ordenados.length >= 3) return `${curto(ordenados[0])} a ${curto(ordenados[ordenados.length - 1])}`;
+  const nomes = ordenados.map(curto);
+  return `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;
+}
+
+const horaNum = (h: string): number => Number(h.split(":")[0]);
+
+/**
+ * Texto dos horários: cada aula de 1 hora pelo horário de início; mais de 4 aulas viram faixa.
+ *
+ * @example
+ * textoHoras("08:00", "10:00"); // "8h e 9h"
+ * textoHoras("16:00", "17:00"); // "16h"
+ * textoHoras("07:00", "12:00"); // "7h às 12h"
+ */
+export function textoHoras(inicio: string, fim: string): string {
+  if (!inicio || !fim || horaNum(fim) <= horaNum(inicio)) return "";
+  const horas = Array.from({ length: horaNum(fim) - horaNum(inicio) }, (_, i) => `${horaNum(inicio) + i}h`);
+  if (horas.length > 4) return `${horaNum(inicio)}h às ${horaNum(fim)}h`;
+  return horas.length === 1 ? horas[0] : `${horas.slice(0, -1).join(", ")} e ${horas[horas.length - 1]}`;
+}
+
+/** Recalcula os textos do site a partir dos dias e horários escolhidos. */
+export function completarTextosTurma(t: TurmaSite): TurmaSite {
+  return { ...t, dias: textoDias(t.diasSemana), horas: textoHoras(t.horaInicio, t.horaFim) };
+}
+
+const DIA_POR_TEXTO: Record<string, DiaSemana> = { dom: 0, seg: 1, ter: 2, qua: 3, qui: 4, sex: 5, sab: 6 };
+const semAcento = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/**
+ * Lê dias e horários de turmas antigas, cadastradas só em texto ("Seg e Qua", "9h, 10h e 11h").
+ * O que não der para entender fica vazio para o dono escolher.
+ */
+export function interpretarTextoTurma(dias: string, horas: string): Pick<TurmaSite, "diasSemana" | "horaInicio" | "horaFim"> {
+  const texto = semAcento(dias);
+  let diasSemana: DiaSemana[] = [];
+  const faixa = texto.match(/(dom|seg|ter|qua|qui|sex|sab)\w*\s+a\s+(dom|seg|ter|qua|qui|sex|sab)/);
+  if (faixa) {
+    const a = ORDEM_DIAS.indexOf(DIA_POR_TEXTO[faixa[1]]);
+    const b = ORDEM_DIAS.indexOf(DIA_POR_TEXTO[faixa[2]]);
+    if (a <= b) diasSemana = ORDEM_DIAS.slice(a, b + 1);
+  } else {
+    diasSemana = [...new Set((texto.match(/dom|seg|ter|qua|qui|sex|sab/g) ?? []).map((d) => DIA_POR_TEXTO[d]))];
+  }
+  const numeros = (horas.match(/\d{1,2}(?=\s*h)/g) ?? []).map(Number).filter((n) => n >= 0 && n <= 23);
+  if (numeros.length === 0) return { diasSemana, horaInicio: "", horaFim: "" };
+  const hh = (n: number) => `${String(n).padStart(2, "0")}:00`;
+  const ehFaixa = /\bas\b|-/.test(semAcento(horas)) && numeros.length === 2;
+  return {
+    diasSemana,
+    horaInicio: hh(Math.min(...numeros)),
+    horaFim: hh(ehFaixa ? Math.max(...numeros) : Math.max(...numeros) + 1),
+  };
+}
+
+/** Período em que as turmas ficam bloqueadas na agenda. */
+export interface PeriodoAgenda {
+  /** Primeiro dia (AAAA-MM-DD) */
+  dataInicio: string;
+  /** Duração em meses */
+  meses: number;
+}
+
+/** Esporte do cadastro da quadra mais parecido com o texto do dono (o contrato exige um da lista). */
+export function esporteDoContrato(esporte: string): Esporte {
+  const alvo = semAcento(esporte.trim());
+  const igual = ESPORTES.find((e) => semAcento(e) === alvo);
+  if (igual) return igual;
+  if (alvo.includes("society") || alvo.includes("futebol")) return "Futebol Society";
+  const contido = ESPORTES.find((e) => e !== "Outro" && (alvo.includes(semAcento(e)) || semAcento(e).includes(alvo)));
+  return contido ?? "Outro";
+}
+
+/** O que precisa mudar na agenda ao salvar a escolinha. */
+export interface PlanoAgenda {
+  /** Índices (em `depois`) das turmas que precisam de contrato novo */
+  criar: number[];
+  /** Contratos a encerrar (turma removida, desmarcada ou com dia/horário/quadra alterados) */
+  encerrar: string[];
+  /** Índices das turmas cujo contrato continua igual (só atualiza nome e contato) */
+  manter: number[];
+}
+
+const mesmaAgenda = (a: TurmaSite, b: TurmaSite) =>
+  a.quadraId === b.quadraId &&
+  a.horaInicio === b.horaInicio &&
+  a.horaFim === b.horaFim &&
+  [...a.diasSemana].sort().join() === [...b.diasSemana].sort().join();
+
+/**
+ * Compara as turmas antes e depois da edição e diz o que criar, encerrar ou manter na agenda.
+ *
+ * @example
+ * planejarAgenda([], [turmaNova]); // { criar: [0], encerrar: [], manter: [] }
+ */
+export function planejarAgenda(antes: readonly TurmaSite[], depois: readonly TurmaSite[]): PlanoAgenda {
+  const plano: PlanoAgenda = { criar: [], encerrar: [], manter: [] };
+  const antigas = new Map(antes.filter((t) => t.contratoId).map((t) => [t.contratoId, t]));
+  const usados = new Set<string>();
+  depois.forEach((t, i) => {
+    const anterior = t.contratoId ? antigas.get(t.contratoId) : undefined;
+    if (!t.bloquearAgenda) {
+      if (t.contratoId) plano.encerrar.push(t.contratoId);
+      return;
+    }
+    if (anterior && mesmaAgenda(anterior, t)) {
+      plano.manter.push(i);
+      usados.add(t.contratoId);
+      return;
+    }
+    if (t.contratoId) plano.encerrar.push(t.contratoId);
+    plano.criar.push(i);
+  });
+  for (const id of antigas.keys()) {
+    if (!usados.has(id) && !plano.encerrar.includes(id)) plano.encerrar.push(id);
+  }
+  return plano;
 }
 
 /** Escolinha do site, como o painel edita. */
@@ -69,7 +233,7 @@ export function escolinhaVazia(ordem = 1): EscolinhaSiteInput {
     professor: "",
     fotoProfessorUrl: "",
     descricao: "",
-    turmas: [{ dias: "", horas: "", categoria: "" }],
+    turmas: [turmaVazia()],
     tipoBotao: "whatsapp",
     whatsapp: "",
     mensagemWhatsapp: "",
@@ -109,11 +273,16 @@ export function linkValido(url: string): boolean {
   return /^https:\/\/[^\s]+\.[^\s]+$/i.test(url.trim()) && url.trim().length <= 500;
 }
 
-/** Turmas preenchidas (linhas totalmente vazias são ignoradas). */
+/** Turmas com algo preenchido (linhas totalmente vazias são ignoradas), com os textos do site em dia. */
 export function turmasPreenchidas(turmas: readonly TurmaSite[]): TurmaSite[] {
   return turmas
-    .map((t) => ({ dias: t.dias.trim(), horas: t.horas.trim(), categoria: t.categoria.trim() }))
-    .filter((t) => t.dias || t.horas || t.categoria);
+    .map((t) => {
+      const base = { ...t, categoria: t.categoria.trim() };
+      return t.diasSemana.length || t.horaInicio || t.horaFim
+        ? completarTextosTurma(base)
+        : { ...base, dias: t.dias.trim(), horas: t.horas.trim() };
+    })
+    .filter((t) => t.dias || t.horas || t.categoria || t.diasSemana.length);
 }
 
 /**
@@ -134,8 +303,8 @@ export type ErrosEscolinha = Partial<Record<"esporte" | "professor" | "nome" | "
 /**
  * Valida o formulário da escolinha.
  *
- * Regras: esporte e professor obrigatórios; ao menos uma turma com dias e horários; no máximo
- * {@link MAX_TURMAS} turmas; WhatsApp (se informado) com DDD; link obrigatório e https quando o
+ * Regras: esporte e professor obrigatórios; ao menos uma turma; toda turma com dias, início e fim
+ * (fim depois do início) e, se bloqueia a agenda, com quadra; no máximo {@link MAX_TURMAS} turmas; WhatsApp (se informado) com DDD; link obrigatório e https quando o
  * botão é de link; mensagem até {@link MAX_MENSAGEM} caracteres.
  */
 export function validarEscolinhaSite(input: EscolinhaSiteInput): ErrosEscolinha {
@@ -146,8 +315,15 @@ export function validarEscolinhaSite(input: EscolinhaSiteInput): ErrosEscolinha 
 
   const turmas = turmasPreenchidas(input.turmas);
   if (turmas.length === 0) erros.turmas = "Cadastre pelo menos uma turma com dias e horários.";
-  else if (turmas.some((t) => !t.dias || !t.horas)) erros.turmas = "Toda turma precisa de dias e horários.";
   else if (turmas.length > MAX_TURMAS) erros.turmas = `No máximo ${MAX_TURMAS} turmas por escolinha.`;
+  else {
+    const incompleta = turmas.findIndex((t) => t.diasSemana.length === 0 || !t.horaInicio || !t.horaFim);
+    const invertida = turmas.findIndex((t) => t.horaInicio && t.horaFim && horaNum(t.horaFim) <= horaNum(t.horaInicio));
+    const semQuadra = turmas.findIndex((t) => t.bloquearAgenda && !t.quadraId);
+    if (incompleta >= 0) erros.turmas = `Turma ${incompleta + 1}: escolha os dias e o horário de início e de fim.`;
+    else if (invertida >= 0) erros.turmas = `Turma ${invertida + 1}: o fim precisa ser depois do início.`;
+    else if (semQuadra >= 0) erros.turmas = `Turma ${semQuadra + 1}: escolha a quadra que fica bloqueada na agenda.`;
+  }
 
   const digitos = input.whatsapp.replace(/\D/g, "");
   if (digitos && (digitos.length < 10 || digitos.length > 13)) {

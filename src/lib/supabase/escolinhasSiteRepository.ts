@@ -10,7 +10,9 @@
 
 import { supabase, isSupabaseConfigured } from "./client";
 import { obterArenaAtivaId } from "@/lib/arena/arenaAtiva";
+import type { DiaSemana } from "@/lib/recorrencia/types";
 import {
+  interpretarTextoTurma,
   limparNomeProfessor,
   linkValido,
   mensagemPadraoEscolinha,
@@ -45,13 +47,33 @@ const texto = (v: unknown): string => (typeof v === "string" ? v : "");
 
 /**
  * Converte a linha do banco na escolinha do painel. A categoria da turma é gravada como `nivel`
- * no JSON (mesma chave que o site lê).
+ * no JSON (mesma chave que o site lê). Turmas antigas, só em texto, têm dias e horários
+ * interpretados do texto para o dono só conferir.
  */
 export function linhaParaEscolinhaSite(row: EscolinhaSiteDbRow): EscolinhaSite {
   const turmas: TurmaSite[] = Array.isArray(row.turmas)
     ? row.turmas
         .filter((t): t is Record<string, unknown> => !!t && typeof t === "object")
-        .map((t) => ({ dias: texto(t.dias), horas: texto(t.horas), categoria: texto(t.nivel) }))
+        .map((t) => {
+          const dias = texto(t.dias);
+          const horas = texto(t.horas);
+          const diasSemana = Array.isArray(t.dias_semana)
+            ? (t.dias_semana.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6) as DiaSemana[])
+            : null;
+          const estrutura =
+            diasSemana && texto(t.hora_inicio)
+              ? { diasSemana, horaInicio: texto(t.hora_inicio), horaFim: texto(t.hora_fim) }
+              : interpretarTextoTurma(dias, horas);
+          return {
+            dias,
+            horas,
+            categoria: texto(t.nivel),
+            ...estrutura,
+            bloquearAgenda: t.bloquear_agenda === true,
+            quadraId: texto(t.quadra_id),
+            contratoId: texto(t.contrato_id),
+          };
+        })
     : [];
   return {
     id: row.id,
@@ -85,7 +107,17 @@ export function escolinhaSiteParaColunas(input: EscolinhaSiteInput): Record<stri
     teacher_name: professor,
     teacher_image_url: input.fotoProfessorUrl.trim() || null,
     descricao: input.descricao.trim() || null,
-    turmas: turmas.map((t) => ({ dias: t.dias, horas: t.horas, nivel: t.categoria })),
+    turmas: turmas.map((t) => ({
+      dias: t.dias,
+      horas: t.horas,
+      nivel: t.categoria,
+      dias_semana: t.diasSemana,
+      hora_inicio: t.horaInicio,
+      hora_fim: t.horaFim,
+      bloquear_agenda: t.bloquearAgenda,
+      quadra_id: t.bloquearAgenda ? t.quadraId || null : null,
+      contrato_id: t.bloquearAgenda ? t.contratoId || null : null,
+    })),
     schedule_info: resumirTurmas(turmas) || null,
     whatsapp_number: normalizarWhatsApp(input.whatsapp) || null,
     botao_tipo: ehLink ? "link" : "whatsapp",
@@ -160,7 +192,8 @@ export async function atualizarEscolinhaSite(id: string, input: EscolinhaSiteInp
     .select("*")
     .maybeSingle();
   lancarSeErro(error, "Falha ao atualizar a escolinha");
-  if (!data) throw new Error("Escolinha não encontrada nesta arena.");
+  // Sem linha de volta: a RLS escondeu (sessão expirada ou usuário sem acesso a esta arena) ou foi excluída
+  if (!data) throw new Error("Não foi possível salvar: sua sessão pode ter expirado. Clique em Sair, entre de novo e tente outra vez.");
   return linhaParaEscolinhaSite(data as EscolinhaSiteDbRow);
 }
 

@@ -283,7 +283,7 @@ export async function executarRest(db, req) {
                        ${montarOrdem(req.busca.get("order"), "t")} ${limite} ${desloc}) x`;
       } else if (req.metodo === "POST") {
         const linhas = Array.isArray(req.corpo) ? req.corpo : [req.corpo];
-        const cols = req.busca.get("columns")?.split(",") ?? [...new Set(linhas.flatMap((l) => Object.keys(l ?? {})))];
+        const cols = req.busca.get("columns")?.split(",").map((c) => c.trim().replace(/^"(.*)"$/, "$1")) ?? [...new Set(linhas.flatMap((l) => Object.keys(l ?? {})))];
         params.push(JSON.stringify(linhas));
         const lista = cols.map(ident).join(", ");
         let conflito = "";

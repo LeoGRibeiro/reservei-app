@@ -2,15 +2,21 @@ import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { FormEscolinhaSite } from "@/components/admin/institucional/FormEscolinhaSite";
-import { escolinhaVazia, mensagemPadraoEscolinha } from "@/lib/institucional/escolinhasSite";
+import { escolinhaVazia, mensagemPadraoEscolinha, turmaVazia, type EscolinhaSiteInput } from "@/lib/institucional/escolinhasSite";
 
-function montar(inicial = escolinhaVazia()) {
-  const aoSalvar = vi.fn().mockResolvedValue(undefined);
+const QUADRAS = [{ id: "q1", nome: "Areia 1" }, { id: "q4", nome: "Campo Society" }];
+const HORARIOS = ["07:00", "08:00", "09:00", "16:00", "17:00"];
+
+const novaComQuadra = (): EscolinhaSiteInput => ({ ...escolinhaVazia(), turmas: [turmaVazia("q1")] });
+
+function montar(inicial: EscolinhaSiteInput = novaComQuadra(), aoSalvar = vi.fn().mockResolvedValue(undefined), editando = false) {
   render(
     <FormEscolinhaSite
       inicial={inicial}
-      editando={false}
+      editando={editando}
       whatsappArena="5591984982865"
+      quadras={QUADRAS}
+      horarios={HORARIOS}
       aoSalvar={aoSalvar}
       aoCancelar={vi.fn()}
       aoEnviarFoto={vi.fn()}
@@ -19,6 +25,14 @@ function montar(inicial = escolinhaVazia()) {
   const mensagem = () => screen.getByLabelText("Mensagem pronta") as HTMLTextAreaElement;
   const digitar = (rotulo: string | RegExp, valor: string) => fireEvent.change(screen.getByLabelText(rotulo), { target: { value: valor } });
   return { aoSalvar, mensagem, digitar };
+}
+
+/** Preenche a turma 1: Ter e Qui, 8h às 10h. */
+function preencherTurma(digitar: (r: string, v: string) => void) {
+  fireEvent.click(screen.getByRole("button", { name: "Terça-feira na turma 1" }));
+  fireEvent.click(screen.getByRole("button", { name: "Quinta-feira na turma 1" }));
+  digitar("Início da turma 1", "08:00");
+  digitar("Fim da turma 1", "10:00");
 }
 
 describe("FormEscolinhaSite", () => {
@@ -35,12 +49,20 @@ describe("FormEscolinhaSite", () => {
     digitar("Mensagem pronta", "Quero a turma de sábado");
     digitar("Esporte *", "Futevôlei");
     expect(mensagem().value).toBe("Quero a turma de sábado");
-    expect(screen.getByText(/Você personalizou a mensagem/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Voltar para a mensagem padrão" }));
     expect(mensagem().value).toContain("no futevôlei");
   });
 
-  it("mostra os erros e não salva sem esporte, professor e turma", async () => {
+  it("escolher dias e horário mostra como fica no site e pede o período da agenda", () => {
+    const { digitar } = montar();
+    preencherTurma(digitar);
+    expect(screen.getByText(/No site: Ter e Qui · 8h e 9h/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Terça-feira na turma 1" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByLabelText("Bloquear a partir de")).toBeInTheDocument();
+    expect(screen.getByLabelText("Quadra da turma 1")).toHaveValue("q1");
+  });
+
+  it("mostra os erros e não salva sem esporte, professor e horário da turma", async () => {
     const { aoSalvar } = montar();
     fireEvent.click(screen.getByRole("button", { name: "Salvar escolinha" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Confira os campos");
@@ -49,51 +71,52 @@ describe("FormEscolinhaSite", () => {
     expect(aoSalvar).not.toHaveBeenCalled();
   });
 
-  it("salva com turmas e mensagem padrão gravada vazia", async () => {
+  it("salva a turma estruturada com quadra e o período da agenda", async () => {
     const { aoSalvar, digitar } = montar();
     digitar("Esporte *", "Vôlei");
     digitar("Nome do professor *", "Lucas");
-    digitar("Dias da turma 1", "Sábado");
-    digitar("Horários da turma 1", "9h e 10h");
-    fireEvent.click(screen.getByRole("button", { name: /Adicionar turma/ }));
-    digitar("Dias da turma 2", "Seg e Qua");
-    digitar("Horários da turma 2", "19h");
-    digitar("Categoria da turma 2", "Iniciante");
+    preencherTurma(digitar);
+    digitar("Categoria da turma 1", "Iniciante");
+    digitar("Quadra da turma 1", "q4");
+    digitar("Por quanto tempo", "3");
     fireEvent.click(screen.getByRole("button", { name: "Salvar escolinha" }));
     await waitFor(() => expect(aoSalvar).toHaveBeenCalledTimes(1));
-    expect(aoSalvar.mock.calls[0][0]).toMatchObject({
+    const [dados, periodo] = aoSalvar.mock.calls[0];
+    expect(dados).toMatchObject({
       esporte: "Vôlei",
       mensagemWhatsapp: "",
-      tipoBotao: "whatsapp",
-      turmas: [
-        { dias: "Sábado", horas: "9h e 10h", categoria: "" },
-        { dias: "Seg e Qua", horas: "19h", categoria: "Iniciante" },
-      ],
+      turmas: [{ diasSemana: [2, 4], horaInicio: "08:00", horaFim: "10:00", categoria: "Iniciante", bloquearAgenda: true, quadraId: "q4" }],
     });
+    expect(periodo).toMatchObject({ meses: 3 });
+  });
+
+  it("turma sem 'Bloquear na agenda' salva sem quadra", async () => {
+    const { aoSalvar, digitar } = montar();
+    digitar("Esporte *", "Vôlei");
+    digitar("Nome do professor *", "Lucas");
+    preencherTurma(digitar);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Bloquear na agenda" }));
+    expect(screen.queryByLabelText("Quadra da turma 1")).not.toBeInTheDocument();
+    expect(screen.getByText("Só aparece no site, sem ocupar quadra.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Salvar escolinha" }));
+    await waitFor(() => expect(aoSalvar.mock.calls[0][0].turmas[0]).toMatchObject({ bloquearAgenda: false }));
   });
 
   it("botão de link pede o endereço https", async () => {
-    const { aoSalvar, digitar } = montar({ ...escolinhaVazia(), esporte: "Vôlei", professor: "Lucas", turmas: [{ dias: "Sáb", horas: "9h", categoria: "" }] });
+    const inicial = { ...escolinhaVazia(), esporte: "Vôlei", professor: "Lucas", turmas: [{ ...turmaVazia("q1"), diasSemana: [6] as 6[], horaInicio: "09:00", horaFim: "10:00" }] };
+    const { aoSalvar, digitar } = montar(inicial);
     fireEvent.click(screen.getByRole("radio", { name: /Abrir um link/ }));
     digitar("Endereço do link *", "forms.gle/abc");
     fireEvent.click(screen.getByRole("button", { name: "Salvar escolinha" }));
     expect(await screen.findByText("Cole o endereço completo, começando com https://")).toBeInTheDocument();
     digitar("Endereço do link *", "https://forms.gle/abc");
     fireEvent.click(screen.getByRole("button", { name: "Salvar escolinha" }));
-    await waitFor(() => expect(aoSalvar).toHaveBeenCalledWith(expect.objectContaining({ tipoBotao: "link", linkBotao: "https://forms.gle/abc" })));
+    await waitFor(() => expect(aoSalvar).toHaveBeenCalledWith(expect.objectContaining({ tipoBotao: "link", linkBotao: "https://forms.gle/abc" }), expect.anything()));
   });
 
   it("mostra o erro do banco sem fechar", async () => {
-    const aoSalvar = vi.fn().mockRejectedValue(new Error("Falha ao salvar a escolinha: sem permissão"));
-    render(
-      <FormEscolinhaSite
-        inicial={{ ...escolinhaVazia(), esporte: "Vôlei", professor: "Lucas", turmas: [{ dias: "Sáb", horas: "9h", categoria: "" }] }}
-        editando
-        aoSalvar={aoSalvar}
-        aoCancelar={vi.fn()}
-        aoEnviarFoto={vi.fn()}
-      />
-    );
+    const inicial = { ...escolinhaVazia(), esporte: "Vôlei", professor: "Lucas", turmas: [{ ...turmaVazia("q1"), diasSemana: [6] as 6[], horaInicio: "09:00", horaFim: "10:00" }] };
+    montar(inicial, vi.fn().mockRejectedValue(new Error("Falha ao salvar a escolinha: sem permissão")), true);
     fireEvent.click(screen.getByRole("button", { name: "Salvar escolinha" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("sem permissão");
     expect(screen.getByRole("heading", { name: "Editar escolinha" })).toBeInTheDocument();

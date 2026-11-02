@@ -21,6 +21,7 @@ export interface ContratoDbRow {
   meses: number | string;
   foto_url?: string | null;
   faixa_etaria?: string | null;
+  escolinha_id?: string | null;
   ativo: boolean;
   criado_em?: string;
 }
@@ -56,6 +57,7 @@ export function rowToContrato(row: ContratoDbRow): ContratoRecorrente {
     meses: Number(row.meses),
     fotoUrl: row.foto_url || undefined,
     faixaEtaria: row.faixa_etaria || undefined,
+    escolinhaId: row.escolinha_id || undefined,
     ativo: Boolean(row.ativo),
     criadoEm: row.criado_em ?? new Date().toISOString(),
   };
@@ -79,6 +81,7 @@ export function contratoToRow(contrato: Partial<ContratoRecorrente>): Record<str
   if (contrato.meses !== undefined) row.meses = contrato.meses;
   if (contrato.fotoUrl !== undefined) row.foto_url = contrato.fotoUrl ?? null;
   if (contrato.faixaEtaria !== undefined) row.faixa_etaria = contrato.faixaEtaria ?? null;
+  if (contrato.escolinhaId !== undefined) row.escolinha_id = contrato.escolinhaId ?? null;
   if (contrato.ativo !== undefined) row.ativo = contrato.ativo;
   if (contrato.criadoEm !== undefined) row.criado_em = contrato.criadoEm;
 

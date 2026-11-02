@@ -65,6 +65,8 @@ export interface ContratoRecorrente {
   fotoUrl?: string;
   /** Faixa etária atendida (ex: Infantil, Juvenil, Adulto) */
   faixaEtaria?: string;
+  /** Escolinha do site (`landing_page_schools.id`) a que esta turma pertence (só escolinhas) */
+  escolinhaId?: string;
 
   ativo: boolean;
   criadoEm: string;

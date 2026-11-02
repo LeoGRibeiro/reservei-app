@@ -1,9 +1,10 @@
 /**
  * @module components/admin/institucional/AbaEscolinhasSite
  *
- * Aba "Escolinhas do site" do painel: lista as escolinhas que aparecem no site da arena (com as
- * turmas e o que o botão faz), cria, edita, esconde e exclui. Os dados ficam em
- * `landing_page_schools`, que o site lê direto.
+ * Aba "No site" do menu Escolinhas: lista as escolinhas que aparecem no site da arena (turmas,
+ * situação na agenda e o que o botão faz), cria, edita, esconde e exclui. Os dados ficam em
+ * `landing_page_schools`, que o site lê direto; as turmas com "Bloquear na agenda" viram contratos
+ * recorrentes ({@link useAgendaEscolinha}).
  *
  * @see SPEC/2026-10-31-escolinhas-admin.md
  */
@@ -12,11 +13,13 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Eye, EyeOff, Link2, Loader2, MessageCircle, Pencil, Plus, Trash2 } from "lucide-react";
+import { CalendarCheck, Eye, EyeOff, Link2, Loader2, MessageCircle, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEscolinhasSite } from "@/hooks/useEscolinhasSite";
+import { useAgendaEscolinha } from "@/hooks/useAgendaEscolinha";
 import { useArena } from "@/hooks/useArena";
+import { useHorariosCatalogo, useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { uploadImagemInstitucional } from "@/lib/supabase/institucionalRepository";
-import { escolinhaVazia, normalizarWhatsApp, tituloEscolinha, turmasPreenchidas, type EscolinhaSite } from "@/lib/institucional/escolinhasSite";
+import { escolinhaVazia, normalizarWhatsApp, tituloEscolinha, turmasPreenchidas, turmaVazia, type EscolinhaSite } from "@/lib/institucional/escolinhasSite";
 import { FormEscolinhaSite } from "./FormEscolinhaSite";
 
 /** Formulário aberto: nova (id nulo) ou edição. */
@@ -31,19 +34,31 @@ type Edicao = { id: string | null; dados: Omit<EscolinhaSite, "id"> } | null;
 export function AbaEscolinhasSite() {
   const { escolinhas, carregando, erro, salvar, alternarVisibilidade, excluir } = useEscolinhasSite();
   const { arena } = useArena();
+  const { sincronizarAgenda, liberarAgenda } = useAgendaEscolinha();
+  const quadrasCatalogo = useQuadrasCatalogo();
+  const horarios = useHorariosCatalogo();
+  const quadras = quadrasCatalogo.map((q) => ({ id: q.id, nome: q.descricao }));
+  const nomeQuadra = (id: string) => quadras.find((q) => q.id === id)?.nome ?? "quadra";
+  const whatsappArena = normalizarWhatsApp(arena?.whatsapp ?? "");
   const [edicao, setEdicao] = useState<Edicao>(null);
 
-  const abrirNova = () => setEdicao({ id: null, dados: escolinhaVazia(escolinhas.length + 1) });
+  const abrirNova = () => {
+    const dados = escolinhaVazia(escolinhas.length + 1);
+    setEdicao({ id: null, dados: { ...dados, turmas: [turmaVazia(quadras[0]?.id)] } });
+  };
   const abrirEdicao = (e: EscolinhaSite) => {
     const { id, ...dados } = e;
-    setEdicao({ id, dados: { ...dados, turmas: dados.turmas.length ? dados.turmas : escolinhaVazia().turmas } });
+    setEdicao({ id, dados: { ...dados, turmas: dados.turmas.length ? dados.turmas : [turmaVazia(quadras[0]?.id)] } });
   };
 
   const remover = async (e: EscolinhaSite) => {
-    if (!window.confirm(`Excluir a escolinha "${tituloEscolinha(e)}" do site? Isso não pode ser desfeito.`)) return;
+    const naAgenda = e.turmas.filter((t) => t.contratoId).length;
+    const aviso = naAgenda ? " Os horários dela na agenda são liberados de hoje em diante." : "";
+    if (!window.confirm(`Excluir a escolinha "${tituloEscolinha(e)}"?${aviso} Isso não pode ser desfeito.`)) return;
     try {
+      await liberarAgenda(e.turmas);
       await excluir(e.id);
-      toast.success("Escolinha excluída do site.");
+      toast.success(naAgenda ? "Escolinha excluída e horários liberados na agenda." : "Escolinha excluída do site.");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível excluir.");
     }
@@ -63,7 +78,8 @@ export function AbaEscolinhasSite() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-xs text-slate-400 max-w-xl">
           As escolinhas cadastradas aqui aparecem na seção <strong>Escolinhas</strong> do site, com as turmas e o botão
-          &ldquo;Quero uma vaga&rdquo;. Os horários que ocupam quadra ficam na aba <strong>Horários na agenda</strong>.
+          &ldquo;Quero uma vaga&rdquo;. As turmas marcadas com <strong>Bloquear na agenda</strong> reservam a quadra
+          sozinhas; dá para conferir na aba <strong>Horários na agenda</strong>.
         </p>
         <button type="button" id="btn-admin-nova-escolinha" onClick={abrirNova} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-bold shrink-0">
           <Plus className="w-4 h-4" />
@@ -94,10 +110,19 @@ export function AbaEscolinhasSite() {
                 </div>
                 <ul className="space-y-1 text-xs text-slate-300 mb-3">
                   {turmasPreenchidas(e.turmas).map((t, i) => (
-                    <li key={i} className="flex gap-2">
-                      <span className="font-semibold">{t.dias}</span>
-                      <span className="text-amber-300">{t.horas}</span>
-                      {t.categoria && <span className="text-slate-400 ml-auto">{t.categoria}</span>}
+                    <li key={i}>
+                      <div className="flex gap-2">
+                        <span className="font-semibold">{t.dias}</span>
+                        <span className="text-amber-300">{t.horas}</span>
+                        {t.categoria && <span className="text-slate-400 ml-auto">{t.categoria}</span>}
+                      </div>
+                      {t.contratoId ? (
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-400">
+                          <CalendarCheck className="w-3 h-3" /> Na agenda · {nomeQuadra(t.quadraId)}
+                        </span>
+                      ) : t.bloquearAgenda ? (
+                        <span className="text-[10px] text-amber-400">Ainda não bloqueada na agenda (edite e salve de novo)</span>
+                      ) : null}
                     </li>
                   ))}
                 </ul>
@@ -131,12 +156,32 @@ export function AbaEscolinhasSite() {
         <FormEscolinhaSite
           inicial={edicao.dados}
           editando={edicao.id !== null}
-          whatsappArena={normalizarWhatsApp(arena?.whatsapp ?? "")}
+          whatsappArena={whatsappArena}
+          quadras={quadras}
+          horarios={horarios}
           aoEnviarFoto={(arquivo) => uploadImagemInstitucional(arquivo, "professores")}
           aoCancelar={() => setEdicao(null)}
-          aoSalvar={async (dados) => {
-            await salvar(edicao.id, dados);
-            toast.success(edicao.id ? "Escolinha atualizada no site." : "Escolinha publicada no site.");
+          aoSalvar={async (dados, periodo) => {
+            const salva = await salvar(edicao.id, dados);
+            const agenda = await sincronizarAgenda(salva, edicao.dados.turmas, periodo, whatsappArena);
+            const mudouVinculo = agenda.turmas.some((t, i) => t.contratoId !== salva.turmas[i]?.contratoId);
+            if (mudouVinculo) {
+              const { id, ...resto } = salva;
+              await salvar(id, { ...resto, turmas: agenda.turmas });
+            }
+            const partes = [
+              edicao.id ? "Escolinha atualizada no site." : "Escolinha publicada no site.",
+              agenda.criadas ? `${agenda.criadas} turma(s) bloqueada(s) na agenda.` : "",
+              agenda.encerradas ? `${agenda.encerradas} horário(s) liberado(s) na agenda.` : "",
+            ].filter(Boolean);
+            if (agenda.falhas.length) {
+              toast.warning(partes.join(" "), {
+                description: `Não deu para bloquear na agenda: ${agenda.falhas.join(" | ")}`,
+                duration: 15000,
+              });
+            } else {
+              toast.success(partes.join(" "));
+            }
             setEdicao(null);
           }}
         />

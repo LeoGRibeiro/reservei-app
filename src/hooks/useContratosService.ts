@@ -324,6 +324,7 @@ export function useContratosService() {
         ...(dados.contatoWhatsapp !== undefined ? { contatoWhatsapp: dados.contatoWhatsapp } : {}),
         ...(dados.fotoUrl !== undefined ? { fotoUrl: dados.fotoUrl } : {}),
         ...(dados.faixaEtaria !== undefined ? { faixaEtaria: dados.faixaEtaria } : {}),
+        ...(dados.escolinhaId !== undefined ? { escolinhaId: dados.escolinhaId } : {}),
         ...(dados.ativo !== undefined ? { ativo: dados.ativo } : {}),
       };
 
