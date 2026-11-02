@@ -16,6 +16,7 @@
  * autoria do checkout para gerar o Pix, consultar o status, cancelar o lock e vincular a conta.
  */
 
+import { motivoFechamentoParaAtleta, quadraFechadaEm } from "@/lib/arena/bloqueioQuadra";
 import { VERSAO_TERMOS } from "@/lib/legal/termos";
 import { randomUUID } from "node:crypto";
 import { supabaseAdmin } from "@/lib/supabase/adminClient";
@@ -235,8 +236,11 @@ export async function criarReservaCheckout(
   if (!linhaQuadra) throw new ErroHttp("Quadra não encontrada.", 404);
   const quadra = mapearLinhaParaQuadra(linhaQuadra as Record<string, unknown>);
 
-  // 2. Calendário, funcionamento e antecedência
+  // 2. Calendário, funcionamento e antecedência; quadra fechada (reforma, evento) não aceita reserva
   validarCalendario(arena, dados, agora);
+  if (quadraFechadaEm(quadra, dados.data)) {
+    throw new ErroHttp(motivoFechamentoParaAtleta(quadra), 422);
+  }
 
   // 3. Bloqueio de cadastro (pelo WhatsApp informado ou pela conta autenticada)
   const filtroBloqueio = usuarioId

@@ -259,6 +259,16 @@ describe("criarReservaCheckout", () => {
     await expect(criarReservaCheckout({ ...PEDIDO, data: "2026-10-21", horarios: ["14:00"] }, null, meioDia)).resolves.toBeDefined();
   });
 
+  it("quadra fechada (reforma, evento) recusa a reserva no período com o motivo (422)", async () => {
+    mocks.quadra = { ...QUADRA, bloqueio_inicio: "2026-10-22", bloqueio_fim: null, bloqueio_motivo: "Reforma" };
+    const erro = await erroDe(criarReservaCheckout(PEDIDO, null, AGORA));
+    expect(erro.status).toBe(422);
+    expect(erro.message).toBe("Quadra fechada nesta data: Reforma.");
+    expect(inserts()).toHaveLength(0);
+    mocks.quadra = { ...QUADRA, bloqueio_inicio: "2026-10-23", bloqueio_fim: "2026-10-25", bloqueio_motivo: "Evento" };
+    await expect(criarReservaCheckout(PEDIDO, null, AGORA)).resolves.toBeDefined();
+  });
+
   it("recusa telefone bloqueado (403)", async () => {
     mocks.bloqueados = [{ id: "u-bloq" }];
     expect((await erroDe(criarReservaCheckout(PEDIDO, null, AGORA))).status).toBe(403);

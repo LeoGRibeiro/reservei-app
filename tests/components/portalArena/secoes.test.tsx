@@ -74,7 +74,7 @@ describe("CardQuadra", () => {
     expect(botao).toHaveTextContent("Indisponível");
     fireEvent.click(botao);
     expect(p.aoAlternar).not.toHaveBeenCalled();
-    expect(screen.getByRole("status")).toHaveTextContent(`12:00: ${motivo}`);
+    expect(screen.getByRole("status")).toHaveTextContent(`12:00 · ${motivo}`);
   });
 
   it("encaminha os toques: livre alterna, aula leva à turma, sua reserva leva à conta", () => {

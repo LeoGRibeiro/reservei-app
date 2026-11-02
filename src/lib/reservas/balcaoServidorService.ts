@@ -108,6 +108,7 @@ async function carregarReserva(membro: MembroArena, reservaId: string): Promise<
 
 async function gravar(reservaId: string, arenaId: string, mudanca: Record<string, unknown>): Promise<void> {
   const { error } = await supabaseAdmin.from("reservas").update(mudanca).eq("id", reservaId).eq("arena_id", arenaId);
+  if (error && /Quadra fechada/i.test(error.message)) throw new ErroHttp("A quadra está fechada nesta data (reforma ou evento). Escolha outra quadra ou data.", 422);
   if (error?.code === "23P01") throw new ErroHttp("Esse horário já está ocupado nesta quadra. Escolha outro.", 409);
   if (error) throw new Error(error.message);
 }
@@ -411,6 +412,7 @@ export async function criarReservaBalcao(membro: MembroArena, dados: NovaReserva
     pago_em: pago > 0 ? instante : null,
     criada_em: instante,
   });
+  if (error && /Quadra fechada/i.test(error.message)) throw new ErroHttp("A quadra está fechada nesta data (reforma ou evento). Escolha outra quadra ou data.", 422);
   if (error?.code === "23P01") throw new ErroHttp("Esse horário já está ocupado nesta quadra. Escolha outro.", 409);
   if (error) throw new Error(error.message);
 

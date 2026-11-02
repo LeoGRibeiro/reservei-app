@@ -71,7 +71,7 @@ export function CardQuadra({ quadra, indice, periodos, situacao, preco, selecion
               aria-disabled="true"
               title={s.motivo}
               aria-label={`${faixa}, indisponível. ${s.motivo}`}
-              onClick={() => setMotivo(`${hh(h)}: ${s.motivo}`)}
+              onClick={() => setMotivo(`${hh(h)} · ${s.motivo}`)}
             >
               <b className="num">{hh(h)}</b>
               <span>Indisponível</span>

@@ -27,6 +27,7 @@ import { useHorariosCatalogo, useQuadrasCatalogo } from "@/store/useCatalogoAren
 import { LockService } from "@/lib/pagamento/lockService";
 import { descreverStatus, dataExtensa, type TomStatus } from "@/lib/admin/formatos";
 import { hrefReserva } from "@/lib/admin/navegacao";
+import { quadraFechadaEm } from "@/lib/arena/bloqueioQuadra";
 import { getHoje } from "@/lib/constants";
 import { somarDias } from "@/lib/datas/fusoHorario";
 import { gerarDiasCalendarioMensal, getNomeMesExtenso } from "@/lib/adminAgenda/adminAgendaService";
@@ -84,6 +85,11 @@ function GradeDia({
             {quadras.map((q) => (
               <th key={q.id} scope="col" className="px-2 py-2.5 text-left text-sm font-semibold text-painel-tinta">
                 {q.descricao}
+                {quadraFechadaEm(q, data) && (
+                  <span className="block text-xs font-normal text-red-800" title={q.bloqueioMotivo}>
+                    Fechada{q.bloqueioMotivo ? ` · ${q.bloqueioMotivo}` : ""}
+                  </span>
+                )}
               </th>
             ))}
           </tr>
@@ -99,7 +105,11 @@ function GradeDia({
                 if (!r) {
                   return (
                     <td key={q.id} className="p-1">
-                      {passado ? (
+                      {quadraFechadaEm(q, data) ? (
+                        <span className="flex h-14 items-center justify-center rounded-md bg-painel-elevada text-xs text-painel-suave" aria-label={`Fechada: ${q.descricao} às ${h}`}>
+                          Fechada
+                        </span>
+                      ) : passado ? (
                         <span className="block h-14" />
                       ) : (
                         <button

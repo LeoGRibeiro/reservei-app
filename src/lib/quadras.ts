@@ -72,6 +72,10 @@ export interface Quadra {
   descricao: string;
   /** Esportes praticados nesta quadra (cadastrados pela arena) */
   esportes?: Esporte[];
+  /** Fechamento da quadra inteira (reforma, evento) — ver `lib/arena/bloqueioQuadra` */
+  bloqueioInicio?: string;
+  bloqueioFim?: string;
+  bloqueioMotivo?: string;
 }
 
 /**

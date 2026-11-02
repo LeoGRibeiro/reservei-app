@@ -159,6 +159,7 @@ export type SituacaoHorario =
  *
  * @param params.minhas Ids das reservas ativas do atleta logado
  * @param params.antecedenciaMin Antecedência mínima da arena, em minutos (0 = até começar)
+ * @param params.fechada Motivo, quando a quadra inteira está fechada no dia (vira "Indisponível")
  */
 export function situacaoDoHorario(params: {
   quadraId: string;
@@ -169,8 +170,10 @@ export function situacaoDoHorario(params: {
   antecedenciaMin: number;
   indice: Map<string, LinhaGrade>;
   minhas: Map<string, string>;
+  /** Motivo quando a quadra inteira está fechada neste dia (reforma, evento); ausente = aberta */
+  fechada?: string | null;
 }): SituacaoHorario {
-  const { quadraId, dia, h, hoje, agoraMin, antecedenciaMin, indice, minhas } = params;
+  const { quadraId, dia, h, hoje, agoraMin, antecedenciaMin, indice, minhas, fechada } = params;
   const chave = chaveHorario(dia, quadraId, h);
   const minha = minhas.get(chave);
   if (minha) return { tipo: "meu", reservaId: minha };
@@ -180,6 +183,7 @@ export function situacaoDoHorario(params: {
     return { tipo: "aula", escolinhaId: ocupacao.escolinhaId, esporte: ocupacao.esporte ?? "" };
   }
   if (ocupacao) return { tipo: "ocupado" };
+  if (fechada) return { tipo: "indisponivel", motivo: fechada };
   const antecedencia = Math.max(0, antecedenciaMin);
   if (dia === hoje && h * 60 < agoraMin + antecedencia) {
     return { tipo: "indisponivel", motivo: `A arena fecha as reservas pelo site ${textoAntecedencia(antecedencia)} antes do horário.` };

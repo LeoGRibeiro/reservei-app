@@ -297,6 +297,47 @@ describe("tabelas do portal (migração 2026-10-30-b)", () => {
     });
   });
 
+  describe("quadra fechada por período (migração 2026-11-02-f)", () => {
+    const reservar = (id: string, data: string, tipo = "avulsa") =>
+      db.query(
+        `INSERT INTO public.reservas (id, arena_id, quadra_id, data, horarios, hora_inicio, hora_fim, nome_cliente, whatsapp_cliente,
+           cpf_cliente, valor_total, valor_sinal, valor_pendente, status, tipo_reserva, criada_em)
+         VALUES ($1, 'arena-belem', 'arena-belem-q2', $2, '{19:00}', '19:00', '20:00', 'Bia', '91999990002', '', 100, 50, 50, 'pendente', $3, now())`,
+        [id, data, tipo]
+      );
+    const fechar = (inicio: string | null, fim: string | null, motivo: string | null) =>
+      db.query("UPDATE public.quadras SET bloqueio_inicio = $1, bloqueio_fim = $2, bloqueio_motivo = $3 WHERE id = 'arena-belem-q2'", [inicio, fim, motivo]);
+
+    it("reserva antiga no período continua; reserva nova é barrada com o motivo", async () => {
+      await reservar("fech-antiga", "2032-05-10");
+      await fechar("2032-05-09", "2032-05-12", "Reforma do piso");
+      await expect(reservar("fech-nova", "2032-05-11")).rejects.toThrow(/Quadra fechada nesta data \(Reforma do piso\)/);
+      // Fora do período, segue normal
+      await reservar("fech-depois", "2032-05-13");
+      // A reserva antiga pode ser quitada sem esbarrar na trava
+      await db.query("UPDATE public.reservas SET status = 'confirmada', valor_pendente = 0 WHERE id = 'fech-antiga'");
+    });
+
+    it("bloqueio de horário do painel passa; reativar uma cancelada no período é barrado", async () => {
+      await reservar("fech-bloqueio", "2032-05-11", "manutencao_bloqueio");
+      await db.query("UPDATE public.reservas SET status = 'cancelada' WHERE id = 'fech-antiga'");
+      await expect(db.query("UPDATE public.reservas SET status = 'pendente' WHERE id = 'fech-antiga'")).rejects.toThrow(/Quadra fechada/);
+    });
+
+    it("'até eu liberar' fecha qualquer data futura; reabrir libera", async () => {
+      await fechar("2032-06-01", null, "Evento");
+      await expect(reservar("fech-longe", "2033-01-20")).rejects.toThrow(/Quadra fechada/);
+      await fechar(null, null, null);
+      await reservar("fech-reaberta", "2033-01-20");
+    });
+
+    it("período invertido ou motivo longo demais são recusados", async () => {
+      await expect(fechar("2032-07-10", "2032-07-01", "X")).rejects.toThrow(/quadras_bloqueio_periodo_check/);
+      await expect(fechar(null, "2032-07-01", null)).rejects.toThrow(/quadras_bloqueio_periodo_check/);
+      await expect(fechar("2032-07-01", null, "x".repeat(121))).rejects.toThrow(/quadras_bloqueio_motivo_check/);
+    });
+  });
+
   it("pedidos de vaga e Clube entram na publicação do tempo real", async () => {
     const { rows } = await db.query(
       "SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime' ORDER BY tablename"

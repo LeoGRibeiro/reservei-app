@@ -1,7 +1,7 @@
 /**
  * @file servidor.mjs
- * @description Supabase local para testes automatizados: PGlite + REST (PostgREST), Auth (GoTrue)
- * e Realtime num único servidor HTTP. O schema, as migrações e os seeds são os arquivos reais do
+ * @description Supabase local para testes automatizados: PGlite + REST (PostgREST), Auth (GoTrue),
+ * Realtime e Storage (envio e leitura pública de imagens) num único servidor HTTP. O schema, as migrações e os seeds são os arquivos reais do
  * projeto, e o RLS vale de verdade (cada requisição roda com o papel do JWT).
  *
  * Uso: `node tests/supabase-local/servidor.mjs` (porta em SUPABASE_LOCAL_PORTA, padrão 54329).
@@ -15,6 +15,7 @@ import { criarBanco, importarDoSrc } from "./banco.mjs";
 import { executarRest } from "./postgrest.mjs";
 import { criarAuth, CHAVES } from "./gotrue.mjs";
 import { criarRealtime } from "./realtime.mjs";
+import { criarStorage } from "./storage.mjs";
 
 const moduloWs = await importarDoSrc("ws");
 const WebSocketServer = moduloWs.WebSocketServer ?? moduloWs.default.WebSocketServer;
@@ -51,6 +52,7 @@ export async function iniciarSupabaseLocal(opcoes = {}) {
   const auth = criarAuth(db);
   const wss = new WebSocketServer({ noServer: true });
   const realtime = criarRealtime(wss);
+  const storage = criarStorage(db);
 
   // O PGlite atende uma consulta por vez: as requisições entram numa fila
   let fila = Promise.resolve();
@@ -68,6 +70,26 @@ export async function iniciarSupabaseLocal(opcoes = {}) {
     }
     const url = new URL(req.url, "http://localhost");
     const cabecalhos = Object.fromEntries(Object.entries(req.headers).map(([k, v]) => [k.toLowerCase(), String(v)]));
+
+    // Storage: corpo binário (multipart) e resposta que pode ser o próprio arquivo
+    if (url.pathname.startsWith("/storage/v1/")) {
+      const partes = [];
+      for await (const p of req) partes.push(p);
+      let r;
+      try {
+        r = await emFila(() => storage({ metodo: req.method, caminho: url.pathname.slice(12), cabecalhos, corpo: partes.length ? Buffer.concat(partes) : null }));
+      } catch (err) {
+        r = { status: 500, corpo: { message: String(err?.message ?? err) } };
+      }
+      if (r.binario) {
+        res.writeHead(r.status, { ...CORS, ...(r.cabecalhos ?? {}) });
+        res.end(r.binario);
+      } else {
+        res.writeHead(r.status, { ...CORS, "content-type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify(r.corpo ?? {}));
+      }
+      return;
+    }
     const corpo = ["POST", "PATCH", "PUT", "DELETE"].includes(req.method) ? await lerCorpo(req) : null;
     let resposta;
     try {

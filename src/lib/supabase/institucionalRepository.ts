@@ -263,7 +263,7 @@ export async function excluirGaleriaItem(id: string): Promise<boolean> {
  */
 export async function uploadImagemInstitucional(
   arquivo: File,
-  pasta: "galeria" | "professores" = "galeria"
+  pasta: "galeria" | "professores" | "quadras" = "galeria"
 ): Promise<{ success: boolean; url?: string; error?: string }> {
   if (!arquivo.type.startsWith("image/")) {
     return { success: false, error: "Envie um arquivo de imagem (JPG, PNG ou WebP)." };

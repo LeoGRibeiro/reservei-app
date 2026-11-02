@@ -62,6 +62,11 @@ export interface QuadraPortal {
   fotoPosicao?: string;
   fotoDescricao?: string;
   ordem: number;
+  /** Quadra fechada a partir deste dia (reforma, evento) */
+  bloqueioInicio?: string;
+  /** Último dia fechado; vazio com início = até a arena liberar */
+  bloqueioFim?: string;
+  bloqueioMotivo?: string;
 }
 
 /** Item "Na arena" da seção Estrutura: parte em negrito + resto. */

@@ -8,6 +8,7 @@
 
 "use client";
 
+import { motivoFechamentoParaAtleta, quadraFechadaEm } from "@/lib/arena/bloqueioQuadra";
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import {
   SELECAO_VAZIA,
@@ -572,7 +573,17 @@ function ConteudoPortal({ dados, visaoInicial = "portal", abaInicial = "reservas
               indice={i}
               periodos={periodos}
               situacao={(h) =>
-                situacaoDoHorario({ quadraId: q.id, dia, h, hoje, agoraMin, antecedenciaMin: arena.antecedenciaMinimaMinutos, indice, minhas })
+                situacaoDoHorario({
+                  quadraId: q.id,
+                  dia,
+                  h,
+                  hoje,
+                  agoraMin,
+                  antecedenciaMin: arena.antecedenciaMinimaMinutos,
+                  indice,
+                  minhas,
+                  fechada: quadraFechadaEm(q, dia) ? motivoFechamentoParaAtleta(q) : null,
+                })
               }
               preco={(h) => precoDaHora(q, precos, dia, h)}
               selecionadas={selecao.quadraId === q.id ? selecao.horas : []}

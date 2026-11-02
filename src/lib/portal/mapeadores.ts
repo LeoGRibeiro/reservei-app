@@ -119,6 +119,9 @@ export function mapearQuadraPortal(row: Linha): QuadraPortal {
     fotoPosicao: posicao(row.foto_posicao),
     fotoDescricao: texto(row.foto_descricao),
     ordem: numero(row.ordem) ?? 0,
+    bloqueioInicio: texto(row.bloqueio_inicio)?.slice(0, 10),
+    bloqueioFim: texto(row.bloqueio_fim)?.slice(0, 10),
+    bloqueioMotivo: texto(row.bloqueio_motivo),
   };
 }
 

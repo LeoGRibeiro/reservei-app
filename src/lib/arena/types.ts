@@ -127,6 +127,18 @@ export interface Quadra {
   criadaEm: string;
   /** Data da última alteração das configurações da quadra */
   atualizadaEm?: string;
+  /** Foto mostrada no card da quadra no site */
+  fotoUrl?: string;
+  /** Enquadramento da foto ("50% 40%", vira `object-position`) */
+  fotoPosicao?: string;
+  /** Texto alternativo da foto (leitores de tela) */
+  fotoDescricao?: string;
+  /** Quadra fechada a partir deste dia (YYYY-MM-DD); ausente = aberta */
+  bloqueioInicio?: string;
+  /** Último dia fechado (inclusive); ausente com `bloqueioInicio` = "até eu liberar" */
+  bloqueioFim?: string;
+  /** Motivo do fechamento (ex.: "Reforma do piso") */
+  bloqueioMotivo?: string;
 }
 
 /**

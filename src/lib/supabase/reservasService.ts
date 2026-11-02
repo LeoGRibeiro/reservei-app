@@ -238,6 +238,9 @@ export type ResultadoGravacao = { ok: true } | { ok: false; erro: string };
  * @param erro Erro do PostgREST
  */
 export function mensagemErroReserva(erro: { code?: string; message: string }): string {
+  if (/Quadra fechada/i.test(erro.message)) {
+    return "A quadra está fechada nesta data (Quadras e preços → Reabrir). Escolha outra quadra ou data.";
+  }
   if (erro.code === "23P01" || /Horário já ocupado/i.test(erro.message)) {
     return "Esse horário já está ocupado nesta quadra. Atualize a agenda e escolha outro.";
   }
@@ -546,4 +549,59 @@ export function subscreverReservasSupabase(
     cancelado = true;
     if (canal) void supabase.removeChannel(canal);
   };
+}
+
+/** Reserva que cai num período de fechamento da quadra (para o dono decidir antes de fechar). */
+export interface ReservaNoCaminho {
+  id: string;
+  data: string;
+  horaInicio: string;
+  horaFim: string;
+  nomeCliente: string;
+}
+
+/**
+ * Reservas ativas de uma quadra num período (sem os bloqueios de horário do painel). Usado ao fechar
+ * a quadra inteira: elas continuam valendo e o painel lista para o dono cancelar ou remarcar.
+ *
+ * @param quadraId Quadra
+ * @param inicio Primeiro dia (YYYY-MM-DD)
+ * @param fim Último dia; vazio = sem fim ("até eu liberar")
+ * @returns Até 100 reservas em ordem de data, ou null se a consulta falhar
+ *
+ * @example
+ * ```ts
+ * const noCaminho = await listarReservasDaQuadraNoPeriodo("q2", "2026-11-10", null);
+ * ```
+ */
+export async function listarReservasDaQuadraNoPeriodo(quadraId: string, inicio: string, fim: string | null): Promise<ReservaNoCaminho[] | null> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    let consulta = supabase
+      .from("reservas")
+      .select("id, data, hora_inicio, hora_fim, nome_cliente, tipo_reserva")
+      .eq("quadra_id", quadraId)
+      .gte("data", inicio)
+      .in("status", ["confirmada", "pendente", "em_processamento"])
+      .neq("tipo_reserva", "manutencao_bloqueio")
+      .order("data")
+      .order("hora_inicio")
+      .limit(100);
+    if (fim) consulta = consulta.lte("data", fim);
+    const { data, error } = await consulta;
+    if (error) {
+      console.error("[reservasService] Erro ao listar reservas da quadra:", error.message);
+      return null;
+    }
+    return (data ?? []).map((r) => ({
+      id: String(r.id),
+      data: String(r.data).slice(0, 10),
+      horaInicio: String(r.hora_inicio ?? ""),
+      horaFim: String(r.hora_fim ?? ""),
+      nomeCliente: String(r.nome_cliente ?? ""),
+    }));
+  } catch (err) {
+    console.error("[reservasService] Erro inesperado ao listar reservas da quadra:", err);
+    return null;
+  }
 }

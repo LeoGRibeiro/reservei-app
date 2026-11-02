@@ -197,6 +197,14 @@ describe("estados do horário", () => {
     expect(situacaoDoHorario({ ...base, indice: comGrupo, h: 21 })).toEqual({ tipo: "ocupado" });
   });
 
+  it("quadra fechada no dia: horário livre vira 'Indisponível' com o motivo; ocupado e encerrado continuam", () => {
+    const fechada = "Quadra fechada nesta data: Reforma.";
+    expect(situacaoDoHorario({ ...base, h: 18, fechada })).toEqual({ tipo: "indisponivel", motivo: fechada });
+    expect(situacaoDoHorario({ ...base, h: 19, fechada }).tipo).toBe("ocupado");
+    expect(situacaoDoHorario({ ...base, h: 8, fechada }).tipo).toBe("encerrado");
+    expect(situacaoDoHorario({ ...base, h: 18, fechada: null }).tipo).toBe("livre");
+  });
+
   it("lock de checkout vencido não ocupa", () => {
     expect(situacaoDoHorario({ ...base, h: 20 }).tipo).toBe("livre");
   });

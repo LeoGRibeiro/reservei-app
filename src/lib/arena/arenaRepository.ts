@@ -117,7 +117,54 @@ export function mapearLinhaParaQuadra(row: Record<string, unknown>): Quadra {
     ativa: Boolean(row.ativa ?? true),
     criadaEm: String(row.criado_em || new Date().toISOString()),
     atualizadaEm: row.atualizado_em ? String(row.atualizado_em) : undefined,
+    fotoUrl: row.foto_url ? String(row.foto_url) : undefined,
+    fotoPosicao: row.foto_posicao ? String(row.foto_posicao) : undefined,
+    fotoDescricao: row.foto_descricao ? String(row.foto_descricao) : undefined,
+    bloqueioInicio: row.bloqueio_inicio ? String(row.bloqueio_inicio).slice(0, 10) : undefined,
+    bloqueioFim: row.bloqueio_fim ? String(row.bloqueio_fim).slice(0, 10) : undefined,
+    bloqueioMotivo: row.bloqueio_motivo ? String(row.bloqueio_motivo) : undefined,
   };
+}
+
+/**
+ * Campos da quadra que viram colunas no update (só os presentes no objeto; presente com
+ * `undefined` ou "" limpa a coluna, ex.: reabrir a quadra ou tirar a foto).
+ *
+ * @param dados Campos a gravar
+ * @returns Payload em snake_case para o PostgREST
+ *
+ * @example
+ * ```ts
+ * quadraParaPayload({ bloqueioInicio: undefined, bloqueioFim: undefined }); // { bloqueio_inicio: null, bloqueio_fim: null }
+ * ```
+ */
+export function quadraParaPayload(dados: Partial<Quadra>): Record<string, unknown> {
+  const payload: Record<string, unknown> = {};
+  const mapa: [keyof Quadra, string][] = [
+    ["nome", "nome"],
+    ["numero", "numero"],
+    ["descricao", "descricao"],
+    ["tipoPiso", "tipo_piso"],
+    ["esportes", "esportes"],
+    ["coberta", "coberta"],
+    ["iluminacao", "iluminacao"],
+    ["valorHoraPadrao", "valor_hora_padrao"],
+    ["ordem", "ordem"],
+    ["ativa", "ativa"],
+    ["fotoUrl", "foto_url"],
+    ["fotoPosicao", "foto_posicao"],
+    ["fotoDescricao", "foto_descricao"],
+    ["bloqueioInicio", "bloqueio_inicio"],
+    ["bloqueioFim", "bloqueio_fim"],
+    ["bloqueioMotivo", "bloqueio_motivo"],
+  ];
+  for (const [campo, coluna] of mapa) {
+    if (campo in dados) {
+      const valor = dados[campo];
+      payload[coluna] = valor === undefined || valor === "" ? null : valor;
+    }
+  }
+  return payload;
 }
 
 /**
@@ -482,6 +529,9 @@ export const ArenaRepository = {
         valor_hora_padrao: dados.valorHoraPadrao,
         ordem: dados.ordem,
         ativa: dados.ativa,
+        foto_url: dados.fotoUrl || null,
+        foto_posicao: dados.fotoPosicao || null,
+        foto_descricao: dados.fotoDescricao || null,
         criado_em: agora,
       };
 
@@ -521,19 +571,9 @@ export const ArenaRepository = {
 
     try {
       const payload: Record<string, unknown> = {
+        ...quadraParaPayload(dados),
         atualizado_em: new Date().toISOString(),
       };
-
-      if (dados.nome !== undefined) payload.nome = dados.nome;
-      if (dados.numero !== undefined) payload.numero = dados.numero;
-      if (dados.descricao !== undefined) payload.descricao = dados.descricao;
-      if (dados.tipoPiso !== undefined) payload.tipo_piso = dados.tipoPiso;
-      if (dados.esportes !== undefined) payload.esportes = dados.esportes;
-      if (dados.coberta !== undefined) payload.coberta = dados.coberta;
-      if (dados.iluminacao !== undefined) payload.iluminacao = dados.iluminacao;
-      if (dados.valorHoraPadrao !== undefined) payload.valor_hora_padrao = dados.valorHoraPadrao;
-      if (dados.ordem !== undefined) payload.ordem = dados.ordem;
-      if (dados.ativa !== undefined) payload.ativa = dados.ativa;
 
       const { data, error } = await supabase
         .from("quadras")
@@ -625,6 +665,41 @@ export const ArenaRepository = {
       return mapearLinhaParaPreco(data);
     } catch (err) {
       console.error("[ArenaRepository] Erro inesperado ao criar regra de preço:", err);
+      return null;
+    }
+  },
+
+  /**
+   * Atualiza uma tarifa (nome, dias, início, fim e valor).
+   *
+   * @param id Identificador da tarifa
+   * @param dados Campos a alterar
+   * @returns Tarifa atualizada ou null em caso de falha
+   */
+  async atualizarPreco(
+    id: string,
+    dados: Partial<Pick<QuadraPreco, "diasSemana" | "horaInicio" | "horaFim" | "valorHora" | "descricao" | "ativo">>
+  ): Promise<QuadraPreco | null> {
+    if (!id) return null;
+    if (!isSupabaseConfigured()) return null;
+
+    try {
+      const payload: Record<string, unknown> = {};
+      if (dados.diasSemana !== undefined) payload.dias_semana = dados.diasSemana;
+      if (dados.horaInicio !== undefined) payload.hora_inicio = dados.horaInicio;
+      if (dados.horaFim !== undefined) payload.hora_fim = dados.horaFim;
+      if (dados.valorHora !== undefined) payload.valor_hora = dados.valorHora;
+      if (dados.descricao !== undefined) payload.descricao = dados.descricao || null;
+      if (dados.ativo !== undefined) payload.ativo = dados.ativo;
+
+      const { data, error } = await supabase.from("quadras_precos").update(payload).eq("id", id).select("*").single();
+      if (error || !data) {
+        console.error(`[ArenaRepository] Erro ao atualizar tarifa '${id}':`, error?.message);
+        return null;
+      }
+      return mapearLinhaParaPreco(data);
+    } catch (err) {
+      console.error(`[ArenaRepository] Erro inesperado ao atualizar tarifa '${id}':`, err);
       return null;
     }
   },

@@ -47,6 +47,9 @@ export function quadrasParaCatalogo(quadras: Quadra[]): QuadraCatalogo[] {
       numero: q.numero,
       descricao: q.nome || q.descricao || `Quadra ${q.numero}`,
       esportes: q.esportes,
+      bloqueioInicio: q.bloqueioInicio,
+      bloqueioFim: q.bloqueioFim,
+      bloqueioMotivo: q.bloqueioMotivo,
     }));
 }
 
