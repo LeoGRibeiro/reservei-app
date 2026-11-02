@@ -35,7 +35,9 @@ export type AcaoAdmin =
   /** Redefinir a senha de um atleta da arena */
   | "redefinir_senha_atleta"
   /** Bloquear ou liberar um cliente nesta arena */
-  | "bloquear_cliente";
+  | "bloquear_cliente"
+  /** Liberar ou recusar a hora grátis do Clube (voucher em análise) */
+  | "analisar_voucher";
 
 /** Ordem hierárquica: cada papel herda o acesso dos anteriores. */
 const NIVEL: Record<ArenaUserRole, number> = { operador: 1, gerente: 2, proprietario: 3 };
@@ -61,6 +63,7 @@ const PAPEL_MINIMO_ACAO: Record<AcaoAdmin, ArenaUserRole> = {
   ver_receita: "gerente",
   redefinir_senha_atleta: "gerente",
   bloquear_cliente: "gerente",
+  analisar_voucher: "gerente",
   gerenciar_equipe: "proprietario",
   configurar_pagamentos: "proprietario",
 };

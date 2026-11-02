@@ -62,13 +62,15 @@ describe("sincronizarFidelidadeServidor", () => {
     mocks.vouchers = [];
   });
 
-  it("gera selos das partidas concluídas e emite o voucher ao atingir a meta", async () => {
+  it("gera selos das partidas concluídas e, ao atingir a meta, emite o pedido de hora grátis em análise", async () => {
     mocks.reservas = [partida("r1", ["19:00", "20:00"], 200)];
 
     const r = await sincronizarFidelidadeServidor("u1", "a1");
 
     expect(r.novosSelos).toBe(1);
-    expect(r.voucherGerado).toMatchObject({ usuarioId: "u1", valorTeto: 100, status: "disponivel" });
+    // Bateu a meta: o pedido nasce "em análise" e só vale depois que o dono liberar
+    expect(r.voucherGerado).toMatchObject({ usuarioId: "u1", valorTeto: 100, status: "em_analise" });
+    expect((escritas("fidelidade_vouchers", "insert")[0].payload as Record<string, unknown>).status).toBe("em_analise");
     const [upsertSelos] = escritas("fidelidade_selos", "upsert");
     expect((upsertSelos.payload as Record<string, unknown>[])[0]).toMatchObject({ arena_id: "a1", reserva_id: "r1", usuario_id: "u1" });
     expect((escritas("fidelidade_vouchers", "insert")[0].payload as Record<string, unknown>).arena_id).toBe("a1");

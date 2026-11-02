@@ -52,6 +52,10 @@ export interface VoucherDbRow {
   expira_em?: string;
   reserva_utilizada_id?: string | null;
   utilizado_em?: string | null;
+  analisado_por?: string | null;
+  analisado_por_nome?: string | null;
+  analisado_em?: string | null;
+  motivo_analise?: string | null;
 }
 
 /**
@@ -155,6 +159,9 @@ export function rowToVoucher(row: VoucherDbRow): VoucherFidelidade {
     expiraEm: row.expira_em ?? "",
     reservaUtilizadaId: row.reserva_utilizada_id ?? null,
     utilizadoEm: row.utilizado_em ?? null,
+    analisadoPorNome: row.analisado_por_nome ?? null,
+    analisadoEm: row.analisado_em ?? null,
+    motivoAnalise: row.motivo_analise ?? null,
   };
 }
 

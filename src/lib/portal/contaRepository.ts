@@ -73,6 +73,8 @@ export interface DadosConta {
   reservas: ReservaAtleta[];
   carimbos: CarimboAtleta[];
   horasGratis: HoraGratis[];
+  /** Horas grátis que bateram a meta e aguardam a arena liberar */
+  horasEmAnalise?: number;
   /** Pedidos que o atleta fez em partidas de outras pessoas */
   pedidosFeitos: PedidoVaga[];
   /** Pedidos recebidos nas partidas do atleta */
@@ -92,7 +94,7 @@ export async function lerConta(arenaId: string, userId: string, hoje: string, ag
     ler("carimbos", supabase.from("fidelidade_selos").select("*").eq("arena_id", arenaId).eq("usuario_id", userId)),
     ler(
       "horas grátis",
-      supabase.from("fidelidade_vouchers").select("*").eq("arena_id", arenaId).eq("usuario_id", userId).eq("status", "disponivel")
+      supabase.from("fidelidade_vouchers").select("*").eq("arena_id", arenaId).eq("usuario_id", userId).in("status", ["disponivel", "em_analise"])
     ),
     ler("pedidos feitos", supabase.from("interesses_vagas").select("*").eq("usuario_id", userId)),
   ]);
@@ -107,7 +109,9 @@ export async function lerConta(arenaId: string, userId: string, hoje: string, ag
   return {
     reservas: minhas,
     carimbos: selos.map(mapearCarimbo),
-    horasGratis: vouchers.map(mapearHoraGratis),
+    // Só as liberadas valem; as "em análise" aparecem como aviso no Clube
+    horasGratis: vouchers.filter((v) => v.status !== "em_analise").map(mapearHoraGratis),
+    horasEmAnalise: vouchers.filter((v) => v.status === "em_analise").length,
     pedidosFeitos: feitos.map(mapearPedido).filter((p) => !idsMinhas.includes(p.reservaId)),
     pedidosRecebidos: recebidos.map(mapearPedido).filter((p) => p.usuarioId !== userId),
   };

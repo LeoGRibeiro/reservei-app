@@ -1076,3 +1076,6 @@ body:has(.pa) { margin: 0; background: #ffffff; }
 @media (max-width: 760px) {
   .pa .ig-grade .post:nth-child(n + 7) { display: none; }
 }
+
+/* Hora grátis aguardando a arena liberar (SPEC/2026-11-02-admin-ajustes-demo.md §10) */
+.pa .cc-analise { margin: 4px 0 12px; padding: 12px 14px; border-radius: 12px; background: var(--pa-marca-clara); color: var(--pa-marca); font-size: 14px; font-weight: 600; }

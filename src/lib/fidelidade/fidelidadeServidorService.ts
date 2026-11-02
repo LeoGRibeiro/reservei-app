@@ -2,7 +2,8 @@
  * @file fidelidadeServidorService.ts
  * @description Casos de uso do programa de fidelidade executados SOMENTE no servidor (service role).
  *
- * - Emissão de selos das partidas concluídas e do voucher automático ao atingir a meta.
+ * - Emissão de selos das partidas concluídas e do pedido de hora grátis ao atingir a meta
+ *   (nasce "em análise"; o dono ou gerente libera ou recusa em {@link analisarVoucher}).
  * - Validação dos vouchers aplicados no checkout (titularidade, arena, status e validade).
  * - Consumo dos vouchers quando a reserva é efetivamente paga ou 100% coberta.
  *
@@ -180,7 +181,9 @@ export async function sincronizarFidelidadeServidor(
   const progresso = calcularProgressoUsuario(usuarioId, [...selosAtuais, ...novos], vouchersAtuais, campanha);
   if (!progresso.podeResgatar) return { voucherGerado: null, novosSelos: novos.length };
 
+  // Bateu a meta: o pedido entra "em análise" e só vale depois que o dono liberar
   const resgate = resgatarVoucherFidelidade(usuarioId, progresso.selosAtivos, campanha);
+  resgate.voucher.status = "em_analise";
   const { error: erroVoucher } = await supabaseAdmin
     .from("fidelidade_vouchers")
     .insert(voucherToRow(resgate.voucher, arenaId));
@@ -197,4 +200,95 @@ export async function sincronizarFidelidadeServidor(
   if (erroResgate) throw new Error(erroResgate.message);
 
   return { voucherGerado: resgate.voucher, novosSelos: novos.length };
+}
+
+// ── Aprovação da hora grátis pelo dono (SPEC/2026-11-02-admin-ajustes-demo.md §10) ──────────────
+
+/** Decisão do dono sobre um pedido de hora grátis. */
+export type DecisaoVoucher = { decisao: "liberar" } | { decisao: "recusar"; motivo: string };
+
+/** Tamanho do motivo da recusa. */
+export const MOTIVO_RECUSA_MIN = 3;
+export const MOTIVO_RECUSA_MAX = 200;
+
+/**
+ * Valida o corpo da requisição de análise.
+ *
+ * @throws ErroHttp 400 com a mensagem para o dono
+ */
+export function validarDecisaoVoucher(corpo: Record<string, unknown>): DecisaoVoucher {
+  if (corpo.decisao === "liberar") return { decisao: "liberar" };
+  if (corpo.decisao === "recusar") {
+    const motivo = String(corpo.motivo ?? "").trim();
+    if (motivo.length < MOTIVO_RECUSA_MIN) throw new ErroHttp("Diga o motivo da recusa (o atleta pode perguntar).", 400);
+    if (motivo.length > MOTIVO_RECUSA_MAX) throw new ErroHttp(`O motivo tem até ${MOTIVO_RECUSA_MAX} letras.`, 400);
+    return { decisao: "recusar", motivo };
+  }
+  throw new ErroHttp("Decisão inválida.", 400);
+}
+
+/**
+ * Nova validade ao liberar: o prazo que o voucher teria a partir da emissão passa a contar do dia
+ * da liberação (o atleta não perde dias enquanto a arena analisa).
+ *
+ * @example
+ * ```ts
+ * validadeAoLiberar("2026-11-01T10:00:00Z", "2026-12-31", "2026-11-05"); // "2027-01-04"
+ * ```
+ */
+export function validadeAoLiberar(criadoEm: string, expiraEm: string, hoje: string): string {
+  const dia = (iso: string) => Date.UTC(Number(iso.slice(0, 4)), Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
+  const prazo = Math.max(1, Math.round((dia(expiraEm.slice(0, 10)) - dia(criadoEm.slice(0, 10))) / 86_400_000));
+  const fim = new Date(dia(hoje) + prazo * 86_400_000);
+  return fim.toISOString().slice(0, 10);
+}
+
+/**
+ * Libera ou recusa um pedido de hora grátis "em análise". Só o dono ou o gerente (verificado na
+ * rota). A troca de status é atômica (`status = 'em_analise'` no filtro): duas pessoas analisando
+ * ao mesmo tempo não liberam duas vezes.
+ *
+ * @param membro Quem analisa (já autorizado para `analisar_voucher`)
+ * @param voucherId Voucher
+ * @param decisao Liberar ou recusar com motivo
+ * @returns Voucher atualizado
+ * @throws ErroHttp 404 (não existe nesta arena) ou 409 (já analisado)
+ */
+export async function analisarVoucher(
+  membro: { userId: string; email: string | null; arenaId: string },
+  voucherId: string,
+  decisao: DecisaoVoucher
+): Promise<VoucherFidelidade> {
+  const { data: atual, error: erroLeitura } = await supabaseAdmin
+    .from("fidelidade_vouchers")
+    .select("*")
+    .eq("id", voucherId)
+    .eq("arena_id", membro.arenaId)
+    .maybeSingle();
+  if (erroLeitura) throw new Error(erroLeitura.message);
+  if (!atual) throw new ErroHttp("Pedido não encontrado nesta arena.", 404);
+  const voucher = rowToVoucher(atual as VoucherDbRow);
+  if (voucher.status !== "em_analise") throw new ErroHttp("Este pedido já foi analisado. Atualize a página.", 409);
+
+  // Nome do membro fica no cadastro do Auth (convite da Equipe); sem nome, vale o e-mail
+  const { data: conta } = await supabaseAdmin.auth.admin.getUserById(membro.userId);
+  const nomeMeta = conta?.user?.user_metadata?.nome;
+  const nome = String((typeof nomeMeta === "string" && nomeMeta.trim()) || membro.email || "Equipe");
+  const agora = new Date().toISOString();
+  const payload =
+    decisao.decisao === "liberar"
+      ? { status: "disponivel", expira_em: validadeAoLiberar(voucher.criadoEm, voucher.expiraEm, obterDataHojeIso()), motivo_analise: null }
+      : { status: "recusado", motivo_analise: decisao.motivo };
+
+  const { data, error } = await supabaseAdmin
+    .from("fidelidade_vouchers")
+    .update({ ...payload, analisado_por: membro.userId, analisado_por_nome: nome, analisado_em: agora })
+    .eq("id", voucherId)
+    .eq("arena_id", membro.arenaId)
+    .eq("status", "em_analise")
+    .select("*");
+  if (error) throw new Error(error.message);
+  const linha = (data ?? [])[0];
+  if (!linha) throw new ErroHttp("Este pedido já foi analisado. Atualize a página.", 409);
+  return rowToVoucher(linha as VoucherDbRow);
 }

@@ -53,8 +53,15 @@ export interface SeloFidelidade {
 
 /**
  * Status possíveis de um voucher de fidelidade.
+ *
+ * - `em_analise`: bateu a meta; aguarda o dono (ou gerente) liberar ou recusar.
+ * - `disponivel`: liberado; o atleta vê e usa no Clube.
+ * - `recusado`: o dono recusou, com motivo.
+ * - `utilizado` / `expirado`: usado numa reserva ou vencido.
+ *
+ * @see SPEC/2026-11-02-admin-ajustes-demo.md §10
  */
-export type StatusVoucherFidelidade = "disponivel" | "utilizado" | "expirado";
+export type StatusVoucherFidelidade = "em_analise" | "disponivel" | "recusado" | "utilizado" | "expirado";
 
 /**
  * Representa a recompensa em forma de voucher gerada para o cliente.
@@ -78,6 +85,12 @@ export interface VoucherFidelidade {
   reservaUtilizadaId?: string | null;
   /** Timestamp do momento em que o voucher foi consumido */
   utilizadoEm?: string | null;
+  /** Quem liberou ou recusou (dono ou gerente) */
+  analisadoPorNome?: string | null;
+  /** Quando foi liberado ou recusado */
+  analisadoEm?: string | null;
+  /** Motivo da recusa (ou observação da liberação) */
+  motivoAnalise?: string | null;
 }
 
 /**

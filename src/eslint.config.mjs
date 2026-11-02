@@ -11,6 +11,8 @@ const eslintConfig = defineConfig([
     ".next/**",
     // Build do servidor de testes ponta a ponta (playwright.config.ts)
     ".next-teste/**",
+    // Build da demonstração local (servidor de dev apontado para o Supabase local)
+    ".next-demo/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

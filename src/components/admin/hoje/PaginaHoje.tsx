@@ -2,7 +2,8 @@
  * @file PaginaHoje.tsx
  * @description Tela inicial do painel (`/admin`): o que está acontecendo na arena hoje. Quem está em
  * quadra agora, os próximos horários, o que falta receber no balcão, Pix para conferir e devoluções
- * pendentes. Gerente e dono também veem o recebido e a ocupação do dia.
+ * pendentes. Gerente e dono também veem o recebido, a ocupação do dia e as horas grátis do Clube
+ * esperando liberação.
  *
  * @see SPEC/2026-11-02-admin-revisao.md (Plano F, tela Hoje)
  */
@@ -14,6 +15,7 @@ import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { CabecalhoPagina, Cartao, EstadoVazio, Numero, StatusReserva, Tabela, Td, Tr, classeBotao } from "@/components/admin/ui";
 import { PainelPagamentosAConfirmar } from "@/components/admin/PainelPagamentosAConfirmar";
+import { AvisoHorasGratis } from "./AvisoHorasGratis";
 import { usePainel } from "@/components/admin/painel/ContextoPainel";
 import { useReservasService } from "@/hooks/useReservasService";
 import { descreverQuadra, useHorariosCatalogo, useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
@@ -89,6 +91,7 @@ export function PaginaHoje() {
         {pode("ver_receita") && <Numero rotulo="Ocupação do dia" valor={`${resumo.ocupacao}%`} detalhe="dos horários de todas as quadras" />}
       </div>
 
+      {pode("analisar_voucher") && <AvisoHorasGratis />}
       <PainelPagamentosAConfirmar arenaSlug={arenaSlug} />
 
       <Cartao titulo="Agora em quadra" descricao={atual ? `Horário das ${atual}` : "A arena ainda não abriu."}>

@@ -280,6 +280,8 @@ function sincronizarFidelidadeLocal(
   let voucher: VoucherFidelidade | null = null;
   if (progresso.podeResgatar) {
     const resgate = resgatarVoucherFidelidade(usuarioId, progresso.selosAtivos, campanha);
+    // Mesma regra do servidor: o pedido nasce "em análise" até o dono liberar
+    resgate.voucher.status = "em_analise";
     const usados = new Map(resgate.selosUtilizados.map((s) => [s.id, s]));
     selos = selos.map((s) => usados.get(s.id) ?? s);
     voucher = resgate.voucher;
@@ -322,4 +324,28 @@ export async function sincronizarFidelidade(
     return { voucherGerado: null };
   }
   return { voucherGerado: res.dados?.voucherGerado ?? null };
+}
+
+/**
+ * Quantas horas grátis do Clube aguardam o dono liberar ou recusar na arena ativa (aviso da tela
+ * Hoje). Sem Supabase, conta no armazenamento local.
+ *
+ * @returns Total de vouchers `em_analise` (0 em caso de erro)
+ */
+export async function contarHorasGratisEmAnalise(): Promise<number> {
+  if (!isSupabaseConfigured()) {
+    return lerLocalStorage<VoucherFidelidade[]>(STORAGE_VOUCHERS_KEY, []).filter((v) => v.status === "em_analise").length;
+  }
+  try {
+    const arenaId = await obterArenaAtivaId();
+    if (!arenaId) return 0;
+    const { count, error } = await supabase
+      .from(TABELA_VOUCHERS)
+      .select("id", { count: "exact", head: true })
+      .eq("arena_id", arenaId)
+      .eq("status", "em_analise");
+    return error ? 0 : (count ?? 0);
+  } catch {
+    return 0;
+  }
 }

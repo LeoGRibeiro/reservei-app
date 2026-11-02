@@ -447,6 +447,13 @@ function AbaClube(props: AreaAtletaProps & { atleta: AtletaPortal; clube: ClubeA
           <h2 className="cc-h" id="cc-cup">
             Horas grátis
           </h2>
+          {(conta.horasEmAnalise ?? 0) > 0 && (
+            <p className="cc-analise" role="status">
+              {conta.horasEmAnalise === 1
+                ? "Sua hora grátis está em análise pela arena. Assim que for liberada, ela aparece aqui."
+                : `Suas ${conta.horasEmAnalise} horas grátis estão em análise pela arena. Assim que forem liberadas, aparecem aqui.`}
+            </p>
+          )}
           {horasGratis.length ? (
             <>
               <ul className="cupons">
@@ -469,7 +476,7 @@ function AbaClube(props: AreaAtletaProps & { atleta: AtletaPortal; clube: ClubeA
               </ul>
               <p className="cc-nota">No site, a hora grátis aparece no ticket da reserva. Reservando pelo WhatsApp, informe o código.</p>
             </>
-          ) : (
+          ) : (conta.horasEmAnalise ?? 0) > 0 ? null : (
             <p className="cc-nada">{`Quando você juntar ${clube.meta} carimbos, a sua hora grátis aparece aqui.`}</p>
           )}
         </section>

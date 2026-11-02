@@ -76,6 +76,10 @@ export function criarSupabaseMock(resolver: (consulta: ConsultaRegistrada) => Re
         data: { user: null },
         error: null,
       }),
+      admin: {
+        /** Conta do Auth com o nome no metadata (como o convite da Equipe grava) */
+        getUserById: async (id: string) => ({ data: { user: { id, email: "dono@arena.com", user_metadata: { nome: "Dono Teste" } } }, error: null }),
+      },
     },
   };
 

@@ -519,7 +519,7 @@ function TelaConfirmada(
             <CarimbosMini cheias={Math.min(antes, meta)} novas={Math.max(0, Math.min(n, meta - antes))} total={meta} />
             <p>
               {antes + n >= meta
-                ? `Você completou ${meta} carimbos e ganhou 1 hora grátis para a próxima reserva.`
+                ? `Você completou ${meta} carimbos! Sua hora grátis vai para análise da arena e aparece no Clube assim que for liberada.`
                 : `Agora são ${antes + n} de ${meta} carimbos. Faltam ${plural(meta - antes - n, "carimbo", "carimbos")} para ganhar 1 hora grátis.`}
             </p>
           </div>

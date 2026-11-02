@@ -338,6 +338,58 @@ describe("tabelas do portal (migração 2026-10-30-b)", () => {
     });
   });
 
+  describe("hora grátis com aprovação do dono (migração 2026-11-02-g)", () => {
+    const OPERADOR = "6f1c2a52-0000-4000-8000-00000000f1d0";
+    const ATLETA = "6f1c2a52-0000-4000-8000-00000000a7a0";
+    const voucher = (id: string, status: string, motivo: string | null = null) =>
+      db.query(
+        `INSERT INTO public.fidelidade_vouchers (id, arena_id, codigo, usuario_id, valor_teto, status, expira_em, motivo_analise)
+         VALUES ($1, 'arena-belem', $1, $2, 100, $3, CURRENT_DATE + 30, $4)`,
+        [id, ATLETA, status, motivo]
+      );
+
+    beforeAll(async () => {
+      await db.query(`INSERT INTO auth.users (id, email) VALUES ($1, 'operador-fid@teste.local') ON CONFLICT DO NOTHING`, [OPERADOR]);
+      await db.query(
+        `INSERT INTO public.arena_usuarios (arena_id, user_id, role, ativo) VALUES ('arena-belem', $1, 'operador', true) ON CONFLICT DO NOTHING`,
+        [OPERADOR]
+      );
+      await voucher("fid-analise", "em_analise");
+    });
+
+    it("aceita os status novos e exige motivo na recusa", async () => {
+      await voucher("fid-recusado", "recusado", "Horas de reservas canceladas");
+      await expect(voucher("fid-recusa-sem-motivo", "recusado")).rejects.toThrow(/fidelidade_vouchers_recusa_check/);
+      await expect(voucher("fid-status-errado", "liberado")).rejects.toThrow(/fidelidade_vouchers_status_check/);
+    });
+
+    it("a equipe lê, mas não libera pela API (só o servidor grava)", async () => {
+      const lidos = await comoPapel("authenticated", "SELECT count(*)::int AS n FROM public.fidelidade_vouchers WHERE id = 'fid-analise'", [], OPERADOR);
+      expect(lidos.rows[0].n).toBe(1);
+      const alterados = await comoPapel(
+        "authenticated",
+        "WITH m AS (UPDATE public.fidelidade_vouchers SET status = 'disponivel' WHERE id = 'fid-analise' RETURNING 1) SELECT count(*)::int AS n FROM m",
+        [],
+        OPERADOR
+      );
+      expect(alterados.rows[0].n).toBe(0);
+      const { rows } = await db.query("SELECT status FROM public.fidelidade_vouchers WHERE id = 'fid-analise'");
+      expect(rows[0].status).toBe("em_analise");
+    });
+
+    it("o atleta lê os próprios vouchers e não altera", async () => {
+      const lidos = await comoPapel("authenticated", "SELECT count(*)::int AS n FROM public.fidelidade_vouchers WHERE id = 'fid-analise'", [], ATLETA);
+      expect(lidos.rows[0].n).toBe(1);
+      const alterados = await comoPapel(
+        "authenticated",
+        "WITH m AS (UPDATE public.fidelidade_vouchers SET status = 'disponivel' WHERE id = 'fid-analise' RETURNING 1) SELECT count(*)::int AS n FROM m",
+        [],
+        ATLETA
+      );
+      expect(alterados.rows[0].n).toBe(0);
+    });
+  });
+
   it("pedidos de vaga e Clube entram na publicação do tempo real", async () => {
     const { rows } = await db.query(
       "SELECT tablename FROM pg_publication_tables WHERE pubname = 'supabase_realtime' ORDER BY tablename"

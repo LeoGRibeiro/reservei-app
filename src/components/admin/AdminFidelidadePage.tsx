@@ -3,11 +3,14 @@
  * Permite ao gestor da arena configurar parâmetros da campanha (horas necessárias,
  * validade em meses, prazo do voucher), acompanhar métricas de retenção (LTV)
  * e inspecionar todos os vouchers e selos emitidos no sistema.
+ *
+ * No topo, a fila {@link FilaHorasGratis}: horas grátis que bateram a meta e esperam o dono (ou
+ * gerente) liberar ou recusar (SPEC/2026-11-02-admin-ajustes-demo.md §10).
  */
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useContext, useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
   Save,
@@ -33,9 +36,22 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase/client";
 import Link from "next/link";
 import { hrefReserva } from "@/lib/admin/navegacao";
 import { Botao, CabecalhoPagina } from "@/components/admin/ui";
+import { chamarApi } from "@/lib/api/clienteApi";
+import { ContextoPainel } from "@/components/admin/painel/ContextoPainel";
+import { FilaHorasGratis, type Decisao } from "./fidelidade/FilaHorasGratis";
+
+/** Status do voucher com nome de negócio. */
+const ROTULO_STATUS_VOUCHER: Record<string, string> = {
+  em_analise: "Em análise",
+  disponivel: "Liberada",
+  recusado: "Recusada",
+  utilizado: "Usada",
+  expirado: "Vencida",
+};
 
 export function AdminFidelidadePage() {
   const { campanha, atualizarCampanha, carregando } = useFidelidadeService();
+  const painel = useContext(ContextoPainel);
 
   // Estados locais para edição das configurações
   const [nomeCampanha, setNomeCampanha] = useState("");
@@ -208,6 +224,21 @@ export function AdminFidelidadePage() {
             Atualizar
           </Botao>
         }
+      />
+
+      <FilaHorasGratis
+        pedidos={todosVouchers.filter((v) => v.status === "em_analise")}
+        selos={todosSelos}
+        nomeAtleta={(id) => nomes[id] ?? "Atleta"}
+        aoDecidir={async (voucherId: string, decisao: Decisao) => {
+          const r = await chamarApi<{ voucher: VoucherFidelidade }>(`/api/admin/fidelidade/vouchers/${encodeURIComponent(voucherId)}`, {
+            method: "POST",
+            corpo: { arenaSlug: painel?.arenaSlug ?? "", ...decisao },
+          });
+          if (!r.ok) return r.erro ?? "Não foi possível salvar a decisão.";
+          await carregarDadosGlobais();
+          return null;
+        }}
       />
 
       {/* ── Cards de Métricas Principais ─────────────────────────────────────── */}
@@ -443,9 +474,11 @@ export function AdminFidelidadePage() {
                 className="bg-painel-superficie border border-painel-linha text-painel-tinta rounded-md px-3 py-2 text-xs focus:outline-none"
               >
                 <option value="todos">Todos os Status</option>
-                <option value="disponivel">Disponível</option>
-                <option value="utilizado">Utilizado</option>
-                <option value="expirado">Expirado</option>
+                <option value="em_analise">Em análise</option>
+                <option value="disponivel">Liberada</option>
+                <option value="recusado">Recusada</option>
+                <option value="utilizado">Usada</option>
+                <option value="expirado">Vencida</option>
               </select>
             </div>
           </div>
@@ -487,13 +520,16 @@ export function AdminFidelidadePage() {
                           className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                             v.status === "disponivel"
                               ? "bg-painel-destaque-suave text-painel-destaque border border-painel-destaque"
+                              : v.status === "em_analise"
+                              ? "bg-amber-50 text-amber-800 border border-amber-200"
                               : v.status === "utilizado"
                               ? "bg-painel-elevada text-painel-suave"
                               : "bg-red-50 text-red-700 border border-red-200"
                           }`}
                         >
-                          {v.status}
+                          {ROTULO_STATUS_VOUCHER[v.status] ?? v.status}
                         </span>
+                        {v.status === "recusado" && v.motivoAnalise && <span className="mt-1 block text-xs text-painel-suave">{v.motivoAnalise}</span>}
                       </td>
                       <td className="py-3.5 px-4 text-painel-suave">
                         {formatarDataExibicao(v.criadoEm.split("T")[0])}
