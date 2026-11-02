@@ -245,6 +245,20 @@ describe("criarReservaCheckout", () => {
     expect(inserts()).toHaveLength(0);
   });
 
+  it("antecedência 0 (padrão): às 12:35 reserva as 13:00, mas não as 12:00 que já começaram", async () => {
+    mocks.arena = { ...ARENA, antecedencia_minima_minutos: 0 };
+    const meioDia = new Date("2026-10-21T15:35:00Z"); // 12:35 em Belém
+    expect((await erroDe(criarReservaCheckout({ ...PEDIDO, data: "2026-10-21", horarios: ["12:00"] }, null, meioDia))).status).toBe(422);
+    await expect(criarReservaCheckout({ ...PEDIDO, data: "2026-10-21", horarios: ["13:00"] }, null, meioDia)).resolves.toBeDefined();
+  });
+
+  it("antecedência de 1 hora: às 12:35 as 13:00 são recusadas, as 14:00 passam (mesma regra do portal)", async () => {
+    mocks.arena = { ...ARENA, antecedencia_minima_minutos: 60 };
+    const meioDia = new Date("2026-10-21T15:35:00Z");
+    expect((await erroDe(criarReservaCheckout({ ...PEDIDO, data: "2026-10-21", horarios: ["13:00"] }, null, meioDia))).status).toBe(422);
+    await expect(criarReservaCheckout({ ...PEDIDO, data: "2026-10-21", horarios: ["14:00"] }, null, meioDia)).resolves.toBeDefined();
+  });
+
   it("recusa telefone bloqueado (403)", async () => {
     mocks.bloqueados = [{ id: "u-bloq" }];
     expect((await erroDe(criarReservaCheckout(PEDIDO, null, AGORA))).status).toBe(403);

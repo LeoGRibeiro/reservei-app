@@ -18,7 +18,7 @@ INSERT INTO public.arenas (
 ) VALUES (
   'arena-belem', 'arena-belem', 'Arena Belém', '(91) 98498-2865', '(91) 98498-2865',
   'Av. Roberto Camelier, 580', 'Jurunas', 'Esquina com a Rua dos Caripunas', 'Belém', 'PA', '66033-420',
-  '07:00', '23:00', 60, 50, 60,
+  '07:00', '23:00', 60, 50, 0,
   true, '{agendamento_core,fidelidade,vagas,escolinhas,contratos,eventos,instagram}', 'simulado',
   'Cancelamentos com mais de 24 horas de antecedência: você recebe o sinal de volta no Pix. Com menos de 24 horas, o sinal não é devolvido. Em caso de chuva forte, a arena remarca sem custo.',
   '/arenas/arena-belem/logo.png', 'arenabelem', -1.4663397, -48.4906044,

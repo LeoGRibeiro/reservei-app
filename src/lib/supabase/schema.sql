@@ -482,7 +482,7 @@ CREATE TABLE IF NOT EXISTS public.arenas (
   horario_fechamento TEXT NOT NULL DEFAULT '23:00',
   intervalo_minutos INTEGER NOT NULL DEFAULT 60,
   percentual_sinal_minimo NUMERIC(5, 2) NOT NULL DEFAULT 50.00,
-  antecedencia_minima_minutos INTEGER NOT NULL DEFAULT 60,
+  antecedencia_minima_minutos INTEGER NOT NULL DEFAULT 0,
   ativo BOOLEAN NOT NULL DEFAULT TRUE,
   modulos_ativos TEXT[] NOT NULL DEFAULT '{agendamento_core,fidelidade,vagas,escolinhas,contratos}',
   criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),

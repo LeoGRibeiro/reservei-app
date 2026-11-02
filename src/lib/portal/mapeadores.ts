@@ -89,7 +89,7 @@ export function mapearArenaPortal(row: Linha): ArenaPortal {
     cep: texto(row.cep),
     horarioAbertura: texto(row.horario_abertura) ?? "07:00",
     horarioFechamento: texto(row.horario_fechamento) ?? "23:00",
-    antecedenciaMinimaMinutos: numero(row.antecedencia_minima_minutos) ?? 60,
+    antecedenciaMinimaMinutos: numero(row.antecedencia_minima_minutos) ?? 0,
     percentualSinal: numero(row.percentual_sinal_minimo) ?? 50,
     modoPagamento: normalizarModoPagamento(row.modo_pagamento),
     politicaCancelamento: texto(row.politica_cancelamento) ?? "",

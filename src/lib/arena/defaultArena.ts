@@ -39,7 +39,7 @@ export const ARENA_PADRAO: Arena = {
   horarioFechamento: "22:00",
   intervaloMinutos: 60,
   percentualSinalMinimo: 50.0,
-  antecedenciaMinimaMinutos: 60,
+  antecedenciaMinimaMinutos: 0,
   ativo: true,
   modulosAtivos: [...MODULOS_PADRAO],
   criadaEm: "2026-01-01T00:00:00Z",

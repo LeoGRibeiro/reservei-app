@@ -33,7 +33,7 @@ beforeEach(() => {
 
 describe("CardQuadra", () => {
   const situacoes: Record<number, SituacaoHorario> = {
-    7: { tipo: "passado" },
+    7: { tipo: "encerrado" },
     8: { tipo: "ocupado" },
     9: { tipo: "aula", escolinhaId: "e1", esporte: "Beach Tennis" },
     10: { tipo: "meu", reservaId: "r1" },
@@ -55,13 +55,26 @@ describe("CardQuadra", () => {
     return props;
   };
 
-  it("mostra cada estado do horário e esconde o que já passou", () => {
+  it("mostra todos os horários: encerrado e indisponível continuam na grade", () => {
     montar();
-    expect(screen.queryByText("07:00")).toBeNull();
+    expect(screen.getByRole("button", { name: "07:00 às 08:00, encerrado" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "08:00 às 09:00, ocupado" })).toBeDisabled();
     expect(screen.getByRole("button", { name: /aula de beach tennis/ })).toHaveAttribute("title", "Aula de beach tennis");
     expect(screen.getByRole("button", { name: /sua reserva/ })).toHaveTextContent("Sua reserva");
     expect(screen.getByRole("button", { name: "11:00 às 12:00, R$ 80" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("horário indisponível fica na grade, não seleciona e mostra o motivo no toque", () => {
+    const motivo = "A arena fecha as reservas pelo site 1 hora antes do horário.";
+    const p = montar({
+      situacao: (h: number) => (h === 12 ? { tipo: "indisponivel" as const, motivo } : situacoes[h] ?? { tipo: "livre" as const }),
+    });
+    const botao = screen.getByRole("button", { name: /12:00 às 13:00, indisponível/ });
+    expect(botao).toHaveAttribute("aria-disabled", "true");
+    expect(botao).toHaveTextContent("Indisponível");
+    fireEvent.click(botao);
+    expect(p.aoAlternar).not.toHaveBeenCalled();
+    expect(screen.getByRole("status")).toHaveTextContent(`12:00: ${motivo}`);
   });
 
   it("encaminha os toques: livre alterna, aula leva à turma, sua reserva leva à conta", () => {

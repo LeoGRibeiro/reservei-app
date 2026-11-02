@@ -10,6 +10,7 @@ import {
   SELECAO_VAZIA,
   alternarHora,
   avisoDoDia,
+  textoAntecedencia,
   diasDaGrade,
   hojeNoFusoArena,
   indexarGrade,
@@ -123,13 +124,26 @@ describe("horário de Belém e antecedência", () => {
     ]);
   });
 
-  it("aviso de corte com 1 hora de antecedência", () => {
+  it("aviso do dia: só quando o dia acabou ou a antecedência fecha o resto do dia", () => {
     const periodos = periodosDoDia("07:00", "23:00");
-    const base = { dia: SEXTA, hoje: SEXTA, antecedenciaMin: 60, periodos };
+    const base = { dia: SEXTA, hoje: SEXTA, antecedenciaMin: 0, periodos };
     expect(avisoDoDia({ ...base, agoraMin: 6 * 60 })).toBeNull();
-    expect(avisoDoDia({ ...base, agoraMin: 14 * 60 + 10 })).toBe("Antes das 16:00 já não dá para reservar hoje.");
-    expect(avisoDoDia({ ...base, agoraMin: 22 * 60 + 30 })).toBe("Os horários de hoje já acabaram. Escolha outro dia.");
+    // Antecedência 0: até as 22:00 começarem ainda dá para reservar
+    expect(avisoDoDia({ ...base, agoraMin: 21 * 60 + 59 })).toBeNull();
+    expect(avisoDoDia({ ...base, agoraMin: 22 * 60 })).toBe("Os horários de hoje já acabaram. Escolha outro dia.");
+    // Antecedência de 1 hora às 21:30: as 22:00 ficam fechadas para o site
+    expect(avisoDoDia({ ...base, antecedenciaMin: 60, agoraMin: 21 * 60 + 30 })).toBe(
+      "Pelo site, as reservas fecham 1 hora antes do horário. Para hoje, fale com a arena."
+    );
+    expect(avisoDoDia({ ...base, antecedenciaMin: 60, agoraMin: 14 * 60 })).toBeNull();
     expect(avisoDoDia({ ...base, dia: SABADO, agoraMin: 22 * 60 })).toBeNull();
+  });
+
+  it("texto da antecedência", () => {
+    expect(textoAntecedencia(30)).toBe("30 minutos");
+    expect(textoAntecedencia(60)).toBe("1 hora");
+    expect(textoAntecedencia(90)).toBe("1h30");
+    expect(textoAntecedencia(120)).toBe("2 horas");
   });
 });
 
@@ -143,11 +157,37 @@ describe("estados do horário", () => {
   const indice = indexarGrade(grade, agora);
   const base = { quadraId: "q1", dia: SEXTA, hoje: SEXTA, agoraMin: 9 * 60, antecedenciaMin: 60, indice, minhas: new Map<string, string>() };
 
-  it("livre, ocupado, aula e passado", () => {
+  it("livre, ocupado, aula e encerrado (horário que já começou)", () => {
     expect(situacaoDoHorario({ ...base, h: 18 }).tipo).toBe("livre");
     expect(situacaoDoHorario({ ...base, h: 19 }).tipo).toBe("ocupado");
     expect(situacaoDoHorario({ ...base, h: 16 })).toEqual({ tipo: "aula", escolinhaId: "e1", esporte: "Beach Tennis" });
-    expect(situacaoDoHorario({ ...base, h: 9 }).tipo).toBe("passado");
+    expect(situacaoDoHorario({ ...base, h: 9 }).tipo).toBe("encerrado");
+    expect(situacaoDoHorario({ ...base, h: 7 }).tipo).toBe("encerrado");
+  });
+
+  it("às 12:35 com antecedência 0: 12:00 encerrado, 13:00 livre", () => {
+    const meioDia = { ...base, agoraMin: 12 * 60 + 35, antecedenciaMin: 0 };
+    expect(situacaoDoHorario({ ...meioDia, h: 12 }).tipo).toBe("encerrado");
+    expect(situacaoDoHorario({ ...meioDia, h: 13 }).tipo).toBe("livre");
+  });
+
+  it("às 12:35 com antecedência de 1 hora: 13:00 indisponível com motivo, 14:00 livre", () => {
+    const meioDia = { ...base, agoraMin: 12 * 60 + 35, antecedenciaMin: 60 };
+    expect(situacaoDoHorario({ ...meioDia, h: 13 })).toEqual({
+      tipo: "indisponivel",
+      motivo: "A arena fecha as reservas pelo site 1 hora antes do horário.",
+    });
+    expect(situacaoDoHorario({ ...meioDia, h: 14 }).tipo).toBe("livre");
+  });
+
+  it("horário ocupado dentro da antecedência continua ocupado; outro dia não tem corte", () => {
+    const comCorte = { ...base, agoraMin: 18 * 60 + 30, antecedenciaMin: 60 };
+    expect(situacaoDoHorario({ ...comCorte, h: 19 }).tipo).toBe("ocupado");
+    expect(situacaoDoHorario({ ...comCorte, dia: SABADO, h: 7 }).tipo).toBe("livre");
+  });
+
+  it("exatamente na hora de início o horário já está encerrado", () => {
+    expect(situacaoDoHorario({ ...base, agoraMin: 13 * 60, antecedenciaMin: 0, h: 13 }).tipo).toBe("encerrado");
   });
 
   it("lock de checkout vencido não ocupa", () => {

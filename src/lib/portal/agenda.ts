@@ -60,8 +60,25 @@ export function periodosDoDia(abertura: string, fechamento: string): Periodo[] {
 }
 
 /**
- * Aviso da linha do dia, só para hoje: a primeira hora que ainda dá para reservar (antecedência mínima)
- * ou que os horários acabaram.
+ * Texto da antecedência para o atleta: "30 minutos", "1 hora", "1h30".
+ *
+ * @example
+ * ```ts
+ * textoAntecedencia(90); // "1h30"
+ * ```
+ */
+export function textoAntecedencia(minutos: number): string {
+  if (minutos < 60) return `${minutos} minutos`;
+  const h = Math.floor(minutos / 60);
+  const m = minutos % 60;
+  if (m) return `${h}h${String(m).padStart(2, "0")}`;
+  return h === 1 ? "1 hora" : `${h} horas`;
+}
+
+/**
+ * Aviso da linha do dia, só para hoje. Todos os horários continuam na grade (os que já começaram
+ * aparecem como "Encerrado"); o aviso só explica quando o dia acabou ou quando a arena fecha as
+ * reservas do site algum tempo antes do horário.
  *
  * @returns Texto do aviso, ou null quando não há o que avisar
  */
@@ -74,11 +91,13 @@ export function avisoDoDia(params: {
 }): string | null {
   const { dia, hoje, agoraMin, antecedenciaMin, periodos } = params;
   if (dia !== hoje || !periodos.length) return null;
-  const corte = Math.ceil((agoraMin + antecedenciaMin) / 60);
-  const primeira = periodos[0].horas[0];
   const ultima = periodos[periodos.length - 1].horas.at(-1) as number;
-  if (corte <= primeira) return null;
-  return corte > ultima ? "Os horários de hoje já acabaram. Escolha outro dia." : `Antes das ${hh(corte)} já não dá para reservar hoje.`;
+  if (ultima * 60 <= agoraMin) return "Os horários de hoje já acabaram. Escolha outro dia.";
+  const antecedencia = Math.max(0, antecedenciaMin);
+  if (antecedencia > 0 && ultima * 60 < agoraMin + antecedencia) {
+    return `Pelo site, as reservas fecham ${textoAntecedencia(antecedencia)} antes do horário. Para hoje, fale com a arena.`;
+  }
+  return null;
 }
 
 /** Converte a linha bruta da RPC `grade_publica`. */
@@ -123,14 +142,23 @@ export function indexarGrade(grade: LinhaGrade[], agora: Date): Map<string, Linh
 export type SituacaoHorario =
   | { tipo: "livre" }
   | { tipo: "ocupado" }
-  | { tipo: "passado" }
+  /** O horário já começou (hoje) */
+  | { tipo: "encerrado" }
+  /** Ainda não começou, mas está dentro da antecedência mínima da arena */
+  | { tipo: "indisponivel"; motivo: string }
   | { tipo: "aula"; escolinhaId?: string; esporte: string }
   | { tipo: "meu"; reservaId: string };
 
 /**
- * Situação de um horário, na mesma ordem do protótipo: sua reserva, passado (some), aula, ocupado, livre.
+ * Situação de um horário. Ordem: sua reserva, encerrado (já começou), aula, ocupado, indisponível
+ * (dentro da antecedência) e livre. Nenhum horário some: a grade tem sempre o mesmo tamanho.
+ *
+ * A regra de tempo é a mesma do checkout no servidor (`validarCalendario`): dá para reservar enquanto
+ * faltarem pelo menos `antecedenciaMin` minutos para o início. Com antecedência 0, reserva-se até o
+ * horário começar (às 12:35, as 13:00 estão livres).
  *
  * @param params.minhas Ids das reservas ativas do atleta logado
+ * @param params.antecedenciaMin Antecedência mínima da arena, em minutos (0 = até começar)
  */
 export function situacaoDoHorario(params: {
   quadraId: string;
@@ -146,12 +174,16 @@ export function situacaoDoHorario(params: {
   const chave = chaveHorario(dia, quadraId, h);
   const minha = minhas.get(chave);
   if (minha) return { tipo: "meu", reservaId: minha };
-  if (dia === hoje && h * 60 < agoraMin + antecedenciaMin) return { tipo: "passado" };
+  if (dia === hoje && h * 60 <= agoraMin) return { tipo: "encerrado" };
   const ocupacao = indice.get(chave);
   if (ocupacao?.tipoReserva === "escolinha") {
     return { tipo: "aula", escolinhaId: ocupacao.escolinhaId, esporte: ocupacao.esporte ?? "" };
   }
   if (ocupacao) return { tipo: "ocupado" };
+  const antecedencia = Math.max(0, antecedenciaMin);
+  if (dia === hoje && h * 60 < agoraMin + antecedencia) {
+    return { tipo: "indisponivel", motivo: `A arena fecha as reservas pelo site ${textoAntecedencia(antecedencia)} antes do horário.` };
+  }
   return { tipo: "livre" };
 }
 

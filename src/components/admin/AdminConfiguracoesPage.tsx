@@ -25,6 +25,19 @@ import { construirUrlArena } from "@/lib/arena/subdomain";
 import { POLITICA_CANCELAMENTO_PADRAO } from "@/lib/legal/termos";
 import { CabecalhoPagina } from "@/components/admin/ui";
 
+
+/** Opções de antecedência mínima das reservas pelo site (minutos). */
+const OPCOES_ANTECEDENCIA = [
+  { valor: 0, rotulo: "Até o horário começar" },
+  { valor: 15, rotulo: "15 minutos antes" },
+  { valor: 30, rotulo: "30 minutos antes" },
+  { valor: 60, rotulo: "1 hora antes" },
+  { valor: 120, rotulo: "2 horas antes" },
+  { valor: 180, rotulo: "3 horas antes" },
+  { valor: 360, rotulo: "6 horas antes" },
+  { valor: 720, rotulo: "12 horas antes" },
+  { valor: 1440, rotulo: "1 dia antes" },
+];
 export function AdminConfiguracoesPage() {
   const { arena, recarregar, carregando } = useArena();
 
@@ -41,7 +54,7 @@ export function AdminConfiguracoesPage() {
   const [horarioAbertura, setHorarioAbertura] = useState("06:00");
   const [horarioFechamento, setHorarioFechamento] = useState("23:00");
   const [percentualSinal, setPercentualSinal] = useState(50);
-  const [antecedenciaMinutos, setAntecedenciaMinutos] = useState(60);
+  const [antecedenciaMinutos, setAntecedenciaMinutos] = useState(0);
   const [politicaCancelamento, setPoliticaCancelamento] = useState("");
   const [salvando, setSalvando] = useState(false);
   // A coluna só existe em bancos com a migração da Fase 8
@@ -63,7 +76,7 @@ export function AdminConfiguracoesPage() {
     setHorarioAbertura(arena.horarioAbertura || "06:00");
     setHorarioFechamento(arena.horarioFechamento || "23:00");
     setPercentualSinal(arena.percentualSinalMinimo || 50);
-    setAntecedenciaMinutos(arena.antecedenciaMinimaMinutos || 60);
+    setAntecedenciaMinutos(arena.antecedenciaMinimaMinutos ?? 0);
     setPoliticaCancelamento(arena.politicaCancelamento || "");
   }
 
@@ -340,20 +353,27 @@ export function AdminConfiguracoesPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-painel-suave mb-1">
-                Antecedência Mínima (min)
+              <label htmlFor="cfg-antecedencia" className="block text-[15px] font-medium text-painel-tinta mb-1">
+                Quanto tempo antes do horário o site para de aceitar reservas
               </label>
-              <input
-                type="number"
-                min={0}
-                step={15}
+              <select
+                id="cfg-antecedencia"
                 value={antecedenciaMinutos}
                 onChange={(e) => setAntecedenciaMinutos(Number(e.target.value))}
-                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
-                required
-              />
+                className="w-full h-10 bg-painel-superficie border border-painel-linha-forte rounded-md px-3 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
+              >
+                {(OPCOES_ANTECEDENCIA.some((o) => o.valor === antecedenciaMinutos)
+                  ? OPCOES_ANTECEDENCIA
+                  : [...OPCOES_ANTECEDENCIA, { valor: antecedenciaMinutos, rotulo: `${antecedenciaMinutos} minutos antes` }]
+                ).map((o) => (
+                  <option key={o.valor} value={o.valor}>
+                    {o.rotulo}
+                  </option>
+                ))}
+              </select>
               <span className="text-xs text-painel-suave mt-1 block">
-                Tempo mínimo antes da partida para reservar online.
+                Com &ldquo;Até o horário começar&rdquo;, às 12:35 o atleta ainda reserva as 13:00. Os horários fechados aparecem no
+                site como &ldquo;Indisponível&rdquo;. O balcão reserva a qualquer momento pela Agenda.
               </span>
             </div>
           </div>

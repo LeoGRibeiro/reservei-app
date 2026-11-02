@@ -222,6 +222,11 @@ body:has(.pa) { margin: 0; background: #ffffff; }
 .pa .slot.vaga > span { color: var(--red); font-weight: 700; }
 .pa .slot.vaga:hover { border-color: var(--red); }
 .pa .slot.meu { background: var(--pa-marca); color: #fff; cursor: default; }
+.pa .slot.encerrado { background: transparent; border-style: dashed; border-color: var(--line); color: var(--off); cursor: default; }
+.pa .slot.encerrado b { font-weight: 600; }
+.pa .slot.indisponivel { background: rgba(22, 28, 58, 0.04); border-style: dashed; border-color: var(--line); color: var(--off); cursor: help; }
+.pa .slot.indisponivel b { font-weight: 600; }
+.pa .q-motivo { margin-top: 10px; font-size: 13px; color: var(--muted); }
 .pa .slot.meu > span { color: var(--on-navy); }
 
 

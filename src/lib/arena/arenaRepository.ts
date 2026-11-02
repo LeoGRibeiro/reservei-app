@@ -69,7 +69,7 @@ export function mapearLinhaParaArena(row: Record<string, unknown>): Arena {
     horarioFechamento: String(row.horario_fechamento || "23:00"),
     intervaloMinutos: Number(row.intervalo_minutos || 60),
     percentualSinalMinimo: Number(row.percentual_sinal_minimo || 50),
-    antecedenciaMinimaMinutos: Number(row.antecedencia_minima_minutos || 60),
+    antecedenciaMinimaMinutos: Number(row.antecedencia_minima_minutos ?? 0),
     ativo: Boolean(row.ativo ?? true),
     modulosAtivos: normalizarModulosAtivos(row.modulos_ativos),
     modoPagamento: normalizarModoPagamento(row.modo_pagamento),

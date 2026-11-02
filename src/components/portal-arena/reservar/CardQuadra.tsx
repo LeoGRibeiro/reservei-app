@@ -2,7 +2,14 @@
  * @file CardQuadra.tsx
  * @description Card de uma quadra: foto com enquadramento, nome, esportes, preço de dia e de noite e
  * todos os horários do dia em Manhã, Tarde e Noite (no celular, grade de 4 sem rótulo, pelo CSS).
+ *
+ * A grade tem sempre o mesmo tamanho: horários que já começaram aparecem como "Encerrado" e os que
+ * estão dentro da antecedência da arena como "Indisponível" (tocar mostra o motivo).
  */
+
+"use client";
+
+import { useState } from "react";
 
 import { hh, lista, maiuscula, reais, esporteNaFrase } from "@/lib/portal/formatos";
 import type { Periodo, SituacaoHorario } from "@/lib/portal/agenda";
@@ -41,12 +48,36 @@ export function textoEsportes(esportes: string[]): string {
  * ```
  */
 export function CardQuadra({ quadra, indice, periodos, situacao, preco, selecionadas, aoAlternar, aoVerAula, aoVerReserva }: CardQuadraProps) {
+  const [motivo, setMotivo] = useState<string | null>(null);
   const blocos = periodos
     .map((p) => {
       const slots = p.horas.flatMap((h) => {
         const s = situacao(h);
-        if (s.tipo === "passado") return [];
         const faixa = `${hh(h)} às ${hh(h + 1)}`;
+        if (s.tipo === "encerrado") {
+          return [
+            <button key={h} type="button" className="slot encerrado" disabled aria-label={`${faixa}, encerrado`}>
+              <b className="num">{hh(h)}</b>
+              <span>Encerrado</span>
+            </button>,
+          ];
+        }
+        if (s.tipo === "indisponivel") {
+          return [
+            <button
+              key={h}
+              type="button"
+              className="slot indisponivel"
+              aria-disabled="true"
+              title={s.motivo}
+              aria-label={`${faixa}, indisponível. ${s.motivo}`}
+              onClick={() => setMotivo(`${hh(h)}: ${s.motivo}`)}
+            >
+              <b className="num">{hh(h)}</b>
+              <span>Indisponível</span>
+            </button>,
+          ];
+        }
         if (s.tipo === "livre") {
           const valor = reais(preco(h));
           const sel = selecionadas.includes(h);
@@ -142,6 +173,11 @@ export function CardQuadra({ quadra, indice, periodos, situacao, preco, selecion
           )}
         </div>
         <div className="periodos">{blocos.length ? blocos : <p className="q-sem">Não há mais horários hoje nesta quadra.</p>}</div>
+        {motivo && (
+          <p className="q-motivo" role="status">
+            {motivo}
+          </p>
+        )}
       </div>
     </article>
   );
