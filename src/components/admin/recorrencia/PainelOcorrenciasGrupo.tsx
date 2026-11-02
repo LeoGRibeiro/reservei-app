@@ -94,7 +94,7 @@ export function PainelOcorrenciasGrupo({
         </button>
       </div>
 
-      <p className="text-[11px] text-painel-apagada">
+      <p className="text-xs text-painel-apagada">
         Cancelamento sem ônus exige aviso com {ANTECEDENCIA_MINIMA_DIAS} dias ou mais de antecedência.
       </p>
 
@@ -116,7 +116,7 @@ export function PainelOcorrenciasGrupo({
                     {formatarDataExibicao(o.data, { weekday: "short", day: "numeric", month: "short" })}
                   </p>
                   {situacao && o.avisoCancelamentoEm && (
-                    <p className="text-[11px] text-painel-suave">
+                    <p className="text-xs text-painel-suave">
                       Aviso em {formatarDataExibicao(o.avisoCancelamentoEm, { day: "numeric", month: "short" })}
                     </p>
                   )}
@@ -125,7 +125,7 @@ export function PainelOcorrenciasGrupo({
                 <div className="flex items-center gap-2">
                   {situacao && (
                     <span
-                      className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${ESTILO_SITUACAO[situacao]}`}
+                      className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${ESTILO_SITUACAO[situacao]}`}
                     >
                       {ROTULO_SITUACAO_COBRANCA[situacao]}
                       {situacao === "cobranca_devida" && ` · ${formatarMoeda(o.valorTotal)}`}
@@ -156,7 +156,7 @@ export function PainelOcorrenciasGrupo({
               {emCancelamento === o.id && (
                 <div className="flex flex-wrap items-end gap-3 bg-painel-elevada border border-painel-linha rounded-md p-3">
                   <div>
-                    <label htmlFor={`aviso-${o.id}`} className="block text-[11px] text-painel-suave mb-1">
+                    <label htmlFor={`aviso-${o.id}`} className="block text-xs text-painel-suave mb-1">
                       Data em que o grupo avisou
                     </label>
                     <input

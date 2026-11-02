@@ -77,7 +77,7 @@ export function AdminTrocaSenhaObrigatoria({
             onChange={(e) => setSenha(e.target.value)}
             className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
           />
-          <ul className="mt-2 space-y-0.5 text-[11px]">
+          <ul className="mt-2 space-y-0.5 text-xs">
             <li className={validacao.regras.minimo ? "text-painel-destaque" : "text-painel-suave"}>• Pelo menos 6 caracteres</li>
             <li className={validacao.regras.maiuscula ? "text-painel-destaque" : "text-painel-suave"}>• Uma letra maiúscula</li>
             <li className={validacao.regras.especial ? "text-painel-destaque" : "text-painel-suave"}>• Um caractere especial</li>

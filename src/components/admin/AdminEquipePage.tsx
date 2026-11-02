@@ -225,7 +225,7 @@ export function AdminEquipePage({ arenaSlug, usuarioId }: Props) {
                       {m.nome} {ehVoce && <span className="text-xs text-painel-suave">(você)</span>}
                     </p>
                     <p className="text-xs text-painel-suave">{m.email}</p>
-                    <p className="text-[11px] text-painel-suave mt-0.5">
+                    <p className="text-xs text-painel-suave mt-0.5">
                       {ROTULO_PAPEL[m.role]}
                       {!m.ativo && " · acesso desativado"}
                       {m.ativo && m.senhaPendente && " · ainda não fez o primeiro acesso"}

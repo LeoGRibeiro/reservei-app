@@ -106,7 +106,7 @@ export function AbaEscolinhasSite() {
                     <h3 className="text-lg font-bold text-painel-tinta">{tituloEscolinha(e)}</h3>
                     <p className="text-xs text-painel-suave">{e.nome.trim() ? `${e.esporte} · ` : ""}Prof. {e.professor}</p>
                   </div>
-                  {!e.ativa && <span className="px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-bold text-[10px] shrink-0">Oculta</span>}
+                  {!e.ativa && <span className="px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-bold text-xs shrink-0">Oculta</span>}
                 </div>
                 <ul className="space-y-1 text-xs text-painel-tinta mb-3">
                   {turmasPreenchidas(e.turmas).map((t, i) => (
@@ -117,16 +117,16 @@ export function AbaEscolinhasSite() {
                         {t.categoria && <span className="text-painel-suave ml-auto">{t.categoria}</span>}
                       </div>
                       {t.contratoId ? (
-                        <span className="flex items-center gap-1 text-[10px] text-painel-destaque">
+                        <span className="flex items-center gap-1 text-xs text-painel-destaque">
                           <CalendarCheck className="w-3 h-3" /> Na agenda · {nomeQuadra(t.quadraId)}
                         </span>
                       ) : t.bloquearAgenda ? (
-                        <span className="text-[10px] text-amber-700">Ainda não bloqueada na agenda (edite e salve de novo)</span>
+                        <span className="text-xs text-amber-700">Ainda não bloqueada na agenda (edite e salve de novo)</span>
                       ) : null}
                     </li>
                   ))}
                 </ul>
-                <p className="flex items-center gap-1.5 text-[11px] text-painel-suave mb-4">
+                <p className="flex items-center gap-1.5 text-xs text-painel-suave mb-4">
                   {e.tipoBotao === "link" ? (
                     <><Link2 className="w-3.5 h-3.5 text-painel-destaque" /> Botão abre link</>
                   ) : (

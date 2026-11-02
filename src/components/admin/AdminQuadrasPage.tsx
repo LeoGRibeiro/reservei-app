@@ -289,11 +289,11 @@ export function AdminQuadrasPage() {
 
                   {/* Badges de características */}
                   <div className="flex flex-wrap gap-2 mb-5">
-                    <span className="text-[11px] bg-painel-elevada text-painel-tinta border border-painel-linha px-2.5 py-1 rounded-md font-medium">
+                    <span className="text-xs bg-painel-elevada text-painel-tinta border border-painel-linha px-2.5 py-1 rounded-md font-medium">
                       Piso: {quadra.tipoPiso}
                     </span>
                     <span
-                      className={`text-[11px] px-2.5 py-1 rounded-md font-medium border flex items-center gap-1 ${
+                      className={`text-xs px-2.5 py-1 rounded-md font-medium border flex items-center gap-1 ${
                         quadra.coberta
                           ? "bg-sky-50 text-sky-700 border-sky-200"
                           : "bg-painel-elevada text-painel-suave border-painel-linha"
@@ -303,7 +303,7 @@ export function AdminQuadrasPage() {
                       {quadra.coberta ? "Coberta" : "Descoberta"}
                     </span>
                     <span
-                      className={`text-[11px] px-2.5 py-1 rounded-md font-medium border flex items-center gap-1 ${
+                      className={`text-xs px-2.5 py-1 rounded-md font-medium border flex items-center gap-1 ${
                         quadra.iluminacao
                           ? "bg-amber-50 text-amber-700 border-amber-200"
                           : "bg-painel-elevada text-painel-suave border-painel-linha"
@@ -312,14 +312,14 @@ export function AdminQuadrasPage() {
                       <Sun className="w-3 h-3" />
                       {quadra.iluminacao ? "Com Iluminação" : "Sem Iluminação"}
                     </span>
-                    <span className="text-[11px] bg-emerald-50 text-painel-destaque border border-emerald-200 px-2.5 py-1 rounded-md font-bold">
+                    <span className="text-xs bg-emerald-50 text-painel-destaque border border-emerald-200 px-2.5 py-1 rounded-md font-bold">
                       Base: R$ {quadra.valorHoraPadrao.toFixed(2)}/h
                     </span>
                   </div>
 
                   {/* Modalidades Esportivas */}
                   <div className="mb-5">
-                    <span className="text-[10px] font-bold text-painel-suave">
+                    <span className="text-xs font-bold text-painel-suave">
                       Modalidades Permitidas
                     </span>
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -327,7 +327,7 @@ export function AdminQuadrasPage() {
                         quadra.esportes.map((esp) => (
                           <span
                             key={esp}
-                            className="text-[11px] bg-painel-elevada text-painel-tinta border border-painel-linha px-2 py-0.5 rounded font-medium"
+                            className="text-xs bg-painel-elevada text-painel-tinta border border-painel-linha px-2 py-0.5 rounded font-medium"
                           >
                             {esp}
                           </span>
@@ -349,14 +349,14 @@ export function AdminQuadrasPage() {
                       </span>
                       <button
                         onClick={() => abrirCriacaoPreco(quadra)}
-                        className="text-[11px] text-painel-destaque hover:text-painel-destaque font-bold flex items-center gap-1 transition-colors"
+                        className="text-xs text-painel-destaque hover:text-painel-destaque font-bold flex items-center gap-1 transition-colors"
                       >
                         <Plus className="w-3 h-3" /> Adicionar Tarifa
                       </button>
                     </div>
 
                     {precosDestaQuadra.length === 0 ? (
-                      <p className="text-[11px] text-painel-suave italic">
+                      <p className="text-xs text-painel-suave italic">
                         Nenhuma tarifa dinâmica cadastrada. A quadra opera sempre com o valor base.
                       </p>
                     ) : (
@@ -370,7 +370,7 @@ export function AdminQuadrasPage() {
                               <div className="font-bold text-painel-tinta">
                                 {prc.descricao || "Tarifa Especial"}
                               </div>
-                              <div className="text-[11px] text-painel-suave mt-0.5">
+                              <div className="text-xs text-painel-suave mt-0.5">
                                 {prc.horaInicio} às {prc.horaFim} ·{" "}
                                 {prc.diasSemana.map((d) => DIAS_SEMANA_NOMES[d]).join(", ")}
                               </div>

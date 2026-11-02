@@ -38,7 +38,7 @@ const TIPOS_CHAVE: Array<{ valor: TipoChavePix; rotulo: string }> = [
 /** Selo "Em uso" exibido no cartão do modo ativo. */
 function SeloEmUso() {
   return (
-    <span className="text-[11px] font-bold text-painel-destaque flex items-center gap-1">
+    <span className="text-xs font-bold text-painel-destaque flex items-center gap-1">
       <CheckCircle2 className="w-3.5 h-3.5" /> Em uso
     </span>
   );

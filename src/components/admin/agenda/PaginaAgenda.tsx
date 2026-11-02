@@ -77,11 +77,11 @@ function GradeDia({
       <table className="w-full min-w-[640px] border-collapse text-sm">
         <thead>
           <tr className="border-b border-painel-linha">
-            <th scope="col" className="sticky left-0 z-10 w-16 bg-painel-superficie px-3 py-2 text-left text-xs font-medium text-painel-suave">
+            <th scope="col" className="sticky left-0 z-10 w-16 bg-painel-superficie px-3 py-2.5 text-left text-xs font-semibold text-painel-suave">
               Hora
             </th>
             {quadras.map((q) => (
-              <th key={q.id} scope="col" className="px-2 py-2 text-left text-xs font-medium text-painel-tinta">
+              <th key={q.id} scope="col" className="px-2 py-2.5 text-left text-sm font-semibold text-painel-tinta">
                 {q.descricao}
               </th>
             ))}
@@ -90,7 +90,7 @@ function GradeDia({
         <tbody>
           {horarios.map((h) => (
             <tr key={h} className="border-b border-painel-linha last:border-0">
-              <th scope="row" className="sticky left-0 z-10 bg-painel-superficie px-3 py-1.5 text-left text-xs font-normal tabular-nums text-painel-suave">
+              <th scope="row" className="sticky left-0 z-10 bg-painel-superficie px-3 py-1.5 text-left align-top text-xs font-semibold tabular-nums text-painel-tinta">
                 {h}
               </th>
               {quadras.map((q) => {
@@ -99,15 +99,15 @@ function GradeDia({
                   return (
                     <td key={q.id} className="p-1">
                       {passado ? (
-                        <span className="block h-11" />
+                        <span className="block h-14" />
                       ) : (
                         <button
                           type="button"
                           onClick={() => aoClicarLivre({ quadraId: q.id, data, horario: h })}
                           aria-label={`Livre: ${q.descricao} às ${h}`}
-                          className="group flex h-11 w-full items-center justify-center rounded-md border border-dashed border-transparent text-painel-apagada hover:border-painel-linha-forte hover:bg-painel-elevada"
+                          className="group flex h-14 w-full items-center justify-center rounded-md border border-dashed border-painel-linha-forte text-painel-apagada hover:border-painel-destaque hover:bg-painel-destaque-suave hover:text-painel-destaque"
                         >
-                          <Plus className="size-4 opacity-0 group-hover:opacity-100" />
+                          <Plus aria-hidden className="size-4 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100" />
                         </button>
                       )}
                     </td>
@@ -117,11 +117,11 @@ function GradeDia({
                 const primeiro = r.horarios[0] === h;
                 const conteudo = (
                   <>
-                    <span className="block truncate font-medium">{r.tipoReserva === "manutencao_bloqueio" ? "Bloqueado" : r.nomeCliente || "Reserva"}</span>
-                    {primeiro && <span className="block truncate text-xs opacity-80">{r.tipoReserva === "manutencao_bloqueio" ? r.nomeCliente : rotulo}</span>}
+                    <span className="block truncate text-[15px] font-semibold">{r.tipoReserva === "manutencao_bloqueio" ? "Bloqueado" : r.nomeCliente || "Reserva"}</span>
+                    {primeiro && <span className="block truncate text-xs">{r.tipoReserva === "manutencao_bloqueio" ? r.nomeCliente : rotulo}</span>}
                   </>
                 );
-                const classe = cn("block h-11 w-full overflow-hidden rounded-md border px-2 py-1 text-left leading-tight", COR_CELULA[tom], !primeiro && "border-t-transparent");
+                const classe = cn("block h-14 w-full overflow-hidden rounded-md border px-2 py-1.5 text-left leading-snug", COR_CELULA[tom], !primeiro && "border-t-transparent");
                 return (
                   <td key={q.id} className="p-1">
                     {r.tipoReserva === "manutencao_bloqueio" ? (
@@ -238,12 +238,13 @@ export function PaginaAgenda() {
             aria-label="Escolher data"
             value={data}
             onChange={(e) => e.target.value && navegar(e.target.value)}
-            className="h-8 rounded-md border border-painel-linha-forte bg-painel-superficie px-2 text-sm"
+            className="h-9 rounded-md border border-painel-linha-forte bg-painel-superficie px-2 text-sm"
           />
         </div>
-        <div className="w-40">
+        <div className="w-44">
           <Abas
             rotulo="Visão da agenda"
+            className="mb-0"
             itens={[
               { id: "dia", rotulo: "Dia" },
               { id: "mes", rotulo: "Mês" },
@@ -262,7 +263,8 @@ export function PaginaAgenda() {
             aoClicarLivre={(s) => setJanela({ tipo: "reserva", inicial: s })}
             aoClicarBloqueio={(r) => setBloqueio(r)}
           />
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-painel-suave">
+            <span>Legenda:</span>
             {LEGENDA.map((l) => (
               <Etiqueta key={l.tom} tom={l.tom}>
                 {l.rotulo}

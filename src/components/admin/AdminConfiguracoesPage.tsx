@@ -334,7 +334,7 @@ export function AdminConfiguracoesPage() {
                 className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
                 required
               />
-              <span className="text-[10px] text-painel-suave mt-1 block">
+              <span className="text-xs text-painel-suave mt-1 block">
                 Ex: 50% exige metade no Pix; 100% exige valor integral.
               </span>
             </div>
@@ -352,7 +352,7 @@ export function AdminConfiguracoesPage() {
                 className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
                 required
               />
-              <span className="text-[10px] text-painel-suave mt-1 block">
+              <span className="text-xs text-painel-suave mt-1 block">
                 Tempo mínimo antes da partida para reservar online.
               </span>
             </div>
@@ -378,7 +378,7 @@ export function AdminConfiguracoesPage() {
               placeholder={POLITICA_CANCELAMENTO_PADRAO}
               className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
             />
-            <p className="text-[10px] text-painel-suave">Em branco, vale o texto padrão mostrado acima.</p>
+            <p className="text-xs text-painel-suave">Em branco, vale o texto padrão mostrado acima.</p>
           </div>
         )}
 

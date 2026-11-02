@@ -218,7 +218,7 @@ export function AdminFidelidadePage() {
             <Clock className="w-4 h-4 text-painel-destaque" />
           </div>
           <p className="text-2xl font-semibold text-painel-tinta">{metricas.totalHorasAcumuladas}h</p>
-          <p className="text-[11px] text-painel-suave mt-1">
+          <p className="text-xs text-painel-suave mt-1">
             {metricas.usuariosUnicos} jogador(es) ativos na cartela
           </p>
         </div>
@@ -229,7 +229,7 @@ export function AdminFidelidadePage() {
             <Ticket className="w-4 h-4 text-teal-700" />
           </div>
           <p className="text-2xl font-semibold text-painel-tinta">{metricas.totalVouchersEmitidos}</p>
-          <p className="text-[11px] text-teal-700 mt-1">
+          <p className="text-xs text-teal-700 mt-1">
             {metricas.vouchersDisponiveis} pronto(s) para uso
           </p>
         </div>
@@ -240,7 +240,7 @@ export function AdminFidelidadePage() {
             <TrendingUp className="w-4 h-4 text-amber-700" />
           </div>
           <p className="text-2xl font-semibold text-painel-tinta">{metricas.taxaResgate}%</p>
-          <p className="text-[11px] text-painel-suave mt-1">
+          <p className="text-xs text-painel-suave mt-1">
             {metricas.vouchersUtilizados} voucher(s) utilizados
           </p>
         </div>
@@ -253,7 +253,7 @@ export function AdminFidelidadePage() {
           <p className="text-2xl font-semibold text-painel-tinta">
             {formatarMoeda(metricas.valorTotalDescontosConcedidos)}
           </p>
-          <p className="text-[11px] text-painel-suave mt-1">Recompensa convertida em jogos</p>
+          <p className="text-xs text-painel-suave mt-1">Recompensa convertida em jogos</p>
         </div>
       </div>
 
@@ -339,7 +339,7 @@ export function AdminFidelidadePage() {
                   />
                   <span className="absolute right-3 top-2.5 text-xs text-painel-suave font-bold">h</span>
                 </div>
-                <p className="text-[11px] text-painel-suave">Padrão alinhado: 12 horas</p>
+                <p className="text-xs text-painel-suave">Padrão alinhado: 12 horas</p>
               </div>
 
               <div className="space-y-2">
@@ -361,7 +361,7 @@ export function AdminFidelidadePage() {
                     meses
                   </span>
                 </div>
-                <p className="text-[11px] text-painel-suave">Padrão alinhado: 3 meses</p>
+                <p className="text-xs text-painel-suave">Padrão alinhado: 3 meses</p>
               </div>
 
               <div className="space-y-2">
@@ -383,7 +383,7 @@ export function AdminFidelidadePage() {
                     dias
                   </span>
                 </div>
-                <p className="text-[11px] text-painel-suave">Prazo para utilizar o prêmio</p>
+                <p className="text-xs text-painel-suave">Prazo para utilizar o prêmio</p>
               </div>
             </div>
 
@@ -484,7 +484,7 @@ export function AdminFidelidadePage() {
                       </td>
                       <td className="py-3.5 px-4">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                             v.status === "disponivel"
                               ? "bg-painel-destaque-suave text-painel-destaque border border-painel-destaque"
                               : v.status === "utilizado"
@@ -503,7 +503,7 @@ export function AdminFidelidadePage() {
                       </td>
                       <td className="py-3.5 px-4 text-painel-suave">
                         {v.reservaUtilizadaId ? (
-                          <span className="font-mono text-[11px] text-teal-700">
+                          <span className="font-mono text-xs text-teal-700">
                             #{v.reservaUtilizadaId.substring(0, 8)}
                           </span>
                         ) : (
@@ -572,11 +572,11 @@ export function AdminFidelidadePage() {
                         </td>
                         <td className="py-3.5 px-4">
                           {selo.resgatado ? (
-                            <span className="text-teal-700 font-semibold text-[10px]">
+                            <span className="text-teal-700 font-semibold text-xs">
                               Resgatado em Voucher
                             </span>
                           ) : (
-                            <span className="text-painel-destaque font-semibold text-[10px]">
+                            <span className="text-painel-destaque font-semibold text-xs">
                               Ativo na Cartela
                             </span>
                           )}

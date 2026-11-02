@@ -37,7 +37,7 @@ export function Campo({ rotulo, ajuda, erro, opcional, className, children }: Ca
   const id = useId();
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label htmlFor={id} className="block text-sm font-medium text-painel-tinta">
+      <label htmlFor={id} className="block text-[15px] font-medium text-painel-tinta">
         {rotulo}
         {opcional && <span className="ml-1 font-normal text-painel-apagada">(opcional)</span>}
       </label>
@@ -52,11 +52,11 @@ export function Campo({ rotulo, ajuda, erro, opcional, className, children }: Ca
 }
 
 export function Entrada({ className, ...props }: ComponentProps<"input">) {
-  return <input className={cn(BASE, "h-9", className)} {...props} />;
+  return <input className={cn(BASE, "h-10", className)} {...props} />;
 }
 
 export function Selecao({ className, ...props }: ComponentProps<"select">) {
-  return <select className={cn(BASE, "h-9 pr-8", className)} {...props} />;
+  return <select className={cn(BASE, "h-10 pr-8", className)} {...props} />;
 }
 
 export function AreaTexto({ className, ...props }: ComponentProps<"textarea">) {
@@ -72,7 +72,7 @@ export function Caixa({
 }: Omit<ComponentProps<"input">, "type"> & { rotulo: ReactNode; descricao?: ReactNode }) {
   return (
     <label className={cn("flex items-start gap-2.5 text-sm text-painel-tinta cursor-pointer", className)}>
-      <input type="checkbox" className="mt-0.5 size-4 rounded border-painel-linha-forte accent-[var(--painel-destaque)]" {...props} />
+      <input type="checkbox" className="mt-1 size-4 rounded border-painel-linha-forte accent-[var(--painel-destaque)]" {...props} />
       <span>
         {rotulo}
         {descricao && <span className="block text-xs text-painel-suave">{descricao}</span>}
@@ -96,7 +96,7 @@ export function OpcaoCartao({
         className
       )}
     >
-      <input type="radio" className="mt-0.5 size-4 accent-[var(--painel-destaque)]" {...props} />
+      <input type="radio" className="mt-1 size-4 accent-[var(--painel-destaque)]" {...props} />
       <span>
         <span className="font-medium text-painel-tinta">{rotulo}</span>
         {descricao && <span className="block text-xs text-painel-suave mt-0.5">{descricao}</span>}

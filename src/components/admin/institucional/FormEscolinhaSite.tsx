@@ -61,8 +61,8 @@ export interface FormEscolinhaSiteProps {
 const CAMPO =
   "w-full h-10 px-3 rounded-md bg-painel-superficie border border-painel-linha text-painel-tinta text-sm outline-none focus:border-painel-destaque";
 const ROTULO = "text-xs font-semibold text-painel-tinta block mb-1";
-const DICA = "text-[11px] text-painel-suave mt-1";
-const ERRO = "text-[11px] text-red-700 mt-1";
+const DICA = "text-xs text-painel-suave mt-1";
+const ERRO = "text-xs text-red-700 mt-1";
 
 /**
  * @example
@@ -321,7 +321,7 @@ export function FormEscolinhaSite({
             {/* Turmas */}
             <fieldset className="space-y-3">
               <legend className="text-sm font-bold text-painel-destaque mb-1">2. Turmas e horários na agenda</legend>
-              <p className="text-[11px] text-painel-suave">
+              <p className="text-xs text-painel-suave">
                 Escolha os dias e o horário de cada turma. O site mostra sozinho, ex.: <strong>Ter e Qui</strong> ·{" "}
                 <strong>8h e 9h</strong>. Com <strong>Bloquear na agenda</strong>, a quadra fica reservada para a aula
                 nesses dias e horários, e ninguém consegue reservar por cima.
@@ -425,7 +425,7 @@ export function FormEscolinhaSite({
                             ))}
                           </select>
                         )}
-                        <span className="text-[11px] text-painel-suave">
+                        <span className="text-xs text-painel-suave">
                           {t.bloquearAgenda
                             ? t.contratoId
                               ? "Já está na agenda. Se mudar dia, horário ou quadra, a agenda é refeita a partir de hoje."
@@ -485,7 +485,7 @@ export function FormEscolinhaSite({
               <legend className="text-sm font-bold text-painel-destaque mb-1">
                 3. Botão &ldquo;Quero uma vaga&rdquo;
               </legend>
-              <p className="text-[11px] text-painel-suave">
+              <p className="text-xs text-painel-suave">
                 Escolha o que acontece quando o visitante toca no botão do card.
               </p>
               <div
@@ -526,7 +526,7 @@ export function FormEscolinhaSite({
                         <IconeOpcao className="w-4 h-4 text-painel-destaque" />
                         {titulo}
                       </span>
-                      <span className="block text-[11px] text-painel-suave mt-0.5">
+                      <span className="block text-xs text-painel-suave mt-0.5">
                         {texto}
                       </span>
                     </span>
@@ -676,7 +676,7 @@ export function FormEscolinhaSite({
                   <span className="block text-sm font-semibold text-painel-tinta">
                     Mostrar no site
                   </span>
-                  <span className="block text-[11px] text-painel-suave">
+                  <span className="block text-xs text-painel-suave">
                     Desmarque para esconder sem apagar (ex.: férias do
                     professor).
                   </span>

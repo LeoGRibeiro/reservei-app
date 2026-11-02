@@ -25,8 +25,8 @@ const VARIANTES: Record<VarianteBotao, string> = {
 };
 
 const TAMANHOS = {
-  sm: "h-8 px-3 text-xs gap-1.5",
-  md: "h-9 px-3.5 text-sm gap-2",
+  sm: "h-9 px-3 text-xs gap-1.5",
+  md: "h-10 px-4 text-sm gap-2",
 };
 
 /** Classes do botão, para links (`<a>`) com aparência de botão. */

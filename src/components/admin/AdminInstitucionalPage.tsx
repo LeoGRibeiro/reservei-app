@@ -176,15 +176,15 @@ export function AdminInstitucionalPage() {
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 left-2 flex gap-1.5">
-                    <span className="px-2 py-0.5 rounded-full bg-painel-superficie border border-painel-linha text-painel-destaque font-semibold text-[10px]">
+                    <span className="px-2 py-0.5 rounded-full bg-painel-superficie border border-painel-linha text-painel-destaque font-semibold text-xs">
                       {foto.categoria}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-painel-superficie border border-painel-linha text-painel-tinta font-semibold text-[10px]">
+                    <span className="px-2 py-0.5 rounded-full bg-painel-superficie border border-painel-linha text-painel-tinta font-semibold text-xs">
                       Ordem: {foto.displayOrder}
                     </span>
                   </div>
                   {!foto.isActive && (
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-bold text-[10px]">
+                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-bold text-xs">
                       Inativo
                     </div>
                   )}

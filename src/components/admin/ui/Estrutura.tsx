@@ -53,7 +53,7 @@ export function Cartao({
       {(titulo || acoes) && (
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-painel-linha px-4 py-3">
           <div className="min-w-0">
-            {titulo && <h2 className="text-sm font-semibold text-painel-tinta">{titulo}</h2>}
+            {titulo && <h2 className="text-base font-semibold text-painel-tinta">{titulo}</h2>}
             {descricao && <p className="mt-0.5 text-xs text-painel-suave">{descricao}</p>}
           </div>
           {acoes && <div className="flex flex-wrap items-center gap-2">{acoes}</div>}
@@ -68,8 +68,8 @@ export function Cartao({
 export function Numero({ rotulo, valor, detalhe }: { rotulo: string; valor: ReactNode; detalhe?: ReactNode }) {
   return (
     <div className="rounded-lg border border-painel-linha bg-painel-superficie px-4 py-3">
-      <p className="text-xs text-painel-suave">{rotulo}</p>
-      <p className="mt-1 text-xl font-semibold tabular-nums text-painel-tinta">{valor}</p>
+      <p className="text-xs font-medium text-painel-suave">{rotulo}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums text-painel-tinta">{valor}</p>
       {detalhe && <p className="mt-0.5 text-xs text-painel-suave">{detalhe}</p>}
     </div>
   );
@@ -84,15 +84,35 @@ export interface ItemAba {
 
 /**
  * Abas sublinhadas. Com `href`, cada aba é um link; sem, chama `aoTrocar`.
+ *
+ * O sublinhado é uma sombra interna (não ocupa altura nem estoura a borda), então a barra nunca ganha
+ * rolagem vertical. No celular as abas que não cabem rolam na horizontal, sem barra visível.
  */
-export function Abas({ itens, ativa, aoTrocar, rotulo }: { itens: ItemAba[]; ativa: string; aoTrocar?: (id: string) => void; rotulo: string }) {
+export function Abas({
+  itens,
+  ativa,
+  aoTrocar,
+  rotulo,
+  className,
+}: {
+  itens: ItemAba[];
+  ativa: string;
+  aoTrocar?: (id: string) => void;
+  rotulo: string;
+  className?: string;
+}) {
   return (
-    <nav aria-label={rotulo} className="-mx-1 mb-4 flex gap-1 overflow-x-auto border-b border-painel-linha">
+    <nav
+      aria-label={rotulo}
+      className={cn("mb-4 flex gap-1 overflow-x-auto overflow-y-hidden scrollbar-hide border-b border-painel-linha md:overflow-hidden", className)}
+    >
       {itens.map((item) => {
         const atual = item.id === ativa;
         const classe = cn(
-          "whitespace-nowrap px-3 py-2 text-sm border-b-2 -mb-px transition-colors",
-          atual ? "border-painel-destaque text-painel-tinta font-medium" : "border-transparent text-painel-suave hover:text-painel-tinta"
+          "shrink-0 whitespace-nowrap px-3 pb-2.5 pt-2 text-sm transition-colors",
+          atual
+            ? "font-semibold text-painel-tinta shadow-[inset_0_-3px_0_var(--painel-destaque)]"
+            : "text-painel-suave hover:text-painel-tinta hover:shadow-[inset_0_-3px_0_var(--painel-linha-forte)]"
         );
         return item.href ? (
           <Link key={item.id} href={item.href} className={classe} aria-current={atual ? "page" : undefined}>

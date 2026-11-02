@@ -48,7 +48,7 @@ export function CartaoContrato({ contrato, sessoesFuturas, children }: Props) {
           </div>
         </div>
         <span
-          className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${
+          className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
             contrato.ativo
               ? "bg-painel-destaque-suave text-painel-destaque border-painel-destaque"
               : "bg-painel-elevada text-painel-suave border-painel-linha"

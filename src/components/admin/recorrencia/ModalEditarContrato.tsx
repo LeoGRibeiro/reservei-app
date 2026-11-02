@@ -245,7 +245,7 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
                   onChange={(e) => setDescricao(e.target.value)}
                   placeholder="Ex.: Para crianças de 8 a 14 anos. Turmas pela manhã e tarde. Matrículas abertas!"
                 />
-                <span className="text-[11px] text-painel-suave mt-1 block">
+                <span className="text-xs text-painel-suave mt-1 block">
                   Exibido para os clientes no portal e na Landing Page.
                 </span>
               </div>
@@ -312,10 +312,10 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
               <Info className="w-3.5 h-3.5 text-painel-suave" />
               <span>Agenda e bloqueios vinculados:</span>
             </div>
-            <p className="text-[11px] text-painel-suave">
+            <p className="text-xs text-painel-suave">
               {quadra ? `Quadra ${quadra.numero}` : contrato.quadraId} · {dias} · {contrato.horaInicio} às {contrato.horaFim} · {contrato.meses} {contrato.meses === 1 ? "mês" : "meses"} desde {formatarDataExibicao(contrato.dataInicio, { day: "numeric", month: "short", year: "numeric" })}
             </p>
-            <p className="text-[10px] text-painel-suave italic">
+            <p className="text-xs text-painel-suave italic">
               * Para alterar quadra, dias ou horários, encerre este contrato e cadastre um novo.
             </p>
           </div>

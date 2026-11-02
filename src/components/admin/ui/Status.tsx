@@ -24,7 +24,7 @@ const TONS: Record<TomStatus, string> = {
 /** Etiqueta com tom de status. */
 export function Etiqueta({ tom = "neutro", children, className }: { tom?: TomStatus; children: ReactNode; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-medium ring-1 ring-inset", TONS[tom], className)}>
+    <span className={cn("inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-xs font-medium ring-1 ring-inset", TONS[tom], className)}>
       {children}
     </span>
   );

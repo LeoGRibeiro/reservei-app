@@ -51,7 +51,7 @@ function MenuLateral({ modulos, role, aoNavegar }: { modulos?: string[]; role: C
         if (itens.length === 0) return null;
         return (
           <div key={grupo.titulo}>
-            <p className="px-2 pb-1 text-xs font-medium text-painel-apagada">{grupo.titulo}</p>
+            <p className="px-3 pb-1.5 text-[13px] font-semibold uppercase tracking-wide text-painel-suave">{grupo.titulo}</p>
             <ul className="space-y-0.5">
               {itens.map((item) => {
                 const ativo = item.id === atual;
@@ -62,8 +62,10 @@ function MenuLateral({ modulos, role, aoNavegar }: { modulos?: string[]; role: C
                       onClick={aoNavegar}
                       aria-current={ativo ? "page" : undefined}
                       className={cn(
-                        "block rounded-md px-2 py-1.5 text-sm transition-colors",
-                        ativo ? "bg-painel-fundo font-medium text-painel-tinta" : "text-painel-suave hover:bg-painel-elevada hover:text-painel-tinta"
+                        "block rounded-md border-l-[3px] px-3 py-2 text-sm transition-colors",
+                        ativo
+                          ? "border-l-painel-destaque bg-painel-destaque-suave font-semibold text-painel-destaque-forte"
+                          : "border-l-transparent text-painel-tinta hover:bg-painel-elevada"
                       )}
                     >
                       {item.rotulo}
@@ -140,7 +142,7 @@ export function PainelAdmin({ children }: { children: ReactNode }) {
     <ContextoPainel.Provider value={contexto}>
       <div className="painel min-h-screen">
         {/* Barra superior: nome da arena sempre visível */}
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-painel-linha bg-painel-superficie px-4">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-painel-linha bg-painel-superficie px-4">
           <button
             type="button"
             onClick={() => setMenuAberto((v) => !v)}
@@ -150,7 +152,7 @@ export function PainelAdmin({ children }: { children: ReactNode }) {
             {menuAberto ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-painel-tinta">{arena.nome}</p>
+            <p className="truncate text-base font-semibold text-painel-tinta">{arena.nome}</p>
             <p className="hidden truncate text-xs text-painel-suave sm:block">
               {role ? ROTULO_PAPEL[role] : "Painel"}
               {user?.email ? ` · ${user.email}` : ""}
@@ -166,16 +168,16 @@ export function PainelAdmin({ children }: { children: ReactNode }) {
         </header>
 
         <div className="flex">
-          <aside className="sticky top-14 hidden h-[calc(100vh-3.5rem)] w-56 shrink-0 overflow-y-auto border-r border-painel-linha bg-painel-superficie lg:block">
+          <aside className="sticky top-16 hidden h-[calc(100vh-4rem)] w-60 shrink-0 overflow-y-auto border-r border-painel-linha bg-painel-superficie lg:block">
             <MenuLateral modulos={modulos} role={role} />
           </aside>
 
           {menuAberto && (
-            <div className="fixed inset-0 top-14 z-20 lg:hidden" onClick={() => setMenuAberto(false)}>
+            <div className="fixed inset-0 top-16 z-20 lg:hidden" onClick={() => setMenuAberto(false)}>
               <div className="absolute inset-0 bg-stone-900/30" />
               <aside className="relative h-full w-64 overflow-y-auto border-r border-painel-linha bg-painel-superficie" onClick={(e) => e.stopPropagation()}>
                 <MenuLateral modulos={modulos} role={role} aoNavegar={() => setMenuAberto(false)} />
-                <a href={urlSite} target="_blank" rel="noopener noreferrer" className="mx-5 block py-2 text-sm text-painel-suave">
+                <a href={urlSite} target="_blank" rel="noopener noreferrer" className="mx-6 block py-2 text-sm text-painel-suave">
                   Ver site
                 </a>
               </aside>
