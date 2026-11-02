@@ -9,6 +9,7 @@
  * As escolinhas exibidas na landing vêm dos contratos do tipo "escolinha" (`contratos_recorrentes`).
  */
 
+import { prepararImagem } from "@/lib/institucional/prepararImagem";
 import { supabase, isSupabaseConfigured } from "./client";
 import type {
   GaleriaItem,
@@ -248,8 +249,27 @@ export async function excluirGaleriaItem(id: string): Promise<boolean> {
 }
 
 /**
+ * Traduz o erro do Storage para o dono da arena.
+ *
+ * @example
+ * ```ts
+ * mensagemErroUpload("new row violates row-level security policy"); // "Sem permissão para enviar fotos..."
+ * ```
+ */
+export function mensagemErroUpload(mensagem: string): string {
+  if (/row-level security|Unauthorized|permission/i.test(mensagem)) {
+    return "Sem permissão para enviar fotos. Sua sessão pode ter expirado: saia e entre de novo.";
+  }
+  if (/maximum allowed size|too large/i.test(mensagem)) return "A imagem deve ter no máximo 5 MB.";
+  if (/mime type|not supported/i.test(mensagem)) return "Formato não aceito. Envie JPG, PNG ou WebP.";
+  if (/Bucket not found/i.test(mensagem)) return "O armazenamento de fotos não está configurado. Fale com o suporte.";
+  return `Não foi possível enviar a imagem: ${mensagem}`;
+}
+
+/**
  * Faz upload de imagem para o bucket `institucional`, numa pasta da arena ativa.
- * Só aceita imagens de até 5 MB. Sem Supabase (offline), devolve uma URL temporária em memória.
+ * Antes de enviar, {@link prepararImagem} reduz fotos grandes e converte HEIC para JPEG; o bucket
+ * aceita imagens de até 5 MB. Sem Supabase (offline), devolve uma URL temporária em memória.
  *
  * @param arquivo Arquivo selecionado no input file
  * @param pasta Subpasta interna (ex: "galeria" ou "professores")
@@ -262,12 +282,13 @@ export async function excluirGaleriaItem(id: string): Promise<boolean> {
  * ```
  */
 export async function uploadImagemInstitucional(
-  arquivo: File,
+  arquivoEscolhido: File,
   pasta: "galeria" | "professores" | "quadras" = "galeria"
 ): Promise<{ success: boolean; url?: string; error?: string }> {
-  if (!arquivo.type.startsWith("image/")) {
-    return { success: false, error: "Envie um arquivo de imagem (JPG, PNG ou WebP)." };
-  }
+  // Reduz fotos grandes e converte formatos que o bucket não aceita (ex.: HEIC do iPhone)
+  const preparo = await prepararImagem(arquivoEscolhido);
+  if (!preparo.ok) return { success: false, error: preparo.erro };
+  const arquivo = preparo.arquivo;
   if (arquivo.size > TAMANHO_MAXIMO_IMAGEM_BYTES) {
     return { success: false, error: "A imagem deve ter no máximo 5 MB." };
   }
@@ -286,7 +307,7 @@ export async function uploadImagemInstitucional(
       .upload(nomeArquivo, arquivo, { cacheControl: "3600", upsert: false });
 
     if (uploadError) {
-      return { success: false, error: `Não foi possível enviar a imagem: ${uploadError.message}` };
+      return { success: false, error: mensagemErroUpload(uploadError.message) };
     }
 
     const { data: urlData } = supabase.storage.from(BUCKET_INSTITUCIONAL).getPublicUrl(nomeArquivo);

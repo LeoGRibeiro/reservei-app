@@ -192,7 +192,7 @@ export function JanelaQuadra({ quadra, aoFechar, aoSalvar, aoEnviarFoto }: Janel
           <div className="relative aspect-[4/3] overflow-hidden rounded-lg border border-painel-linha bg-painel-elevada">
             {dados.fotoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- prévia com o mesmo enquadramento do site
-              <img src={dados.fotoUrl} alt={dados.fotoDescricao || "Prévia da foto"} className="size-full object-cover" style={{ objectPosition: dados.fotoPosicao }} />
+              <img src={dados.fotoUrl} alt={dados.fotoDescricao || "Prévia da foto"} className="absolute inset-0 size-full object-cover" style={{ objectPosition: dados.fotoPosicao }} />
             ) : (
               <div className="flex size-full items-center justify-center text-sm text-painel-suave">Sem foto: o site mostra um fundo liso.</div>
             )}

@@ -172,13 +172,13 @@ export function AdminQuadrasPage() {
             return (
               <li key={quadra.id} aria-label={quadra.nome} className="overflow-hidden rounded-lg border border-painel-linha bg-painel-superficie">
                 <div className="flex flex-col gap-4 p-4 sm:flex-row">
-                  <div className="aspect-[4/3] w-full shrink-0 overflow-hidden rounded-md bg-painel-elevada sm:w-44">
+                  <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-md bg-painel-elevada sm:w-44">
                     {quadra.fotoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- miniatura com o enquadramento do site
                       <img
                         src={quadra.fotoUrl}
                         alt={quadra.fotoDescricao ?? quadra.nome}
-                        className="size-full object-cover"
+                        className="absolute inset-0 size-full object-cover"
                         style={quadra.fotoPosicao ? { objectPosition: quadra.fotoPosicao } : undefined}
                       />
                     ) : (
