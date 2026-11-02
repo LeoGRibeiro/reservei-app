@@ -3,13 +3,15 @@
  * @description Componentes base do painel (`components/admin/ui`): abas sem rolagem vertical e com a
  * aba ativa marcada; botões no tamanho de toque da SPEC de ajustes da demonstração.
  *
- * @see SPEC/2026-11-02-admin-ajustes-demo.md §1 e §2
+ * Janelas fecham com Esc e com clique no fundo (item 6).
+ *
+ * @see SPEC/2026-11-02-admin-ajustes-demo.md §1, §2 e §6
  */
 
 import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { Abas, Botao } from "@/components/admin/ui";
+import { Abas, Botao, Confirmacao, Janela } from "@/components/admin/ui";
 
 describe("Abas", () => {
   const itens = [
@@ -53,5 +55,50 @@ describe("Botao", () => {
   it("botão primário tem 40px de altura (h-10)", () => {
     render(<Botao>Salvar</Botao>);
     expect(screen.getByRole("button", { name: "Salvar" }).className).toContain("h-10");
+  });
+});
+
+describe("Janela", () => {
+  it("fecha com Esc", () => {
+    const aoFechar = vi.fn();
+    render(
+      <Janela aberta titulo="Teste" aoFechar={aoFechar}>
+        conteúdo
+      </Janela>
+    );
+    expect(screen.getByRole("dialog", { name: "Teste" })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(aoFechar).toHaveBeenCalledTimes(1);
+  });
+
+  it("fecha no clique do fundo, mas não no clique dentro", () => {
+    const aoFechar = vi.fn();
+    render(
+      <Janela aberta titulo="Teste" aoFechar={aoFechar}>
+        <p>conteúdo</p>
+      </Janela>
+    );
+    fireEvent.mouseDown(screen.getByText("conteúdo"));
+    expect(aoFechar).not.toHaveBeenCalled();
+    fireEvent.mouseDown(screen.getByRole("dialog").parentElement!.parentElement!);
+    expect(aoFechar).toHaveBeenCalledTimes(1);
+  });
+
+  it("outras teclas não fecham", () => {
+    const aoFechar = vi.fn();
+    render(
+      <Janela aberta titulo="Teste" aoFechar={aoFechar}>
+        conteúdo
+      </Janela>
+    );
+    fireEvent.keyDown(document, { key: "Enter" });
+    expect(aoFechar).not.toHaveBeenCalled();
+  });
+
+  it("Confirmacao também fecha com Esc", () => {
+    const aoFechar = vi.fn();
+    render(<Confirmacao aberta titulo="Cancelar?" rotuloConfirmar="Sim" aoConfirmar={vi.fn()} aoFechar={aoFechar} />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(aoFechar).toHaveBeenCalledTimes(1);
   });
 });

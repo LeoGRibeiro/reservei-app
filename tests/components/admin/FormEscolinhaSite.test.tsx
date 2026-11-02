@@ -9,7 +9,7 @@ const HORARIOS = ["07:00", "08:00", "09:00", "16:00", "17:00"];
 
 const novaComQuadra = (): EscolinhaSiteInput => ({ ...escolinhaVazia(), turmas: [turmaVazia("q1")] });
 
-function montar(inicial: EscolinhaSiteInput = novaComQuadra(), aoSalvar = vi.fn().mockResolvedValue(undefined), editando = false) {
+function montar(inicial: EscolinhaSiteInput = novaComQuadra(), aoSalvar = vi.fn().mockResolvedValue(undefined), editando = false, aoCancelar = vi.fn()) {
   render(
     <FormEscolinhaSite
       inicial={inicial}
@@ -18,7 +18,7 @@ function montar(inicial: EscolinhaSiteInput = novaComQuadra(), aoSalvar = vi.fn(
       quadras={QUADRAS}
       horarios={HORARIOS}
       aoSalvar={aoSalvar}
-      aoCancelar={vi.fn()}
+      aoCancelar={aoCancelar}
       aoEnviarFoto={vi.fn()}
     />
   );
@@ -36,6 +36,14 @@ function preencherTurma(digitar: (r: string, v: string) => void) {
 }
 
 describe("FormEscolinhaSite", () => {
+  it("fecha com Esc (janela do kit)", () => {
+    const aoCancelar = vi.fn();
+    montar(novaComQuadra(), vi.fn(), false, aoCancelar);
+    expect(screen.getByRole("dialog", { name: "Nova escolinha" })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(aoCancelar).toHaveBeenCalledTimes(1);
+  });
+
   it("a mensagem padrão acompanha o esporte e o professor digitados", () => {
     const { mensagem, digitar } = montar();
     digitar("Esporte *", "Vôlei");

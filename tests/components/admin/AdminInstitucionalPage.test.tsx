@@ -16,7 +16,15 @@ describe("AdminInstitucionalPage - Painel de Gestão", () => {
     const btnNovaFoto = await screen.findByRole("button", { name: /Adicionar Foto/i });
     fireEvent.click(btnNovaFoto);
 
-    expect(screen.getByRole("heading", { name: "Nova Foto da Estrutura" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Nova foto da estrutura" })).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Ex: Nossas Quadras de Saibro")).toBeInTheDocument();
+  });
+
+  it("a janela de foto fecha com Esc", async () => {
+    render(<AdminInstitucionalPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Adicionar Foto/i }));
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

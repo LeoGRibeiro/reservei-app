@@ -12,7 +12,7 @@
 "use client";
 
 import { useState } from "react";
-import { createPortal } from "react-dom";
+import { Janela } from "@/components/admin/ui";
 import {
   Loader2,
   MessageCircle,
@@ -157,30 +157,19 @@ export function FormEscolinhaSite({
     }
   };
 
-  // Portal no body: um ancestral com animação (transform) prenderia o "fixed" à área da página e cortaria a janela
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="titulo-form-escolinha"
-      className="painel fixed inset-0 z-[100] !bg-stone-900/40 overflow-y-auto overscroll-contain"
+  // Janela do kit: portal no body, fecha com Esc e no fundo, trava a rolagem da página
+  return (
+    <Janela
+      aberta
+      largura="lg"
+      titulo={editando ? "Editar escolinha" : "Nova escolinha"}
+      descricao={
+        <>
+          Tudo o que você preencher aqui aparece na seção <strong>Escolinhas</strong> do site da arena, logo depois de salvar.
+        </>
+      }
+      aoFechar={aoCancelar}
     >
-      <div className="min-h-full flex items-start sm:items-center justify-center p-4 sm:p-6">
-        <div className="bg-painel-superficie border border-painel-linha rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4">
-          <div>
-            <h2
-              id="titulo-form-escolinha"
-              className="text-xl font-bold text-painel-tinta"
-            >
-              {editando ? "Editar escolinha" : "Nova escolinha"}
-            </h2>
-            <p className="text-xs text-painel-suave mt-1">
-              Tudo o que você preencher aqui aparece na seção{" "}
-              <strong>Escolinhas</strong> do site da arena, logo depois de
-              salvar.
-            </p>
-          </div>
-
           <form onSubmit={salvar} noValidate className="space-y-5">
             {/* Identificação */}
             <fieldset className="space-y-3">
@@ -708,9 +697,6 @@ export function FormEscolinhaSite({
               </button>
             </div>
           </form>
-        </div>
-      </div>
-    </div>,
-    document.body,
+    </Janela>
   );
 }

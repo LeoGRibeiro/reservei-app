@@ -31,7 +31,7 @@ import { useInstitucionalService } from "@/hooks/useInstitucionalService";
 import {
   validarItemGaleria,
 } from "@/lib/institucional/institucionalHelpers";
-import { CabecalhoPagina } from "@/components/admin/ui";
+import { CabecalhoPagina, Janela } from "@/components/admin/ui";
 
 export function AdminInstitucionalPage() {
   const {
@@ -249,16 +249,11 @@ export function AdminInstitucionalPage() {
 
       {/* ── MODAL FORMULÁRIO GALERIA ───────────────────────────────────────── */}
       {modalGaleriaAberto && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-stone-900/40 flex items-center justify-center p-4"
+        <Janela
+          aberta
+          titulo={fotoEmEdicao ? "Editar foto da estrutura" : "Nova foto da estrutura"}
+          aoFechar={() => setModalGaleriaAberto(false)}
         >
-          <div className="bg-painel-superficie border border-painel-linha rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <h2 className="text-xl font-bold text-painel-tinta">
-              {fotoEmEdicao ? "Editar Foto da Estrutura" : "Nova Foto da Estrutura"}
-            </h2>
-
             <form onSubmit={handleSalvarFoto} className="space-y-4">
               <div>
                 <label className="text-xs font-semibold text-painel-tinta block mb-1">
@@ -397,8 +392,7 @@ export function AdminInstitucionalPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Janela>
       )}
 
     </div>

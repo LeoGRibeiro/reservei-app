@@ -21,7 +21,7 @@ import { useArena } from "@/hooks/useArena";
 import { ArenaRepository } from "@/lib/arena/arenaRepository";
 import type { Quadra, TipoPisoQuadra } from "@/lib/arena/types";
 import { ESPORTES, type Esporte } from "@/lib/quadras";
-import { Botao, CabecalhoPagina } from "@/components/admin/ui";
+import { Botao, CabecalhoPagina, Janela } from "@/components/admin/ui";
 
 const TIPOS_PISO: { valor: TipoPisoQuadra; label: string }[] = [
   { valor: "areia", label: "Areia (Beach Tennis / Futevôlei)" },
@@ -402,20 +402,11 @@ export function AdminQuadrasPage() {
 
       {/* ── Modal de Criação / Edição de Quadra ──────────────────────────────── */}
       {modalQuadraAberto && (
-        <div className="fixed inset-0 z-50 bg-stone-900/40 flex items-center justify-center p-4">
-          <div className="bg-painel-superficie border border-painel-linha rounded-lg max-w-lg w-full p-6 shadow-2xl animate-scale-in">
-            <div className="flex items-center justify-between border-b border-painel-linha pb-4 mb-5">
-              <h2 className="text-lg font-bold text-painel-tinta">
-                {quadraEmEdicao ? `Editar ${quadraEmEdicao.nome}` : "Cadastrar Nova Quadra"}
-              </h2>
-              <button
-                onClick={() => setModalQuadraAberto(false)}
-                className="text-painel-suave hover:text-painel-tinta"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
+        <Janela
+          aberta
+          titulo={quadraEmEdicao ? `Editar ${quadraEmEdicao.nome}` : "Cadastrar nova quadra"}
+          aoFechar={() => setModalQuadraAberto(false)}
+        >
             <form onSubmit={handleSalvarQuadra} className="space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 <div>
@@ -556,27 +547,12 @@ export function AdminQuadrasPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Janela>
       )}
 
       {/* ── Modal de Tarifa Dinâmica ────────────────────────────────────────── */}
       {modalPrecoAberto && quadraAlvoPreco && (
-        <div className="fixed inset-0 z-50 bg-stone-900/40 flex items-center justify-center p-4">
-          <div className="bg-painel-superficie border border-painel-linha rounded-lg max-w-md w-full p-6 shadow-2xl animate-scale-in">
-            <div className="flex items-center justify-between border-b border-painel-linha pb-4 mb-5">
-              <div>
-                <h2 className="text-lg font-bold text-painel-tinta">Adicionar Tarifa Especial</h2>
-                <p className="text-xs text-painel-suave mt-0.5">{quadraAlvoPreco.nome}</p>
-              </div>
-              <button
-                onClick={() => setModalPrecoAberto(false)}
-                className="text-painel-suave hover:text-painel-tinta"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
+        <Janela aberta largura="sm" titulo="Adicionar tarifa especial" descricao={quadraAlvoPreco.nome} aoFechar={() => setModalPrecoAberto(false)}>
             <form onSubmit={handleSalvarPreco} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-painel-suave mb-1">
@@ -676,8 +652,7 @@ export function AdminQuadrasPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Janela>
       )}
     </div>
   );

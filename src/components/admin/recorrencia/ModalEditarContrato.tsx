@@ -6,8 +6,8 @@
 "use client";
 
 import { useState } from "react";
-import { createPortal } from "react-dom";
-import { GraduationCap, Users, X, Loader2, Info, Upload } from "lucide-react";
+import { Janela } from "@/components/admin/ui";
+import { Loader2, Info, Upload } from "lucide-react";
 import { ESPORTES, type Esporte } from "@/lib/quadras";
 import { useQuadrasCatalogo } from "@/store/useCatalogoArenaStore";
 import { mascaraWhatsApp, formatarDataExibicao } from "@/lib/constants";
@@ -114,49 +114,15 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
     }
   };
 
-  return createPortal(
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="modal-editar-titulo"
-      className="painel fixed inset-0 z-50 flex items-center justify-center p-4 !bg-stone-900/40"
+  return (
+    <Janela
+      aberta
+      titulo={ehEscolinha ? "Editar escolinha" : "Editar grupo"}
+      descricao="Altere os dados cadastrais e de divulgação deste contrato."
+      aoFechar={onClose}
     >
-      <div
-        className="w-full max-w-lg bg-painel-superficie border border-painel-linha rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* ── Header ── */}
-        <header className="flex items-center justify-between p-5 border-b border-painel-linha">
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-9 h-9 rounded-md flex items-center justify-center border ${
-                ehEscolinha
-                  ? "bg-violet-50 border-violet-200 text-violet-700"
-                  : "bg-sky-50 border-sky-200 text-sky-700"
-              }`}
-            >
-              {ehEscolinha ? <GraduationCap className="w-5 h-5" /> : <Users className="w-5 h-5" />}
-            </div>
-            <div>
-              <h2 id="modal-editar-titulo" className="text-base font-bold text-painel-tinta">
-                {ehEscolinha ? "Editar Escolinha" : "Editar Grupo"}
-              </h2>
-              <p className="text-xs text-painel-suave">
-                Altere os dados cadastrais e de divulgação deste contrato.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            aria-label="Fechar"
-            className="text-painel-suave hover:text-painel-tinta p-1 rounded-lg hover:bg-painel-elevada transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </header>
-
         {/* ── Formulário com scroll ── */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {erro && (
             <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs">
               {erro}
@@ -340,8 +306,6 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
             </button>
           </div>
         </form>
-      </div>
-    </div>,
-    document.body
+    </Janela>
   );
 }
