@@ -190,6 +190,13 @@ describe("estados do horário", () => {
     expect(situacaoDoHorario({ ...base, agoraMin: 13 * 60, antecedenciaMin: 0, h: 13 }).tipo).toBe("encerrado");
   });
 
+  it("horário de grupo vira 'Ocupado' como reserva comum, nunca 'Aula'", () => {
+    const linha = mapearLinhaGrade({ id: "g1", quadra_id: "q1", data: SEXTA, horarios: ["21:00"], status: "confirmada", tipo_reserva: "grupo", nome_cliente: "Pelada do Marcos" });
+    expect(linha.organizador).toBeUndefined();
+    const comGrupo = indexarGrade([...grade, linha], agora);
+    expect(situacaoDoHorario({ ...base, indice: comGrupo, h: 21 })).toEqual({ tipo: "ocupado" });
+  });
+
   it("lock de checkout vencido não ocupa", () => {
     expect(situacaoDoHorario({ ...base, h: 20 }).tipo).toBe("livre");
   });

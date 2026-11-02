@@ -75,6 +75,29 @@ describe("schema + migrações no Postgres real (PGlite)", () => {
     expect(avulsa?.whatsapp_cliente ?? null).toBeNull();
   });
 
+  it("horário de grupo aparece como reserva comum: sem nome, sem WhatsApp e sem turma (nunca 'Aula')", async () => {
+    await db.query(
+      `INSERT INTO public.contratos_recorrentes (id, arena_id, tipo, nome, responsavel_nome, contato_whatsapp, quadra_id,
+         dias_semana, hora_inicio, hora_fim, data_inicio, meses, escolinha_id, ativo)
+       VALUES ('ctr-grupo-pg', 'arena-belem', 'grupo', 'Pelada do Marcos', 'Marcos', '91988887777', 'arena-belem-q1',
+         '{2}', '21:00', '22:00', '2031-04-01', 1, 'esc-qualquer', true)`
+    );
+    await db.query(
+      `INSERT INTO public.reservas (id, arena_id, quadra_id, data, horarios, hora_inicio, hora_fim, nome_cliente, whatsapp_cliente,
+         cpf_cliente, valor_total, valor_sinal, valor_pendente, status, tipo_reserva, contrato_id, criada_em)
+       VALUES ('rsv-grupo-pg', 'arena-belem', 'arena-belem-q1', '2031-04-01', '{21:00}', '21:00', '22:00', 'Pelada do Marcos',
+         '91988887777', '', 100, 0, 100, 'confirmada', 'grupo', 'ctr-grupo-pg', now())`
+    );
+    const { rows } = await comoPapel("anon", "SELECT * FROM public.grade_publica('arena-belem', '2031-04-01', '2031-04-01')");
+    const grupo = rows.find((r) => r.id === "rsv-grupo-pg");
+    expect(grupo).toBeDefined();
+    expect(grupo?.tipo_reserva).toBe("grupo");
+    expect(grupo?.nome_cliente ?? null).toBeNull();
+    expect(grupo?.whatsapp_cliente ?? null).toBeNull();
+    // Mesmo com escolinha_id no contrato, grupo não vira turma de escolinha
+    expect(grupo?.escolinha_id ?? null).toBeNull();
+  });
+
   it("visitante não lê a tabela de reservas diretamente", async () => {
     const { rows } = await comoPapel("anon", "SELECT count(*)::int AS n FROM public.reservas");
     expect(rows[0].n).toBe(0);

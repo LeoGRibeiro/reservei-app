@@ -16,7 +16,7 @@
 
 import { esporteNaFrase, linkWhatsApp } from "@/lib/portal/formatos";
 import { ESPORTES, type Esporte } from "@/lib/quadras";
-import { DIAS_SEMANA, type DiaSemana } from "@/lib/recorrencia/types";
+import { DIAS_SEMANA, type ContratoRecorrente, type DiaSemana } from "@/lib/recorrencia/types";
 
 /** Máximo de turmas por escolinha (o banco recusa mais que isso). */
 export const MAX_TURMAS = 12;
@@ -356,4 +356,97 @@ export function hrefBotaoEscolinha(
   if (e.tipoBotao === "link" && linkValido(e.linkBotao)) return e.linkBotao.trim();
   const numero = normalizarWhatsApp(e.whatsapp) || whatsappArena;
   return linkWhatsApp(numero, e.mensagemWhatsapp.trim() || mensagemPadraoEscolinha(e.esporte, e.professor));
+}
+
+// ─── Horários antigos (contratos de escolinha sem escolinha do site) ─────────
+
+/** Mesmos dias e mesmo horário (a ordem dos dias não importa). */
+function mesmoHorario(t: Pick<TurmaSite, "diasSemana" | "horaInicio" | "horaFim">, c: Pick<ContratoRecorrente, "diasSemana" | "horaInicio" | "horaFim">): boolean {
+  const dias = (d: readonly number[]) => [...d].sort((x, y) => x - y).join(",");
+  return dias(t.diasSemana) === dias(c.diasSemana) && t.horaInicio === c.horaInicio && t.horaFim === c.horaFim;
+}
+
+/** Resultado de {@link vincularContratos}. */
+export interface VinculoContratos<E extends Pick<EscolinhaSite, "id" | "turmas">> {
+  /** Escolinhas com o `contratoId` das turmas completado pelos contratos encontrados */
+  escolinhas: E[];
+  /** Contratos de escolinha que não pertencem a nenhuma turma ("horários antigos") */
+  antigos: ContratoRecorrente[];
+}
+
+/**
+ * Liga os contratos de escolinha às turmas e separa os que sobram.
+ *
+ * 1. Turma com `contratoId` já gravado: fica com ele.
+ * 2. Contrato com `escolinhaId` de uma escolinha existente, ainda sem turma: casa com a turma dessa
+ *    escolinha que tem os mesmos dias e horário (a turma passa a mostrar "Na agenda"). Isso cobre
+ *    dados gravados antes de a turma guardar o contrato.
+ * 3. O resto dos contratos de escolinha ativos (sem escolinha, escolinha apagada ou sem turma igual)
+ *    vira "horário antigo": o dono decide ligar a uma escolinha ou encerrar. Nada some sozinho.
+ *
+ * @example
+ * ```ts
+ * const { escolinhas: comAgenda, antigos } = vincularContratos(escolinhas, contratos);
+ * ```
+ */
+export function vincularContratos<E extends Pick<EscolinhaSite, "id" | "turmas">>(
+  escolinhas: readonly E[],
+  contratos: readonly ContratoRecorrente[]
+): VinculoContratos<E> {
+  const ativos = contratos.filter((c) => c.tipo === "escolinha" && c.ativo);
+  const usados = new Set(escolinhas.flatMap((e) => e.turmas.map((t) => t.contratoId).filter(Boolean)));
+  const resultado = escolinhas.map((e) => ({ ...e, turmas: e.turmas.map((t) => ({ ...t })) }));
+  const antigos: ContratoRecorrente[] = [];
+  for (const c of ativos) {
+    if (usados.has(c.id)) continue;
+    const dona = c.escolinhaId ? resultado.find((e) => e.id === c.escolinhaId) : undefined;
+    const turma = dona?.turmas.find((t) => !t.contratoId && mesmoHorario(t, c));
+    if (turma) {
+      turma.contratoId = c.id;
+      turma.bloquearAgenda = true;
+      turma.quadraId = c.quadraId;
+      usados.add(c.id);
+    } else {
+      antigos.push(c);
+    }
+  }
+  return { escolinhas: resultado, antigos };
+}
+
+/**
+ * Contratos de escolinha ativos que não pertencem a nenhuma turma (atalho de {@link vincularContratos}).
+ *
+ * @example
+ * ```ts
+ * contratosSemEscolinha(contratos, escolinhas); // [{ id: "ctr-1", nome: "Escolinha Craques", ... }]
+ * ```
+ */
+export function contratosSemEscolinha(
+  contratos: readonly ContratoRecorrente[],
+  escolinhas: readonly Pick<EscolinhaSite, "id" | "turmas">[]
+): ContratoRecorrente[] {
+  return vincularContratos(escolinhas, contratos).antigos;
+}
+
+/**
+ * Turma da escolinha a partir de um contrato antigo: mesmos dias, horário e quadra, já bloqueada na
+ * agenda (o contrato continua o mesmo, só passa a pertencer à escolinha).
+ *
+ * @example
+ * ```ts
+ * turmaDoContrato(contrato); // { dias: "Ter e Qui", horas: "8h e 9h", bloquearAgenda: true, contratoId: "ctr-1", ... }
+ * ```
+ */
+export function turmaDoContrato(c: Pick<ContratoRecorrente, "id" | "diasSemana" | "horaInicio" | "horaFim" | "quadraId" | "faixaEtaria">): TurmaSite {
+  return completarTextosTurma({
+    dias: "",
+    horas: "",
+    categoria: c.faixaEtaria ?? "",
+    diasSemana: [...c.diasSemana].sort((a, b) => a - b) as DiaSemana[],
+    horaInicio: c.horaInicio,
+    horaFim: c.horaFim,
+    bloquearAgenda: true,
+    quadraId: c.quadraId,
+    contratoId: c.id,
+  });
 }

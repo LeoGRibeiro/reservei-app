@@ -1,7 +1,12 @@
 /**
- * Tela do admin: Gestão de Grupos Comuns (mensalistas).
- * Cadastro de grupos com horário cativo e controle de cancelamentos
- * (aviso de 1 semana, reposição e cobrança).
+ * @file AdminGruposPage.tsx
+ * @description Tela Grupos do painel: horários fixos de grupos de amigos (mensalistas), com controle
+ * de cancelamentos (aviso de 1 semana, reposição e cobrança). Cadastro e edição em {@link JanelaGrupo}.
+ *
+ * Diferença para Escolinhas: a escolinha aparece no site como "Aula", com card e botão "Quero uma
+ * vaga"; o grupo aparece no site **igual a uma reserva comum ("Ocupado")**, sem nome nem motivo.
+ *
+ * @see SPEC/2026-11-02-admin-ajustes-demo.md §5
  */
 
 "use client";
@@ -12,11 +17,10 @@ import { Pencil, Plus, Users } from "lucide-react";
 import { useContratosService } from "@/hooks/useContratosService";
 import { formatarMoeda, getHoje } from "@/lib/constants";
 import type { ContratoRecorrente } from "@/lib/recorrencia/types";
-import { FormularioContrato } from "./recorrencia/FormularioContrato";
 import { CartaoContrato } from "./recorrencia/CartaoContrato";
 import { PainelOcorrenciasGrupo } from "./recorrencia/PainelOcorrenciasGrupo";
-import { ModalEditarContrato } from "./recorrencia/ModalEditarContrato";
-import { Botao, CabecalhoPagina } from "@/components/admin/ui";
+import { JanelaGrupo } from "./grupos/JanelaGrupo";
+import { Aviso, Botao, CabecalhoPagina } from "@/components/admin/ui";
 
 export function AdminGruposPage() {
   const {
@@ -72,29 +76,30 @@ export function AdminGruposPage() {
         titulo="Grupos"
         descricao="Horários fixos de grupos de amigos, sem pagamento adiantado. Cancelamento com menos de 1 semana só é abonado se o horário for reposto."
         acoes={
-          !mostrarForm && (
-            <Botao id="grupos-novo" icone={Plus} onClick={() => setMostrarForm(true)}>
-              Novo grupo
-            </Botao>
-          )
+          <Botao id="grupos-novo" icone={Plus} onClick={() => setMostrarForm(true)}>
+            Novo grupo
+          </Botao>
         }
       />
 
+      <Aviso tom="info">
+        No site, o horário do grupo aparece como <strong>&ldquo;Ocupado&rdquo;</strong>, igual a uma reserva comum, sem o nome do grupo.
+        Quem aparece como &ldquo;Aula&rdquo;, com botão &ldquo;Quero uma vaga&rdquo;, são as <strong>Escolinhas</strong>.
+      </Aviso>
+
       {mostrarForm && (
-        <FormularioContrato
-          tipo="grupo"
-          onSubmit={criarContrato}
-          onCancelar={() => setMostrarForm(false)}
-          onSucesso={(resultado) => {
+        <JanelaGrupo
+          aoFechar={() => setMostrarForm(false)}
+          aoCriar={criarContrato}
+          aoAtualizar={atualizarContrato}
+          aoSalvo={(mensagem) => {
             setMostrarForm(false);
-            toast.success("Grupo cadastrado", {
-              description: `${resultado.totalOcorrencias} sessões bloqueadas na agenda.`,
-            });
+            toast.success(mensagem);
           }}
         />
       )}
 
-      {grupos.length === 0 && !mostrarForm && (
+      {grupos.length === 0 && (
         <div className="bg-painel-superficie border border-painel-linha rounded-lg p-10 text-center">
           <Users className="w-10 h-10 text-painel-apagada mx-auto mb-3" />
           <p className="text-painel-suave font-medium">Nenhum grupo cadastrado</p>
@@ -171,15 +176,14 @@ export function AdminGruposPage() {
       </div>
 
       {contratoEmEdicao && (
-        <ModalEditarContrato
-          contrato={contratoEmEdicao}
-          onClose={() => setContratoEmEdicao(null)}
-          onSalvar={async (id, dados) => {
-            const res = await atualizarContrato(id, dados);
-            if (res.ok) {
-              toast.success("Grupo atualizado com sucesso!");
-            }
-            return res;
+        <JanelaGrupo
+          grupo={contratoEmEdicao}
+          aoFechar={() => setContratoEmEdicao(null)}
+          aoCriar={criarContrato}
+          aoAtualizar={atualizarContrato}
+          aoSalvo={(mensagem) => {
+            setContratoEmEdicao(null);
+            toast.success(mensagem);
           }}
         />
       )}
