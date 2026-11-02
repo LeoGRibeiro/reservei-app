@@ -2,6 +2,7 @@
 
 - **Origem:** teste do dono no localhost depois da revisão (`SPEC/2026-11-02-admin-revisao.md`), com prints.
 - **Escopo:** só o que está aqui. "Todo o resto vamos ver depois."
+- **Status:** itens 1 a 10 implementados em 02/11/2026 (ver "Execução" no fim).
 - **Regras de sempre:** banco local para testes (nunca produção). SQL em migração + `schema.sql` + bloco para o dono colar. Testes, `tsc` e build verdes, validar no navegador (computador e celular 390px). Commit ao fim de cada item, sem push.
 
 ---
@@ -179,3 +180,23 @@ Banco só local (tests/supabase-local, porta 54330; dono dono@teste.local / senh
 Migração + schema.sql + SQL para eu colar quando mexer no banco. Testes, tsc (em src/) e build verdes;
 valide cada tela no navegador (1440px e 390px) e mostre prints. Feche com a "🔍 Análise Crítica do Claude".
 ```
+
+
+---
+
+## Execução (02/11/2026)
+
+| Item | Commit | Resumo |
+|---|---|---|
+| 1 e 2 | `07d43f6` | Escala de texto no escopo `.painel` (corpo 16px, mínimo 14px), tokens AA, menu ativo com faixa, botões 40px, grade da Agenda maior; abas com sublinhado por sombra (sem `-mb-px`), `scrollbar-hide` |
+| 6 | `9955f7e` | Escolinha, contrato, quadra, tarifa e foto do site na `Janela` (Esc e clique fora) |
+| 7 | `4217489` | Grade do dia sempre completa (Encerrado / Indisponível com motivo); antecedência padrão 0; corrigido `\|\| 60` que transformava 0 em 60; migração `e` |
+| 3 | `e6307d6` | Escolha rápida no horário livre: Nova reserva ou Bloquear horário, já preenchidos |
+| 4 e 5 | `f9e5d37` | Escolinha num cadastro só; contratos casados com as turmas por escolinha + dias + horário; aviso "Horários antigos sem escolinha" (Ligar / Encerrar); Grupos com `JanelaGrupo` e frase "aparece como Ocupado"; `grade_publica` testada no PGlite |
+| 8 | `d1facf5` | Quadras: foto (envio, enquadramento, descrição), tarifa editável com efeito no site, ordem, sem coberta/iluminação; fechar a quadra por período ou "até liberar" (decisão: **colunas** `bloqueio_*` + trigger no banco, não bloqueios por horário); migração `f`; Storage no Supabase local |
+| 9 | `6b0ef7d` | Site em dois blocos (Fotos da estrutura e "Na arena"); envio reduz fotos grandes e converte HEIC; erros do Storage traduzidos |
+| 10 | `d948ddb` | Voucher `em_analise` → liberar/recusar (dono ou gerente) pela rota do servidor; equipe só lê vouchers; Clube mostra "em análise"; migração `g` |
+
+**Causa do "erro ao enviar foto" (item 9):** o Supabase local de testes não tinha Storage (todo envio no localhost falhava). Em produção, as causas prováveis eram foto de celular acima de 5 MB e HEIC do iPhone; as duas passam a ser tratadas no navegador antes do envio.
+
+**Migrações a aplicar em produção, nesta ordem:** `2026-11-02-e-antecedencia-zero.sql`, `2026-11-02-f-quadra-fechada.sql`, `2026-11-02-g-voucher-aprovacao.sql`.

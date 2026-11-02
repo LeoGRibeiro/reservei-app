@@ -8,8 +8,8 @@
 - [ ] Rodou o `seed-arena-belem.sql` hoje? Ele renova as reservas de exemplo das próximas 2 semanas.
 - [ ] Abriu `https://reserveei.vercel.app` no celular e viu a faixa amarela "Demonstração"?
 - [ ] Entrou no `/admin` com a conta de proprietário da Arena Belém?
-- [ ] Subiu 3 a 5 fotos do Instagram da arena em **Institucional & LP → Galeria**? A demo fica muito mais convincente com as fotos deles.
-- [ ] Conferiu os preços em **Gestão de Quadras**? Os valores do seed são estimativas: areia R$ 80/h de dia, R$ 90 no fim de semana e R$ 100 à noite; society R$ 150, R$ 160 e R$ 180.
+- [ ] Subiu 3 a 5 fotos do Instagram da arena em **Site → Fotos da estrutura**? Pode ser foto do celular: o painel reduz antes de enviar. O site mostra as 4 primeiras.
+- [ ] Conferiu os preços em **Quadras e preços**? O card de cada quadra mostra o preço exatamente como sai no site ("R$ 80 de dia · R$ 100 à noite"). Os valores do seed são estimativas: areia R$ 80/h de dia, R$ 90 no fim de semana e R$ 100 à noite; society R$ 150, R$ 160 e R$ 180.
 
 ## Contexto do cliente (pesquisa de 22/10/2026)
 
@@ -46,12 +46,13 @@ O painel novo é neutro e igual para toda arena; o nome da Arena Belém fica sem
 2. Se aparecer **Pix para conferir**: um atleta pagou na chave Pix da arena e avisou. Explique que é o modo sem taxa, em que o balcão só confere o extrato. Clique em **Confirmar Pix**.
 3. Abra a **Agenda** (visão Dia): uma coluna por quadra, com a reserva feita no celular já lá. Clique num horário livre → **Nova reserva** para um cliente que ligou (o preço vem da tabela da quadra; marque "Pagou o sinal · dinheiro").
 4. Clique numa reserva → **detalhe**: **Receber o restante** (dinheiro, Pix ou cartão), **Remarcar** (só mostra horários livres e recalcula o preço) e **Cancelar** dizendo o que acontece com o sinal. Mostre o **Histórico**: quem fez cada coisa e quando.
-5. **Bloqueie** um horário para manutenção ou torneio (clique no horário livre → Bloquear horário).
+5. **Bloqueie** um horário para manutenção ou torneio: clique no horário livre e escolha **Bloquear horário** (já vem com quadra, dia e hora). Para reforma ou evento de vários dias, mostre **Quadras e preços → Fechar quadra** (de uma data a outra ou "até eu liberar"): o painel lista as reservas que já estão no período e o site passa a mostrar "Indisponível".
 6. **Escolinhas**: cadastre uma turma ao vivo (ex.: futebol, terça e quinta às 17h, "Bloquear na agenda"). Ela aparece no site e reserva os horários fixos sozinha.
 7. **Clientes**: todo mundo que já reservou, com ou sem conta, pelo WhatsApp. Mostre o bloqueio de cliente (só nesta arena).
 8. **Equipe**: crie um acesso de *operador de balcão* e explique que ele não vê Financeiro, preços nem configurações (nem digitando o endereço).
 9. **Recebimento**: chave Pix da arena (sem taxa) ou Asaas (confirma sozinho). Nos dois casos **o dinheiro cai na conta da arena**.
 10. **Financeiro**: escolha o mês. Recebido, falta receber, descontos do Clube e devoluções, por quadra e por dia, e a planilha para o contador.
+11. **Clube (Fidelidade)**: quando um atleta bate a meta, a hora grátis entra em **análise**; o dono libera ou recusa em Fidelidade (e vê o aviso em Hoje). Argumento: nada sai de graça sem o dono conferir.
 
 ## 4. Diferenciais frente ao AgendeiQuadras (2 min)
 
