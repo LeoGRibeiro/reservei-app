@@ -1,12 +1,14 @@
 "use client";
 
-import { AdminFinanceiroPage } from "@/components/admin/AdminFinanceiroPage";
-import { LegadoEscuro } from "@/components/admin/painel/LegadoEscuro";
+import { Suspense } from "react";
+import { PaginaFinanceiro } from "@/components/admin/financeiro/PaginaFinanceiro";
+import { Carregando } from "@/components/admin/ui";
 
-export default function PaginaFinanceiro() {
+/** Financeiro: números do mês calculados no banco e lista de reservas. */
+export default function Financeiro() {
   return (
-    <LegadoEscuro>
-      <AdminFinanceiroPage />
-    </LegadoEscuro>
+    <Suspense fallback={<Carregando />}>
+      <PaginaFinanceiro />
+    </Suspense>
   );
 }

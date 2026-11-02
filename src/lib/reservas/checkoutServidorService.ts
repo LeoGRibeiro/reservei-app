@@ -249,7 +249,16 @@ export async function criarReservaCheckout(
     .or(filtroBloqueio)
     .limit(1);
   if (erroBloqueio) throw new Error(erroBloqueio.message);
-  if (bloqueados && bloqueados.length > 0) {
+  // Bloqueio da própria arena pelo WhatsApp (migração 2026-11-02-d; banco sem a tabela segue sem ele)
+  const telefoneNacional = dados.whatsappCliente.length > 11 && dados.whatsappCliente.startsWith("55") ? dados.whatsappCliente.slice(2) : dados.whatsappCliente;
+  const { data: bloqueadoNaArena, error: erroArenaBloqueio } = await supabaseAdmin
+    .from("arena_clientes_bloqueados")
+    .select("telefone")
+    .eq("arena_id", arena.id)
+    .eq("telefone", telefoneNacional)
+    .limit(1);
+  if (erroArenaBloqueio && erroArenaBloqueio.code !== "42P01" && erroArenaBloqueio.code !== "PGRST205") throw new Error(erroArenaBloqueio.message);
+  if ((bloqueados && bloqueados.length > 0) || (bloqueadoNaArena && bloqueadoNaArena.length > 0)) {
     throw new ErroHttp(
       "Sua conta está com restrição para novos agendamentos. Fale com a arena para entender o motivo.",
       403

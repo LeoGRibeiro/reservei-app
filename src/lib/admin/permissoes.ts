@@ -33,7 +33,9 @@ export type AcaoAdmin =
   /** Conectar Asaas / configurar Pix da arena */
   | "configurar_pagamentos"
   /** Redefinir a senha de um atleta da arena */
-  | "redefinir_senha_atleta";
+  | "redefinir_senha_atleta"
+  /** Bloquear ou liberar um cliente nesta arena */
+  | "bloquear_cliente";
 
 /** Ordem hierárquica: cada papel herda o acesso dos anteriores. */
 const NIVEL: Record<ArenaUserRole, number> = { operador: 1, gerente: 2, proprietario: 3 };
@@ -58,6 +60,7 @@ const PAPEL_MINIMO_VIEW: Record<AdminView, ArenaUserRole> = {
 const PAPEL_MINIMO_ACAO: Record<AcaoAdmin, ArenaUserRole> = {
   ver_receita: "gerente",
   redefinir_senha_atleta: "gerente",
+  bloquear_cliente: "gerente",
   gerenciar_equipe: "proprietario",
   configurar_pagamentos: "proprietario",
 };

@@ -8,25 +8,9 @@
  */
 
 import { supabaseAdmin } from "@/lib/supabase/adminClient";
+import { variacoesDoTelefone } from "./telefone";
 
-/**
- * Formas em que o mesmo WhatsApp pode ter sido gravado numa reserva (só dígitos, com 55, com máscara).
- *
- * @param telefone WhatsApp em qualquer formato
- * @returns Variações sem repetição (vazio se o número for inválido)
- *
- * @example
- * ```ts
- * variacoesDoTelefone("(91) 98498-2865"); // ["91984982865", "5591984982865", "(91) 98498-2865"]
- * ```
- */
-export function variacoesDoTelefone(telefone: string): string[] {
-  let d = telefone.replace(/\D/g, "");
-  if (d.length > 11 && d.startsWith("55")) d = d.slice(2);
-  if (d.length < 10) return [];
-  const mascara = d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}` : `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-  return Array.from(new Set([d, `55${d}`, mascara]));
-}
+export { variacoesDoTelefone } from "./telefone";
 
 /**
  * Liga as reservas sem conta com o WhatsApp do atleta à conta dele. Nunca lança: falhar aqui não
