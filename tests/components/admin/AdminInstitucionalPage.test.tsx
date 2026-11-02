@@ -6,8 +6,7 @@ import { AdminInstitucionalPage } from "@/components/admin/AdminInstitucionalPag
 describe("AdminInstitucionalPage - Painel de Gestão", () => {
   it("renderiza o título, a galeria e avisa que as escolinhas ficam no menu Escolinhas", async () => {
     render(<AdminInstitucionalPage />);
-    expect(await screen.findByRole("heading", { name: "Conteúdo Institucional" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Galeria do Complexo/i })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Site" })).toBeInTheDocument();
     expect(screen.getByText(/As escolinhas ficam no menu Escolinhas/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Escolinhas do site/i })).not.toBeInTheDocument();
   });

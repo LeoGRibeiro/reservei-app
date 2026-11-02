@@ -7,15 +7,12 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
-  Settings,
   Building2,
   Globe,
-  Phone,
   Clock,
   Shield,
-  Percent,
   MapPin,
   Save,
   Copy,
@@ -26,6 +23,7 @@ import { useArena } from "@/hooks/useArena";
 import { ArenaRepository } from "@/lib/arena/arenaRepository";
 import { construirUrlArena } from "@/lib/arena/subdomain";
 import { POLITICA_CANCELAMENTO_PADRAO } from "@/lib/legal/termos";
+import { CabecalhoPagina } from "@/components/admin/ui";
 
 export function AdminConfiguracoesPage() {
   const { arena, recarregar, carregando } = useArena();
@@ -49,24 +47,25 @@ export function AdminConfiguracoesPage() {
   // A coluna só existe em bancos com a migração da Fase 8
   const suportaPolitica = arena?.modoPagamento !== undefined && arena.modoPagamento !== "legado";
 
-  useEffect(() => {
-    if (arena) {
-      setNome(arena.nome || "");
-      setCnpjCpf(arena.cnpjCpf || "");
-      setTelefone(arena.telefone || "");
-      setWhatsapp(arena.whatsapp || "");
-      setEmail(arena.email || "");
-      setEndereco(arena.endereco || "");
-      setCidade(arena.cidade || "Belém");
-      setEstado(arena.estado || "PA");
-      setCep(arena.cep || "");
-      setHorarioAbertura(arena.horarioAbertura || "06:00");
-      setHorarioFechamento(arena.horarioFechamento || "23:00");
-      setPercentualSinal(arena.percentualSinalMinimo || 50);
-      setAntecedenciaMinutos(arena.antecedenciaMinimaMinutos || 60);
-      setPoliticaCancelamento(arena.politicaCancelamento || "");
-    }
-  }, [arena]);
+  // Copia a arena carregada para o formulário (ajuste durante a renderização, sem efeito)
+  const [arenaCarregada, setArenaCarregada] = useState<typeof arena | null>(null);
+  if (arena && arena !== arenaCarregada) {
+    setArenaCarregada(arena);
+    setNome(arena.nome || "");
+    setCnpjCpf(arena.cnpjCpf || "");
+    setTelefone(arena.telefone || "");
+    setWhatsapp(arena.whatsapp || "");
+    setEmail(arena.email || "");
+    setEndereco(arena.endereco || "");
+    setCidade(arena.cidade || "Belém");
+    setEstado(arena.estado || "PA");
+    setCep(arena.cep || "");
+    setHorarioAbertura(arena.horarioAbertura || "06:00");
+    setHorarioFechamento(arena.horarioFechamento || "23:00");
+    setPercentualSinal(arena.percentualSinalMinimo || 50);
+    setAntecedenciaMinutos(arena.antecedenciaMinimaMinutos || 60);
+    setPoliticaCancelamento(arena.politicaCancelamento || "");
+  }
 
   // O endereço (subdomínio) é da plataforma: só o suporte muda (SPEC/2026-11-02-admin-revisao.md)
   const urlArena = construirUrlArena(arena?.slug || "sua-arena");
@@ -119,39 +118,26 @@ export function AdminConfiguracoesPage() {
   if (carregando) {
     return (
       <div className="py-20 text-center">
-        <span className="inline-block w-8 h-8 border-2 border-slate-700 border-t-emerald-400 rounded-full animate-spin" />
-        <p className="text-slate-400 text-xs mt-3">Carregando configurações...</p>
+        <span className="inline-block w-8 h-8 border-2 border-painel-linha border-t-emerald-400 rounded-full animate-spin" />
+        <p className="text-painel-suave text-xs mt-3">Carregando configurações...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-4xl">
-      {/* ── Top Header ──────────────────────────────────────────────────────── */}
-      <div className="border-b border-slate-800 pb-5">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-            <Settings className="w-5 h-5" />
-          </div>
-          <h1 className="text-2xl font-black text-white tracking-tight">
-            Configurações da Arena
-          </h1>
-        </div>
-        <p className="text-slate-400 text-xs sm:text-sm mt-1">
-          Defina as informações comerciais e as regras operacionais da sua arena.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <CabecalhoPagina titulo="Configurações" descricao="Dados da arena, contato, horários de funcionamento e regras das reservas." />
 
       {/* ── Banner de Subdomínio / URL Pública ───────────────────────────────── */}
-      <div className="bg-slate-900 border border-emerald-500/20 rounded-2xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-painel-superficie border border-painel-destaque rounded-lg p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5 mb-1">
+          <span className="text-xs font-bold text-painel-destaque flex items-center gap-1.5 mb-1">
             <Globe className="w-3.5 h-3.5" /> Endereço Público Oficial da Arena
           </span>
-          <p className="text-sm font-black text-white font-mono break-all">
+          <p className="text-sm font-semibold text-painel-tinta font-mono break-all">
             {urlArena}
           </p>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-painel-suave mt-1">
             Este é o link para seus clientes agendarem online. Para mudar o endereço, fale com o suporte.
           </p>
         </div>
@@ -159,7 +145,7 @@ export function AdminConfiguracoesPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={copiarUrl}
-            className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
+            className="px-3.5 py-2 rounded-md bg-painel-elevada hover:bg-painel-fundo text-painel-tinta border border-painel-linha text-xs font-bold flex items-center gap-1.5 transition-colors"
           >
             <Copy className="w-3.5 h-3.5" /> Copiar Link
           </button>
@@ -167,7 +153,7 @@ export function AdminConfiguracoesPage() {
             href={urlArena}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition-colors shadow-lg shadow-emerald-500/20"
+            className="px-3.5 py-2 rounded-md bg-painel-destaque hover:bg-painel-destaque-forte text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
           >
             <ExternalLink className="w-3.5 h-3.5" /> Acessar Portal
           </a>
@@ -176,15 +162,15 @@ export function AdminConfiguracoesPage() {
 
       <form onSubmit={handleSalvar} className="space-y-6">
         {/* ── 1. Dados Comerciais e Subdomínio ───────────────────────────────── */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-emerald-400" />
+        <div className="bg-painel-superficie border border-painel-linha rounded-lg p-6 space-y-4">
+          <h2 className="text-base font-bold text-painel-tinta flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-painel-destaque" />
             Identificação Comercial
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 Nome Comercial da Arena
               </label>
               <input
@@ -192,13 +178,13 @@ export function AdminConfiguracoesPage() {
                 value={nome}
                 onChange={(e) => setNome(e.target.value)}
                 placeholder="Ex: Arena Central"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 CNPJ ou CPF do Responsável
               </label>
               <input
@@ -206,12 +192,12 @@ export function AdminConfiguracoesPage() {
                 value={cnpjCpf}
                 onChange={(e) => setCnpjCpf(e.target.value)}
                 placeholder="00.000.000/0000-00"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 E-mail Administrativo
               </label>
               <input
@@ -219,22 +205,22 @@ export function AdminConfiguracoesPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="contato@arena.com.br"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
               />
             </div>
           </div>
         </div>
 
         {/* ── 2. Contatos e Localização ───────────────────────────────────────── */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-emerald-400" />
+        <div className="bg-painel-superficie border border-painel-linha rounded-lg p-6 space-y-4">
+          <h2 className="text-base font-bold text-painel-tinta flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-painel-destaque" />
             Contatos & Localização Física
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 WhatsApp Oficial de Notificações
               </label>
               <input
@@ -242,13 +228,13 @@ export function AdminConfiguracoesPage() {
                 value={whatsapp}
                 onChange={(e) => setWhatsapp(e.target.value)}
                 placeholder="(91) 98123-4567"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 Telefone Fixo / Balcão
               </label>
               <input
@@ -256,12 +242,12 @@ export function AdminConfiguracoesPage() {
                 value={telefone}
                 onChange={(e) => setTelefone(e.target.value)}
                 placeholder="(91) 3210-0000"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
               />
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 Endereço Completo
               </label>
               <input
@@ -269,24 +255,24 @@ export function AdminConfiguracoesPage() {
                 value={endereco}
                 onChange={(e) => setEndereco(e.target.value)}
                 placeholder="Av. Visconde de Souza Franco, 1000 - Reduto"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 Cidade
               </label>
               <input
                 type="text"
                 value={cidade}
                 onChange={(e) => setCidade(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 Estado (UF)
               </label>
               <input
@@ -294,48 +280,48 @@ export function AdminConfiguracoesPage() {
                 value={estado}
                 onChange={(e) => setEstado(e.target.value)}
                 maxLength={2}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm uppercase focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
               />
             </div>
           </div>
         </div>
 
         {/* ── 3. Regras Operacionais e Pagamento Pix ───────────────────────────── */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Clock className="w-4 h-4 text-emerald-400" />
+        <div className="bg-painel-superficie border border-painel-linha rounded-lg p-6 space-y-4">
+          <h2 className="text-base font-bold text-painel-tinta flex items-center gap-2">
+            <Clock className="w-4 h-4 text-painel-destaque" />
             Horários Operacionais & Sinal Financeiro
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 Horário Abertura
               </label>
               <input
                 type="time"
                 value={horarioAbertura}
                 onChange={(e) => setHorarioAbertura(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 Horário Fechamento
               </label>
               <input
                 type="time"
                 value={horarioFechamento}
                 onChange={(e) => setHorarioFechamento(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 Sinal Mínimo Pix (%)
               </label>
               <input
@@ -345,16 +331,16 @@ export function AdminConfiguracoesPage() {
                 step={5}
                 value={percentualSinal}
                 onChange={(e) => setPercentualSinal(Number(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
                 required
               />
-              <span className="text-[10px] text-slate-500 mt-1 block">
+              <span className="text-[10px] text-painel-suave mt-1 block">
                 Ex: 50% exige metade no Pix; 100% exige valor integral.
               </span>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1">
+              <label className="block text-xs font-semibold text-painel-suave mb-1">
                 Antecedência Mínima (min)
               </label>
               <input
@@ -363,10 +349,10 @@ export function AdminConfiguracoesPage() {
                 step={15}
                 value={antecedenciaMinutos}
                 onChange={(e) => setAntecedenciaMinutos(Number(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
                 required
               />
-              <span className="text-[10px] text-slate-500 mt-1 block">
+              <span className="text-[10px] text-painel-suave mt-1 block">
                 Tempo mínimo antes da partida para reservar online.
               </span>
             </div>
@@ -375,12 +361,12 @@ export function AdminConfiguracoesPage() {
 
         {/* ── Política de cancelamento (exibida no checkout e nos Termos) ───────── */}
         {suportaPolitica && (
-          <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-3">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Shield className="w-4 h-4 text-emerald-400" />
+          <div className="bg-painel-superficie border border-painel-linha rounded-lg p-6 space-y-3">
+            <h2 className="text-base font-bold text-painel-tinta flex items-center gap-2">
+              <Shield className="w-4 h-4 text-painel-destaque" />
               Política de Cancelamento
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-painel-suave">
               Aparece para o atleta antes do pagamento e nos Termos de Uso. Seja claro sobre prazos e devolução do
               sinal.
             </p>
@@ -390,9 +376,9 @@ export function AdminConfiguracoesPage() {
               onChange={(e) => setPoliticaCancelamento(e.target.value.slice(0, 1000))}
               rows={4}
               placeholder={POLITICA_CANCELAMENTO_PADRAO}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+              className="w-full bg-painel-superficie border border-painel-linha rounded-md px-3 py-2 text-painel-tinta text-sm focus:outline-none focus:border-painel-destaque"
             />
-            <p className="text-[10px] text-slate-500">Em branco, vale o texto padrão mostrado acima.</p>
+            <p className="text-[10px] text-painel-suave">Em branco, vale o texto padrão mostrado acima.</p>
           </div>
         )}
 
@@ -401,7 +387,7 @@ export function AdminConfiguracoesPage() {
           <button
             type="submit"
             disabled={salvando}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 font-bold text-sm transition-all duration-150 shadow-lg shadow-emerald-500/20"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-painel-destaque hover:bg-painel-destaque-forte disabled:opacity-50 text-white font-bold text-sm transition-all duration-150"
           >
             <Save className="w-4 h-4" />
             {salvando ? "Salvando Alterações..." : "Salvar Configurações da Arena"}

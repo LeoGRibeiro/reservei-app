@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CalendarClock, Globe, GraduationCap, Pencil, Plus } from "lucide-react";
+import { CalendarClock, Pencil, Plus } from "lucide-react";
 import { useContratosService } from "@/hooks/useContratosService";
 import { getHoje } from "@/lib/constants";
 import type { ContratoRecorrente } from "@/lib/recorrencia/types";
@@ -18,41 +18,34 @@ import { FormularioContrato } from "./recorrencia/FormularioContrato";
 import { CartaoContrato } from "./recorrencia/CartaoContrato";
 import { ModalEditarContrato } from "./recorrencia/ModalEditarContrato";
 import { AbaEscolinhasSite } from "./institucional/AbaEscolinhasSite";
+import { Abas, CabecalhoPagina } from "@/components/admin/ui";
 
 type AbaEscolinhas = "site" | "agenda";
 
 export function AdminEscolinhasPage() {
   const [aba, setAba] = useState<AbaEscolinhas>("site");
 
-  const classeAba = (valor: AbaEscolinhas) =>
-    `flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
-      aba === valor ? "bg-emerald-500 text-slate-950 shadow" : "text-slate-400 hover:text-white"
-    }`;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <GraduationCap className="w-6 h-6 text-violet-400" />
-            Escolinhas
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            <strong className="text-slate-300">No site</strong>: o que o visitante vê e o botão &ldquo;Quero uma vaga&rdquo;.{" "}
-            <strong className="text-slate-300">Horários na agenda</strong>: as aulas que ocupam quadra.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-1 rounded-xl self-start" role="tablist" aria-label="Escolinhas">
-          <button type="button" role="tab" id="escolinhas-aba-site" aria-selected={aba === "site"} onClick={() => setAba("site")} className={classeAba("site")}>
-            <Globe className="w-4 h-4" />
-            No site
-          </button>
-          <button type="button" role="tab" id="escolinhas-aba-agenda" aria-selected={aba === "agenda"} onClick={() => setAba("agenda")} className={classeAba("agenda")}>
-            <CalendarClock className="w-4 h-4" />
-            Horários na agenda
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <CabecalhoPagina
+        titulo="Escolinhas"
+        descricao={
+          <>
+            <strong className="font-medium text-painel-tinta">No site</strong>: o que o visitante vê e o botão &ldquo;Quero uma vaga&rdquo;.{" "}
+            <strong className="font-medium text-painel-tinta">Horários na agenda</strong>: as aulas que ocupam quadra.
+          </>
+        }
+      />
+      <Abas
+        rotulo="Escolinhas"
+        itens={[
+          { id: "site", rotulo: "No site" },
+          { id: "agenda", rotulo: "Horários na agenda" },
+        ]}
+        ativa={aba}
+        aoTrocar={(id) => setAba(id as typeof aba)}
+      />
 
       {aba === "site" ? <AbaEscolinhasSite /> : <HorariosNaAgenda />}
     </div>
@@ -93,7 +86,7 @@ function HorariosNaAgenda() {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <p className="text-xs text-slate-400 max-w-xl">
+        <p className="text-xs text-painel-suave max-w-xl">
           Cada horário cadastrado aqui fica bloqueado na agenda e aparece como &ldquo;Aula&rdquo; na grade de reservas do site.
           O card da escolinha (professor, turmas e botão) fica na aba <strong>No site</strong>.
         </p>
@@ -101,7 +94,7 @@ function HorariosNaAgenda() {
           <button
             id="escolinhas-nova"
             onClick={() => setMostrarForm(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors shrink-0"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-md text-sm font-bold text-white bg-painel-destaque hover:bg-painel-destaque-forte transition-colors shrink-0"
           >
             <Plus className="w-4 h-4" />
             Novo horário de aula
@@ -124,10 +117,10 @@ function HorariosNaAgenda() {
       )}
 
       {escolinhas.length === 0 && !mostrarForm && (
-        <div className="bg-slate-900 border border-slate-700/50 rounded-2xl p-10 text-center">
-          <CalendarClock className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400 font-medium">Nenhum horário de aula na agenda</p>
-          <p className="text-slate-600 text-sm mt-1">
+        <div className="bg-painel-superficie border border-painel-linha rounded-lg p-10 text-center">
+          <CalendarClock className="w-10 h-10 text-painel-apagada mx-auto mb-3" />
+          <p className="text-painel-suave font-medium">Nenhum horário de aula na agenda</p>
+          <p className="text-painel-apagada text-sm mt-1">
             Cadastre um horário para bloquear a quadra nos dias e horas das aulas.
           </p>
         </div>
@@ -142,17 +135,17 @@ function HorariosNaAgenda() {
           return (
             <CartaoContrato key={contrato.id} contrato={contrato} sessoesFuturas={sessoesFuturas}>
               {contrato.descricao && (
-                <p className="text-xs text-slate-500 border-t border-slate-800 pt-3">
+                <p className="text-xs text-painel-suave border-t border-painel-linha pt-3">
                   {contrato.descricao}
                 </p>
               )}
-              <div className="flex items-center justify-between border-t border-slate-800 pt-3">
+              <div className="flex items-center justify-between border-t border-painel-linha pt-3">
                 <button
                   id={`editar-${contrato.id}`}
                   onClick={() => setContratoEmEdicao(contrato)}
-                  className="flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+                  className="flex items-center gap-1.5 text-xs font-medium text-painel-tinta hover:text-painel-tinta px-3 py-1.5 rounded-lg hover:bg-painel-elevada transition-colors"
                 >
-                  <Pencil className="w-3.5 h-3.5 text-violet-400" />
+                  <Pencil className="w-3.5 h-3.5 text-violet-700" />
                   Editar informações
                 </button>
 
@@ -160,7 +153,7 @@ function HorariosNaAgenda() {
                   <button
                     id={`encerrar-${contrato.id}`}
                     onClick={() => handleEncerrar(contrato.id, contrato.nome)}
-                    className="text-xs font-medium text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors"
+                    className="text-xs font-medium text-red-700 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
                   >
                     Encerrar contrato
                   </button>

@@ -1,7 +1,7 @@
 # SPEC — Revisão completa do painel administrativo
 
 - **Data:** 02/11/2026
-- **Status:** em execução. Planos A, B, C e E (balcão) concluídos em 02/11/2026
+- **Status:** Planos A a G implementados em 02/11/2026 (pendências no §8)
 - **Origem:** revisão das 12 telas no navegador (desktop e celular) e do código em `src/components/admin`, `src/hooks`, `src/lib/supabase` e `schema.sql`
 - **Objetivo:** o painel tem que funcionar sem surpresas para o dono e o balcão, mostrar números corretos e ter aparência sóbria e igual para todas as arenas (só o nome da arena muda)
 
@@ -350,3 +350,27 @@ Regras:
 
 3. **Clientes sem conta entram já na tela Clientes**, agrupados pelo WhatsApp normalizado. Mostra o nome mais recente e os outros nomes usados naquele número; nunca funde cadastros automaticamente.
 4. **Subdomínio antigo redireciona:** ao trocar o slug pelo Super Admin, o anterior fica em `arenas.slug_anterior` e quem acessar o endereço antigo recebe 301 para o novo. Guarda só o último endereço. O `slug_anterior` não pode ser igual ao `slug` de outra arena; a criação ou troca de slug também não pode usar o `slug_anterior` de outra arena.
+
+---
+
+## 8. Execução (02/11/2026)
+
+| Plano | Situação |
+|---|---|
+| A · Segurança | Feito: trigger dos campos da plataforma, painel de arenas no Super Admin, `slug_anterior` com redirecionamento, "Excluir" falso removido |
+| B · Fundação | Feito: rotas reais em `(painel)`, `PainelAdmin` com nome da arena no topo e menu agrupado, kit `components/admin/ui`, tokens `.painel` |
+| C · Dados | Feito: janela de datas paginada, mutações só após o banco, trava `impedir_reserva_dupla`, `resumo_financeiro`, `clientes_da_arena`, vínculo reserva→conta no servidor, reservas fora do `localStorage` |
+| D · Bugs | Feito junto com as telas novas (B1–B17 e N1–N6) |
+| E · Balcão | Feito: receber com forma, cancelar com destino do sinal, remarcar, não compareceu, devolução, histórico, nova reserva de balcão pelo servidor |
+| F · Telas | Hoje, Agenda (Dia/Mês), Detalhe, Clientes e Financeiro reescritos; Escolinhas, Grupos, Quadras, Site, Fidelidade, Equipe, Recebimento, Configurações, login e Super Admin convertidos para o tema neutro com cabeçalho padrão |
+| G · Limpeza | Feito: telas antigas removidas, lint do painel sem erros, roteiro da demo atualizado |
+
+**Migrações a aplicar em produção, nesta ordem:** `2026-11-02-a-arenas-campos-plataforma.sql`, `2026-11-02-b-dados-painel.sql`, `2026-11-02-c-balcao-reservas.sql`, `2026-11-02-d-clientes-bloqueio.sql`.
+
+**Ficou para depois (fora do escopo desta entrega):**
+- Visão **Semana** na Agenda (hoje: Dia e Mês).
+- **Horário de funcionamento por dia da semana** (F6): precisa de coluna nova e mudança na grade pública e no checkout.
+- Formulários de Quadras, Fidelidade e Configurações ainda são os antigos convertidos para o tema neutro (funcionam; não foram redesenhados campo a campo).
+- Estorno automático pelo Asaas (BACKLOG).
+- Rebranding Reservei → MarcArena nos textos (BACKLOG).
+

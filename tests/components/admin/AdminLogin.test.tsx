@@ -19,7 +19,7 @@ vi.mock("@/hooks/useArena", () => ({
 import { AdminLogin } from "@/components/admin/AdminLogin";
 
 function preencher(email: string, senha: string) {
-  fireEvent.change(screen.getByLabelText("E-mail corporativo"), { target: { value: email } });
+  fireEvent.change(screen.getByLabelText("E-mail"), { target: { value: email } });
   fireEvent.change(screen.getByLabelText("Senha"), { target: { value: senha } });
 }
 
@@ -27,7 +27,7 @@ describe("AdminLogin", () => {
   it("exibe campos de e-mail corporativo e senha e o nome da arena acessada", () => {
     render(<AdminLogin onLogin={vi.fn()} arenaSlug="Central" />);
 
-    expect(screen.getByLabelText("E-mail corporativo")).toBeInTheDocument();
+    expect(screen.getByLabelText("E-mail")).toBeInTheDocument();
     expect(screen.getByLabelText("Senha")).toBeInTheDocument();
     expect(screen.getByText(/Arena Central/)).toBeInTheDocument();
   });
@@ -73,7 +73,7 @@ describe("AdminLogin", () => {
       "Acesso não autorizado para esta arena."
     );
     expect(screen.getByLabelText("Senha")).toHaveValue("");
-    expect(screen.getByLabelText("E-mail corporativo")).toHaveValue("dono@arena.com");
+    expect(screen.getByLabelText("E-mail")).toHaveValue("dono@arena.com");
   });
 
   it("usa mensagem padrão quando o login falha sem detalhe", async () => {

@@ -10,18 +10,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
-  Gift,
   Save,
   TrendingUp,
   Ticket,
-  CheckCircle2,
   Clock,
-  Users,
   Search,
   Filter,
   RefreshCw,
-  AlertCircle,
-  Calendar,
   Sparkles,
 } from "lucide-react";
 import { formatarMoeda, formatarDataExibicao } from "@/lib/constants";
@@ -34,6 +29,10 @@ import {
   fetchTodosSelosAdminSupabase,
 } from "@/lib/supabase/fidelidadeService";
 import type { VoucherFidelidade, SeloFidelidade } from "@/lib/fidelidade/types";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase/client";
+import Link from "next/link";
+import { hrefReserva } from "@/lib/admin/navegacao";
+import { Botao, CabecalhoPagina } from "@/components/admin/ui";
 
 export function AdminFidelidadePage() {
   const { campanha, atualizarCampanha, carregando } = useFidelidadeService();
@@ -50,6 +49,8 @@ export function AdminFidelidadePage() {
   const [todosVouchers, setTodosVouchers] = useState<VoucherFidelidade[]>([]);
   const [todosSelos, setTodosSelos] = useState<SeloFidelidade[]>([]);
   const [carregandoListas, setCarregandoListas] = useState(true);
+  // Nome de cada atleta (conta) para as tabelas: nunca mostrar ids internos ao dono
+  const [nomes, setNomes] = useState<Record<string, string>>({});
 
   // Filtros
   const [buscaVoucher, setBuscaVoucher] = useState("");
@@ -57,15 +58,15 @@ export function AdminFidelidadePage() {
   const [abaAtual, setAbaAtual] = useState<"configuracao" | "vouchers" | "metricas">("metricas");
 
   // Inicializa dados do formulário quando campanha carrega
-  useEffect(() => {
-    if (campanha) {
-      setNomeCampanha(campanha.nome);
-      setHorasNecessarias(campanha.horasNecessarias);
-      setMesesValidade(campanha.mesesValidade);
-      setDiasValidadeVoucher(campanha.diasValidadeVoucher);
-      setAtivo(campanha.ativo);
-    }
-  }, [campanha]);
+  const [campanhaCarregada, setCampanhaCarregada] = useState(campanha);
+  if (campanha && campanha !== campanhaCarregada) {
+    setCampanhaCarregada(campanha);
+    setNomeCampanha(campanha.nome);
+    setHorasNecessarias(campanha.horasNecessarias);
+    setMesesValidade(campanha.mesesValidade);
+    setDiasValidadeVoucher(campanha.diasValidadeVoucher);
+    setAtivo(campanha.ativo);
+  }
 
   // Carrega todos os vouchers e selos do sistema
   const carregarDadosGlobais = async () => {
@@ -77,6 +78,16 @@ export function AdminFidelidadePage() {
       ]);
       setTodosVouchers(vouchersData);
       setTodosSelos(selosData);
+      const ids = [...new Set([...vouchersData.map((v) => v.usuarioId), ...selosData.map((s) => s.usuarioId)])].filter(Boolean);
+      if (ids.length > 0 && isSupabaseConfigured()) {
+        const { data } = await supabase.from("usuarios").select("id, auth_user_id, nome").or(`id.in.(${ids.join(",")}),auth_user_id.in.(${ids.join(",")})`);
+        const mapa: Record<string, string> = {};
+        for (const u of (data ?? []) as { id: string; auth_user_id: string | null; nome: string }[]) {
+          mapa[u.id] = u.nome;
+          if (u.auth_user_id) mapa[u.auth_user_id] = u.nome;
+        }
+        setNomes(mapa);
+      }
     } catch (err) {
       console.error("[AdminFidelidadePage] Erro ao carregar dados administrativos:", err);
       toast.error("Erro ao carregar dados do programa.");
@@ -86,7 +97,7 @@ export function AdminFidelidadePage() {
   };
 
   useEffect(() => {
-    void carregarDadosGlobais();
+    void Promise.resolve().then(carregarDadosGlobais);
   }, []);
 
   // ── Salvar Configurações ──────────────────────────────────────────────────
@@ -189,93 +200,71 @@ export function AdminFidelidadePage() {
 
   return (
     <div className="space-y-6">
-      {/* ── Header ───────────────────────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-              <Gift className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Programa de Fidelidade
-              </h1>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Gerencie regras de retenção, ticket médio e vouchers promocionais.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={carregarDadosGlobais}
-            disabled={carregandoListas}
-            className="border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800 text-xs gap-1.5"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${carregandoListas ? "animate-spin" : ""}`} />
-            Atualizar Dados
-          </Button>
-        </div>
-      </div>
+      <CabecalhoPagina
+        titulo="Fidelidade"
+        descricao="O Clube da arena: horas jogadas viram selos e os selos viram horas grátis."
+        acoes={
+          <Botao variante="secundario" tamanho="sm" icone={RefreshCw} onClick={carregarDadosGlobais} carregando={carregandoListas}>
+            Atualizar
+          </Botao>
+        }
+      />
 
       {/* ── Cards de Métricas Principais ─────────────────────────────────────── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
+        <div className="bg-painel-superficie border border-painel-linha rounded-lg p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-400">Horas Acumuladas</span>
-            <Clock className="w-4 h-4 text-emerald-400" />
+            <span className="text-xs font-medium text-painel-suave">Horas Acumuladas</span>
+            <Clock className="w-4 h-4 text-painel-destaque" />
           </div>
-          <p className="text-2xl font-black text-white">{metricas.totalHorasAcumuladas}h</p>
-          <p className="text-[11px] text-slate-500 mt-1">
+          <p className="text-2xl font-semibold text-painel-tinta">{metricas.totalHorasAcumuladas}h</p>
+          <p className="text-[11px] text-painel-suave mt-1">
             {metricas.usuariosUnicos} jogador(es) ativos na cartela
           </p>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
+        <div className="bg-painel-superficie border border-painel-linha rounded-lg p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-400">Vouchers Emitidos</span>
-            <Ticket className="w-4 h-4 text-teal-400" />
+            <span className="text-xs font-medium text-painel-suave">Vouchers Emitidos</span>
+            <Ticket className="w-4 h-4 text-teal-700" />
           </div>
-          <p className="text-2xl font-black text-white">{metricas.totalVouchersEmitidos}</p>
-          <p className="text-[11px] text-teal-400 mt-1">
+          <p className="text-2xl font-semibold text-painel-tinta">{metricas.totalVouchersEmitidos}</p>
+          <p className="text-[11px] text-teal-700 mt-1">
             {metricas.vouchersDisponiveis} pronto(s) para uso
           </p>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
+        <div className="bg-painel-superficie border border-painel-linha rounded-lg p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-400">Taxa de Resgate</span>
-            <TrendingUp className="w-4 h-4 text-amber-400" />
+            <span className="text-xs font-medium text-painel-suave">Taxa de Resgate</span>
+            <TrendingUp className="w-4 h-4 text-amber-700" />
           </div>
-          <p className="text-2xl font-black text-white">{metricas.taxaResgate}%</p>
-          <p className="text-[11px] text-slate-500 mt-1">
+          <p className="text-2xl font-semibold text-painel-tinta">{metricas.taxaResgate}%</p>
+          <p className="text-[11px] text-painel-suave mt-1">
             {metricas.vouchersUtilizados} voucher(s) utilizados
           </p>
         </div>
 
-        <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5">
+        <div className="bg-painel-superficie border border-painel-linha rounded-lg p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-slate-400">Descontos Aplicados</span>
-            <Sparkles className="w-4 h-4 text-purple-400" />
+            <span className="text-xs font-medium text-painel-suave">Descontos Aplicados</span>
+            <Sparkles className="w-4 h-4 text-purple-700" />
           </div>
-          <p className="text-2xl font-black text-white">
+          <p className="text-2xl font-semibold text-painel-tinta">
             {formatarMoeda(metricas.valorTotalDescontosConcedidos)}
           </p>
-          <p className="text-[11px] text-slate-500 mt-1">Recompensa convertida em jogos</p>
+          <p className="text-[11px] text-painel-suave mt-1">Recompensa convertida em jogos</p>
         </div>
       </div>
 
       {/* ── Navegação por Abas ──────────────────────────────────────────────── */}
-      <div className="flex border-b border-slate-800 gap-6 text-sm font-semibold">
+      <div className="flex border-b border-painel-linha gap-6 text-sm font-semibold">
         <button
           onClick={() => setAbaAtual("metricas")}
           className={`pb-3 transition-colors border-b-2 flex items-center gap-2 ${
             abaAtual === "metricas"
-              ? "border-emerald-400 text-emerald-400"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "border-emerald-400 text-painel-destaque"
+              : "border-transparent text-painel-suave hover:text-painel-tinta"
           }`}
         >
           <TrendingUp className="w-4 h-4" />
@@ -286,8 +275,8 @@ export function AdminFidelidadePage() {
           onClick={() => setAbaAtual("vouchers")}
           className={`pb-3 transition-colors border-b-2 flex items-center gap-2 ${
             abaAtual === "vouchers"
-              ? "border-emerald-400 text-emerald-400"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "border-emerald-400 text-painel-destaque"
+              : "border-transparent text-painel-suave hover:text-painel-tinta"
           }`}
         >
           <Ticket className="w-4 h-4" />
@@ -298,8 +287,8 @@ export function AdminFidelidadePage() {
           onClick={() => setAbaAtual("configuracao")}
           className={`pb-3 transition-colors border-b-2 flex items-center gap-2 ${
             abaAtual === "configuracao"
-              ? "border-emerald-400 text-emerald-400"
-              : "border-transparent text-slate-400 hover:text-slate-200"
+              ? "border-emerald-400 text-painel-destaque"
+              : "border-transparent text-painel-suave hover:text-painel-tinta"
           }`}
         >
           <Save className="w-4 h-4" />
@@ -309,17 +298,17 @@ export function AdminFidelidadePage() {
 
       {/* ── Conteúdo da Aba: Configuração ───────────────────────────────────── */}
       {abaAtual === "configuracao" && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 max-w-3xl">
+        <div className="bg-painel-superficie border border-painel-linha rounded-3xl p-6 sm:p-8 max-w-3xl">
           <div className="mb-6">
-            <h3 className="text-base font-bold text-white">Regras da Campanha de Fidelidade</h3>
-            <p className="text-xs text-slate-400 mt-1">
+            <h3 className="text-base font-bold text-painel-tinta">Regras da Campanha de Fidelidade</h3>
+            <p className="text-xs text-painel-suave mt-1">
               Defina os parâmetros de horas, prazos de validade e comportamento da premiação.
             </p>
           </div>
 
           <form onSubmit={handleSalvarConfig} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="nomeCampanha" className="text-xs font-bold text-slate-300">
+              <Label htmlFor="nomeCampanha" className="text-xs font-bold text-painel-tinta">
                 Nome da Campanha
               </Label>
               <Input
@@ -327,14 +316,14 @@ export function AdminFidelidadePage() {
                 value={nomeCampanha}
                 onChange={(e) => setNomeCampanha(e.target.value)}
                 placeholder="Ex: Fidelidade Campeão"
-                className="bg-slate-950 border-slate-800 text-white"
+                className="bg-painel-superficie border-painel-linha text-painel-tinta"
                 required
               />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="horasNecessarias" className="text-xs font-bold text-slate-300">
+                <Label htmlFor="horasNecessarias" className="text-xs font-bold text-painel-tinta">
                   Horas Necessárias (Meta)
                 </Label>
                 <div className="relative">
@@ -345,16 +334,16 @@ export function AdminFidelidadePage() {
                     max="100"
                     value={horasNecessarias}
                     onChange={(e) => setHorasNecessarias(Number(e.target.value))}
-                    className="bg-slate-950 border-slate-800 text-white pr-8"
+                    className="bg-painel-superficie border-painel-linha text-painel-tinta pr-8"
                     required
                   />
-                  <span className="absolute right-3 top-2.5 text-xs text-slate-500 font-bold">h</span>
+                  <span className="absolute right-3 top-2.5 text-xs text-painel-suave font-bold">h</span>
                 </div>
-                <p className="text-[11px] text-slate-500">Padrão alinhado: 12 horas</p>
+                <p className="text-[11px] text-painel-suave">Padrão alinhado: 12 horas</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="mesesValidade" className="text-xs font-bold text-slate-300">
+                <Label htmlFor="mesesValidade" className="text-xs font-bold text-painel-tinta">
                   Janela da Cartela
                 </Label>
                 <div className="relative">
@@ -365,18 +354,18 @@ export function AdminFidelidadePage() {
                     max="12"
                     value={mesesValidade}
                     onChange={(e) => setMesesValidade(Number(e.target.value))}
-                    className="bg-slate-950 border-slate-800 text-white pr-14"
+                    className="bg-painel-superficie border-painel-linha text-painel-tinta pr-14"
                     required
                   />
-                  <span className="absolute right-3 top-2.5 text-xs text-slate-500 font-bold">
+                  <span className="absolute right-3 top-2.5 text-xs text-painel-suave font-bold">
                     meses
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500">Padrão alinhado: 3 meses</p>
+                <p className="text-[11px] text-painel-suave">Padrão alinhado: 3 meses</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="diasValidadeVoucher" className="text-xs font-bold text-slate-300">
+                <Label htmlFor="diasValidadeVoucher" className="text-xs font-bold text-painel-tinta">
                   Validade do Voucher
                 </Label>
                 <div className="relative">
@@ -387,22 +376,22 @@ export function AdminFidelidadePage() {
                     max="365"
                     value={diasValidadeVoucher}
                     onChange={(e) => setDiasValidadeVoucher(Number(e.target.value))}
-                    className="bg-slate-950 border-slate-800 text-white pr-12"
+                    className="bg-painel-superficie border-painel-linha text-painel-tinta pr-12"
                     required
                   />
-                  <span className="absolute right-3 top-2.5 text-xs text-slate-500 font-bold">
+                  <span className="absolute right-3 top-2.5 text-xs text-painel-suave font-bold">
                     dias
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500">Prazo para utilizar o prêmio</p>
+                <p className="text-[11px] text-painel-suave">Prazo para utilizar o prêmio</p>
               </div>
             </div>
 
             {/* Switch Ativo / Inativo */}
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <div className="p-4 rounded-lg bg-painel-superficie border border-painel-linha flex items-center justify-between">
               <div>
-                <p className="text-sm font-bold text-white">Programa de Fidelidade Ativo</p>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-sm font-bold text-painel-tinta">Programa de Fidelidade Ativo</p>
+                <p className="text-xs text-painel-suave mt-0.5">
                   Quando ativo, novas reservas concluídas acumulam selos e geram vouchers
                   automaticamente.
                 </p>
@@ -414,7 +403,7 @@ export function AdminFidelidadePage() {
                   onChange={(e) => setAtivo(e.target.checked)}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500" />
+                <div className="w-11 h-6 bg-painel-elevada peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-painel-destaque" />
               </label>
             </div>
 
@@ -422,7 +411,7 @@ export function AdminFidelidadePage() {
               <Button
                 type="submit"
                 disabled={salvandoConfig || carregando}
-                className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 h-11 rounded-xl gap-2 shadow-lg shadow-emerald-500/20"
+                className="bg-painel-destaque hover:bg-painel-destaque-forte text-white font-bold px-6 h-11 rounded-md gap-2"
               >
                 <Save className="w-4 h-4" />
                 {salvandoConfig ? "Salvando Alterações..." : "Salvar Configurações"}
@@ -437,21 +426,21 @@ export function AdminFidelidadePage() {
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
             <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+              <Search className="w-4 h-4 text-painel-suave absolute left-3 top-3" />
               <Input
                 placeholder="Buscar código ou usuário..."
                 value={buscaVoucher}
                 onChange={(e) => setBuscaVoucher(e.target.value)}
-                className="pl-9 bg-slate-900 border-slate-800 text-xs text-white"
+                className="pl-9 bg-painel-superficie border-painel-linha text-xs text-painel-tinta"
               />
             </div>
 
             <div className="flex items-center gap-2 self-start sm:self-auto">
-              <Filter className="w-4 h-4 text-slate-500" />
+              <Filter className="w-4 h-4 text-painel-suave" />
               <select
                 value={filtroStatusVoucher}
                 onChange={(e) => setFiltroStatusVoucher(e.target.value)}
-                className="bg-slate-900 border border-slate-800 text-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                className="bg-painel-superficie border border-painel-linha text-painel-tinta rounded-md px-3 py-2 text-xs focus:outline-none"
               >
                 <option value="todos">Todos os Status</option>
                 <option value="disponivel">Disponível</option>
@@ -461,9 +450,9 @@ export function AdminFidelidadePage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-800">
+          <div className="overflow-x-auto rounded-lg border border-painel-linha bg-painel-superficie">
+            <table className="w-full text-left text-xs text-painel-tinta">
+              <thead className="bg-painel-superficie text-painel-suave font-medium text-xs border-b border-painel-linha">
                 <tr>
                   <th className="py-3 px-4">Código Voucher</th>
                   <th className="py-3 px-4">Usuário</th>
@@ -474,53 +463,51 @@ export function AdminFidelidadePage() {
                   <th className="py-3 px-4">Reserva Usada</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-painel-linha">
                 {vouchersFiltrados.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">
+                    <td colSpan={7} className="py-8 text-center text-painel-suave">
                       Nenhum voucher encontrado com os filtros selecionados.
                     </td>
                   </tr>
                 ) : (
                   vouchersFiltrados.map((v) => (
-                    <tr key={v.id} className="hover:bg-slate-800/30 transition-colors">
-                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">
+                    <tr key={v.id} className="hover:bg-painel-elevada transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-painel-destaque">
                         {v.codigo}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-200">
-                        <span className="truncate block max-w-[140px]" title={v.usuarioId}>
-                          {v.usuarioId}
-                        </span>
+                      <td className="py-3.5 px-4 text-painel-tinta">
+                        <span className="truncate block max-w-[180px]">{nomes[v.usuarioId] ?? "Atleta"}</span>
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-white">
+                      <td className="py-3.5 px-4 font-bold text-painel-tinta">
                         {formatarMoeda(v.valorTeto)}
                       </td>
                       <td className="py-3.5 px-4">
                         <span
-                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                             v.status === "disponivel"
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              ? "bg-painel-destaque-suave text-painel-destaque border border-painel-destaque"
                               : v.status === "utilizado"
-                              ? "bg-slate-800 text-slate-400"
-                              : "bg-red-500/10 text-red-400 border border-red-500/20"
+                              ? "bg-painel-elevada text-painel-suave"
+                              : "bg-red-50 text-red-700 border border-red-200"
                           }`}
                         >
                           {v.status}
                         </span>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400">
+                      <td className="py-3.5 px-4 text-painel-suave">
                         {formatarDataExibicao(v.criadoEm.split("T")[0])}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400">
+                      <td className="py-3.5 px-4 text-painel-suave">
                         {formatarDataExibicao(v.expiraEm)}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400">
+                      <td className="py-3.5 px-4 text-painel-suave">
                         {v.reservaUtilizadaId ? (
-                          <span className="font-mono text-[11px] text-teal-300">
+                          <span className="font-mono text-[11px] text-teal-700">
                             #{v.reservaUtilizadaId.substring(0, 8)}
                           </span>
                         ) : (
-                          <span className="text-slate-600">—</span>
+                          <span className="text-painel-apagada">—</span>
                         )}
                       </td>
                     </tr>
@@ -535,20 +522,20 @@ export function AdminFidelidadePage() {
       {/* ── Conteúdo da Aba: Visão Geral e Selos Recentes ───────────────────── */}
       {abaAtual === "metricas" && (
         <div className="space-y-6">
-          <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
-            <h3 className="text-base font-bold text-white mb-2">
+          <div className="rounded-3xl border border-painel-linha bg-painel-superficie p-6">
+            <h3 className="text-base font-bold text-painel-tinta mb-2">
               Últimos Selos de Horas Registrados
             </h3>
-            <p className="text-xs text-slate-400 mb-4">
+            <p className="text-xs text-painel-suave mb-4">
               Cada selo representa horas jogadas em reservas avulsas concluídas e pagas.
             </p>
 
-            <div className="overflow-x-auto rounded-2xl border border-slate-800">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-800">
+            <div className="overflow-x-auto rounded-lg border border-painel-linha">
+              <table className="w-full text-left text-xs text-painel-tinta">
+                <thead className="bg-painel-superficie text-painel-suave font-medium text-xs border-b border-painel-linha">
                   <tr>
-                    <th className="py-3 px-4">Reserva ID</th>
-                    <th className="py-3 px-4">Usuário</th>
+                    <th className="py-3 px-4">Atleta</th>
+                    <th className="py-3 px-4">Reserva</th>
                     <th className="py-3 px-4">Horas</th>
                     <th className="py-3 px-4">Valor / Hora</th>
                     <th className="py-3 px-4">Data do Jogo</th>
@@ -556,40 +543,40 @@ export function AdminFidelidadePage() {
                     <th className="py-3 px-4">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60">
+                <tbody className="divide-y divide-painel-linha">
                   {todosSelos.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-500">
+                      <td colSpan={7} className="py-8 text-center text-painel-suave">
                         Nenhum selo registrado ainda. Os selos são gerados automaticamente quando
                         reservas avulsas são concluídas.
                       </td>
                     </tr>
                   ) : (
                     todosSelos.slice(0, 15).map((selo) => (
-                      <tr key={selo.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="py-3.5 px-4 font-mono text-emerald-400">
-                          #{selo.reservaId.substring(0, 8)}
+                      <tr key={selo.id} className="hover:bg-painel-elevada transition-colors">
+                        <td className="py-3.5 px-4 text-painel-tinta truncate max-w-[180px]">{nomes[selo.usuarioId] ?? "Atleta"}</td>
+                        <td className="py-3.5 px-4">
+                          <Link href={hrefReserva(selo.reservaId)} className="text-painel-destaque hover:underline">
+                            Abrir reserva
+                          </Link>
                         </td>
-                        <td className="py-3.5 px-4 text-slate-300 truncate max-w-[120px]">
-                          {selo.usuarioId}
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-white">
+                        <td className="py-3.5 px-4 font-bold text-painel-tinta">
                           {selo.horasContabilizadas}h
                         </td>
                         <td className="py-3.5 px-4">{formatarMoeda(selo.valorPorHora)}</td>
-                        <td className="py-3.5 px-4 text-slate-400">
+                        <td className="py-3.5 px-4 text-painel-suave">
                           {formatarDataExibicao(selo.dataJogo)}
                         </td>
-                        <td className="py-3.5 px-4 text-slate-400">
+                        <td className="py-3.5 px-4 text-painel-suave">
                           {formatarDataExibicao(selo.expiraEm)}
                         </td>
                         <td className="py-3.5 px-4">
                           {selo.resgatado ? (
-                            <span className="text-teal-400 font-semibold text-[10px]">
+                            <span className="text-teal-700 font-semibold text-[10px]">
                               Resgatado em Voucher
                             </span>
                           ) : (
-                            <span className="text-emerald-400 font-semibold text-[10px]">
+                            <span className="text-painel-destaque font-semibold text-[10px]">
                               Ativo na Cartela
                             </span>
                           )}

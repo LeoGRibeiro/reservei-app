@@ -14,7 +14,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-  Images,
   Plus,
   Pencil,
   Trash2,
@@ -32,6 +31,7 @@ import { useInstitucionalService } from "@/hooks/useInstitucionalService";
 import {
   validarItemGaleria,
 } from "@/lib/institucional/institucionalHelpers";
+import { CabecalhoPagina } from "@/components/admin/ui";
 
 export function AdminInstitucionalPage() {
   const {
@@ -43,7 +43,7 @@ export function AdminInstitucionalPage() {
     fazerUploadImagem,
   } = useInstitucionalService();
 
-  const [abaAtiva, setAbaAtiva] = useState<"galeria">("galeria");
+  const abaAtiva = "galeria" as const;
 
   // Estado Modal Galeria
   const [modalGaleriaAberto, setModalGaleriaAberto] = useState(false);
@@ -135,56 +135,28 @@ export function AdminInstitucionalPage() {
 
   if (carregando) {
     return (
-      <div className="flex items-center justify-center py-20 text-slate-400">
-        <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+      <div className="flex items-center justify-center py-20 text-painel-suave">
+        <Loader2 className="w-8 h-8 animate-spin text-painel-destaque" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Topo da Página */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2.5">
-            <Images className="w-6 h-6 text-emerald-400" />
-            Conteúdo Institucional
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Fotos da estrutura física divulgadas no site. As escolinhas ficam no menu Escolinhas.
-          </p>
-        </div>
-
-        {/* Abas Superiores */}
-        <div className="flex items-center gap-2 bg-slate-900 border border-slate-800 p-1 rounded-xl">
-          <button
-            type="button"
-            id="admin-aba-galeria"
-            onClick={() => setAbaAtiva("galeria")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors cursor-pointer ${
-              abaAtiva === "galeria"
-                ? "bg-emerald-500 text-slate-950 shadow"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <Images className="w-4 h-4" />
-            Galeria do Complexo ({galeria.length})
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <CabecalhoPagina titulo="Site" descricao="Fotos da estrutura que aparecem no site da arena. As escolinhas ficam no menu Escolinhas." />
 
       {/* ── ABA 1: GALERIA DE FOTOS ────────────────────────────────────────── */}
       {abaAtiva === "galeria" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400">
+            <span className="text-xs text-painel-suave">
               Fotos que aparecem na seção <strong>&ldquo;O Local e Estrutura&rdquo;</strong>
             </span>
             <button
               type="button"
               id="btn-admin-nova-foto"
               onClick={handleAbrirNovaFoto}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-bold transition-colors cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 rounded-md bg-painel-destaque hover:bg-painel-destaque-forte text-white text-xs sm:text-sm font-bold transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               Adicionar Foto
@@ -195,24 +167,24 @@ export function AdminInstitucionalPage() {
             {galeria.map((foto) => (
               <div
                 key={foto.id}
-                className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col justify-between"
+                className="bg-painel-superficie border border-painel-linha rounded-lg overflow-hidden flex flex-col justify-between"
               >
-                <div className="relative aspect-[16/10] bg-slate-950">
+                <div className="relative aspect-[16/10] bg-painel-superficie">
                   <img
                     src={foto.imageUrl}
                     alt={foto.title}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-2 left-2 flex gap-1.5">
-                    <span className="px-2 py-0.5 rounded-full bg-slate-950/80 border border-slate-700/80 text-emerald-400 font-semibold text-[10px] uppercase">
+                    <span className="px-2 py-0.5 rounded-full bg-painel-superficie border border-painel-linha text-painel-destaque font-semibold text-[10px]">
                       {foto.categoria}
                     </span>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-950/80 border border-slate-700/80 text-slate-300 font-semibold text-[10px]">
+                    <span className="px-2 py-0.5 rounded-full bg-painel-superficie border border-painel-linha text-painel-tinta font-semibold text-[10px]">
                       Ordem: {foto.displayOrder}
                     </span>
                   </div>
                   {!foto.isActive && (
-                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-red-950/80 border border-red-500/50 text-red-300 font-bold text-[10px]">
+                    <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-bold text-[10px]">
                       Inativo
                     </div>
                   )}
@@ -220,28 +192,28 @@ export function AdminInstitucionalPage() {
 
                 <div className="p-4 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-bold text-white text-sm">{foto.title}</h3>
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-2">
+                    <h3 className="font-bold text-painel-tinta text-sm">{foto.title}</h3>
+                    <p className="text-xs text-painel-suave mt-1 line-clamp-2">
                       {foto.description}
                     </p>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+                  <div className="mt-4 pt-3 border-t border-painel-linha flex items-center justify-between">
                     <button
                       type="button"
                       onClick={() =>
                         atualizarFoto(foto.id, { isActive: !foto.isActive })
                       }
-                      className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-200"
+                      className="flex items-center gap-1.5 text-xs text-painel-suave hover:text-painel-tinta"
                     >
                       {foto.isActive ? (
                         <>
-                          <Eye className="w-3.5 h-3.5 text-emerald-400" />
+                          <Eye className="w-3.5 h-3.5 text-painel-destaque" />
                           <span>Ativo</span>
                         </>
                       ) : (
                         <>
-                          <EyeOff className="w-3.5 h-3.5 text-slate-500" />
+                          <EyeOff className="w-3.5 h-3.5 text-painel-suave" />
                           <span>Oculto</span>
                         </>
                       )}
@@ -252,7 +224,7 @@ export function AdminInstitucionalPage() {
                         type="button"
                         id={`btn-editar-foto-${foto.id}`}
                         onClick={() => handleAbrirEditarFoto(foto)}
-                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors"
+                        className="p-1.5 rounded-lg bg-painel-elevada hover:bg-painel-fundo text-painel-tinta hover:text-painel-tinta transition-colors"
                         title="Editar foto"
                       >
                         <Pencil className="w-3.5 h-3.5" />
@@ -261,7 +233,7 @@ export function AdminInstitucionalPage() {
                         type="button"
                         id={`btn-excluir-foto-${foto.id}`}
                         onClick={() => handleRemoverFoto(foto.id, foto.title)}
-                        className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors"
+                        className="p-1.5 rounded-lg bg-red-50 hover:bg-red-50 text-red-700 transition-colors"
                         title="Excluir foto"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -280,16 +252,16 @@ export function AdminInstitucionalPage() {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-stone-900/40 flex items-center justify-center p-4"
         >
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <h2 className="text-xl font-bold text-white">
+          <div className="bg-painel-superficie border border-painel-linha rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <h2 className="text-xl font-bold text-painel-tinta">
               {fotoEmEdicao ? "Editar Foto da Estrutura" : "Nova Foto da Estrutura"}
             </h2>
 
             <form onSubmit={handleSalvarFoto} className="space-y-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-semibold text-painel-tinta block mb-1">
                   Título do Ambiente
                 </label>
                 <input
@@ -300,12 +272,12 @@ export function AdminInstitucionalPage() {
                   onChange={(e) =>
                     setFormGaleria((prev) => ({ ...prev, title: e.target.value }))
                   }
-                  className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-emerald-500 outline-none"
+                  className="w-full h-10 px-3 rounded-md bg-painel-superficie border border-painel-linha text-painel-tinta text-sm focus:border-painel-destaque outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-semibold text-painel-tinta block mb-1">
                   Categoria
                 </label>
                 <select
@@ -316,7 +288,7 @@ export function AdminInstitucionalPage() {
                       categoria: e.target.value as CategoriaEstrutura,
                     }))
                   }
-                  className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-emerald-500 outline-none"
+                  className="w-full h-10 px-3 rounded-md bg-painel-superficie border border-painel-linha text-painel-tinta text-sm focus:border-painel-destaque outline-none"
                 >
                   <option value="quadras">Quadras</option>
                   <option value="bar">Sports Bar & Lounge</option>
@@ -326,7 +298,7 @@ export function AdminInstitucionalPage() {
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-semibold text-painel-tinta block mb-1">
                   Descrição dos Diferenciais
                 </label>
                 <textarea
@@ -337,12 +309,12 @@ export function AdminInstitucionalPage() {
                   onChange={(e) =>
                     setFormGaleria((prev) => ({ ...prev, description: e.target.value }))
                   }
-                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-emerald-500 outline-none"
+                  className="w-full p-3 rounded-md bg-painel-superficie border border-painel-linha text-painel-tinta text-sm focus:border-painel-destaque outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1">
+                <label className="text-xs font-semibold text-painel-tinta block mb-1">
                   URL da Imagem ou Upload via Supabase Storage
                 </label>
                 <div className="flex gap-2">
@@ -354,13 +326,13 @@ export function AdminInstitucionalPage() {
                     onChange={(e) =>
                       setFormGaleria((prev) => ({ ...prev, imageUrl: e.target.value }))
                     }
-                    className="flex-1 h-10 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-emerald-500 outline-none"
+                    className="flex-1 h-10 px-3 rounded-md bg-painel-superficie border border-painel-linha text-painel-tinta text-sm focus:border-painel-destaque outline-none"
                   />
-                  <label className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer border border-slate-700 transition-colors">
+                  <label className="flex items-center gap-1.5 px-3 h-10 rounded-md bg-painel-elevada hover:bg-painel-fundo text-painel-tinta text-xs font-semibold cursor-pointer border border-painel-linha transition-colors">
                     {enviandoImagem ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                      <Loader2 className="w-4 h-4 animate-spin text-painel-destaque" />
                     ) : (
-                      <Upload className="w-4 h-4 text-emerald-400" />
+                      <Upload className="w-4 h-4 text-painel-destaque" />
                     )}
                     <span>Upload</span>
                     <input
@@ -376,7 +348,7 @@ export function AdminInstitucionalPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-slate-300 block mb-1">
+                  <label className="text-xs font-semibold text-painel-tinta block mb-1">
                     Ordem de Exibição
                   </label>
                   <input
@@ -389,7 +361,7 @@ export function AdminInstitucionalPage() {
                         displayOrder: Number(e.target.value),
                       }))
                     }
-                    className="w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm outline-none"
+                    className="w-full h-10 px-3 rounded-md bg-painel-superficie border border-painel-linha text-painel-tinta text-sm outline-none"
                   />
                 </div>
                 <div className="flex items-center gap-2 pt-6">
@@ -400,26 +372,26 @@ export function AdminInstitucionalPage() {
                     onChange={(e) =>
                       setFormGaleria((prev) => ({ ...prev, isActive: e.target.checked }))
                     }
-                    className="w-4 h-4 rounded accent-emerald-500"
+                    className="w-4 h-4 rounded accent-[var(--painel-destaque)]"
                   />
-                  <label htmlFor="chk-galeria-ativo" className="text-xs text-slate-300">
+                  <label htmlFor="chk-galeria-ativo" className="text-xs text-painel-tinta">
                     Visível no site
                   </label>
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-painel-linha">
                 <button
                   type="button"
                   onClick={() => setModalGaleriaAberto(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                  className="px-4 py-2 rounded-md text-xs font-semibold text-painel-suave hover:text-painel-tinta"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   id="btn-salvar-foto-modal"
-                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold transition-colors"
+                  className="px-5 py-2 rounded-md bg-painel-destaque hover:bg-painel-destaque-forte text-white text-xs font-bold transition-colors"
                 >
                   Salvar Foto
                 </button>

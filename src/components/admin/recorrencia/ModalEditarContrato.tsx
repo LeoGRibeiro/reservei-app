@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import { GraduationCap, Users, X, Loader2, Info, Upload } from "lucide-react";
 import { ESPORTES, type Esporte } from "@/lib/quadras";
@@ -32,12 +32,12 @@ interface Props {
 }
 
 const CLASSE_INPUT =
-  "w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-500/60 transition-colors";
-const CLASSE_LABEL = "block text-xs font-semibold text-slate-400 mb-1.5";
+  "w-full bg-painel-elevada border border-painel-linha rounded-md px-3.5 py-2.5 text-sm text-painel-tinta placeholder:text-painel-suave focus:outline-none focus:border-painel-destaque transition-colors";
+const CLASSE_LABEL = "block text-xs font-semibold text-painel-suave mb-1.5";
 
 export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
   const quadrasCatalogo = useQuadrasCatalogo();
-  const [mounted, setMounted] = useState(false);
+
   const [nome, setNome] = useState("");
   const [esporte, setEsporte] = useState<Esporte | "">("");
   const [descricao, setDescricao] = useState("");
@@ -49,24 +49,20 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const [contratoCarregado, setContratoCarregado] = useState<typeof contrato | null>(null);
+  if (contrato && contrato !== contratoCarregado) {
+    setContratoCarregado(contrato);
+    setNome(contrato.nome);
+    setEsporte(contrato.esporte || "");
+    setDescricao(contrato.descricao || "");
+    setResponsavelNome(contrato.responsavelNome);
+    setContatoWhatsapp(mascaraWhatsApp(contrato.contatoWhatsapp));
+    setFotoUrl(contrato.fotoUrl || "");
+    setFaixaEtaria(contrato.faixaEtaria || "");
+    setErro(null);
+  }
 
-  useEffect(() => {
-    if (contrato) {
-      setNome(contrato.nome);
-      setEsporte(contrato.esporte || "");
-      setDescricao(contrato.descricao || "");
-      setResponsavelNome(contrato.responsavelNome);
-      setContatoWhatsapp(mascaraWhatsApp(contrato.contatoWhatsapp));
-      setFotoUrl(contrato.fotoUrl || "");
-      setFaixaEtaria(contrato.faixaEtaria || "");
-      setErro(null);
-    }
-  }, [contrato]);
-
-  if (!mounted || !contrato) return null;
+  if (typeof document === "undefined" || !contrato) return null;
 
   const ehEscolinha = contrato.tipo === "escolinha";
   const quadra = quadrasCatalogo.find((q) => q.id === contrato.quadraId);
@@ -123,29 +119,29 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-editar-titulo"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in"
+      className="painel fixed inset-0 z-50 flex items-center justify-center p-4 !bg-stone-900/40"
     >
       <div
-        className="w-full max-w-lg bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-lg bg-painel-superficie border border-painel-linha rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ── Header ── */}
-        <header className="flex items-center justify-between p-5 border-b border-slate-800">
+        <header className="flex items-center justify-between p-5 border-b border-painel-linha">
           <div className="flex items-center gap-3">
             <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+              className={`w-9 h-9 rounded-md flex items-center justify-center border ${
                 ehEscolinha
-                  ? "bg-violet-500/15 border-violet-500/30 text-violet-400"
-                  : "bg-sky-500/15 border-sky-500/30 text-sky-400"
+                  ? "bg-violet-50 border-violet-200 text-violet-700"
+                  : "bg-sky-50 border-sky-200 text-sky-700"
               }`}
             >
               {ehEscolinha ? <GraduationCap className="w-5 h-5" /> : <Users className="w-5 h-5" />}
             </div>
             <div>
-              <h2 id="modal-editar-titulo" className="text-base font-bold text-white">
+              <h2 id="modal-editar-titulo" className="text-base font-bold text-painel-tinta">
                 {ehEscolinha ? "Editar Escolinha" : "Editar Grupo"}
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-painel-suave">
                 Altere os dados cadastrais e de divulgação deste contrato.
               </p>
             </div>
@@ -153,7 +149,7 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
           <button
             onClick={onClose}
             aria-label="Fechar"
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            className="text-painel-suave hover:text-painel-tinta p-1 rounded-lg hover:bg-painel-elevada transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -162,7 +158,7 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
         {/* ── Formulário com scroll ── */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           {erro && (
-            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs">
+            <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-700 text-xs">
               {erro}
             </div>
           )}
@@ -249,14 +245,14 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
                   onChange={(e) => setDescricao(e.target.value)}
                   placeholder="Ex.: Para crianças de 8 a 14 anos. Turmas pela manhã e tarde. Matrículas abertas!"
                 />
-                <span className="text-[11px] text-slate-500 mt-1 block">
+                <span className="text-[11px] text-painel-suave mt-1 block">
                   Exibido para os clientes no portal e na Landing Page.
                 </span>
               </div>
 
               <div>
                 <label htmlFor="editar-faixa-etaria" className={CLASSE_LABEL}>
-                  Faixa Etária <span className="text-slate-500">(Landing Page)</span>
+                  Faixa Etária <span className="text-painel-suave">(Landing Page)</span>
                 </label>
                 <input
                   id="editar-faixa-etaria"
@@ -269,7 +265,7 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
 
               <div>
                 <label htmlFor="editar-foto-professor" className={CLASSE_LABEL}>
-                  Foto do Professor / Banner <span className="text-slate-500">(Landing Page)</span>
+                  Foto do Professor / Banner <span className="text-painel-suave">(Landing Page)</span>
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -280,11 +276,11 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
                     onChange={(e) => setFotoUrl(e.target.value)}
                     placeholder="https://... ou faça upload"
                   />
-                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold cursor-pointer transition-colors shrink-0">
+                  <label className="flex items-center gap-1.5 px-3 py-2 rounded-md bg-painel-linha hover:bg-painel-fundo text-painel-tinta text-xs font-semibold cursor-pointer transition-colors shrink-0">
                     {enviandoFoto ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-painel-destaque" />
                     ) : (
-                      <Upload className="w-3.5 h-3.5 text-emerald-400" />
+                      <Upload className="w-3.5 h-3.5 text-painel-destaque" />
                     )}
                     <span>{enviandoFoto ? "Enviando..." : "Upload"}</span>
                     <input
@@ -301,9 +297,9 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
                     <img
                       src={fotoUrl}
                       alt="Prévia da foto"
-                      className="w-10 h-10 rounded-lg object-cover border border-slate-700"
+                      className="w-10 h-10 rounded-lg object-cover border border-painel-linha"
                     />
-                    <span className="text-xs text-slate-400">Prévia da imagem no site</span>
+                    <span className="text-xs text-painel-suave">Prévia da imagem no site</span>
                   </div>
                 )}
               </div>
@@ -311,33 +307,33 @@ export function ModalEditarContrato({ contrato, onClose, onSalvar }: Props) {
           )}
 
           {/* Dados fixos da agenda */}
-          <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400 space-y-1.5">
-            <div className="flex items-center gap-1.5 font-semibold text-slate-300">
-              <Info className="w-3.5 h-3.5 text-slate-400" />
+          <div className="p-3.5 rounded-md bg-painel-superficie border border-painel-linha text-xs text-painel-suave space-y-1.5">
+            <div className="flex items-center gap-1.5 font-semibold text-painel-tinta">
+              <Info className="w-3.5 h-3.5 text-painel-suave" />
               <span>Agenda e bloqueios vinculados:</span>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] text-painel-suave">
               {quadra ? `Quadra ${quadra.numero}` : contrato.quadraId} · {dias} · {contrato.horaInicio} às {contrato.horaFim} · {contrato.meses} {contrato.meses === 1 ? "mês" : "meses"} desde {formatarDataExibicao(contrato.dataInicio, { day: "numeric", month: "short", year: "numeric" })}
             </p>
-            <p className="text-[10px] text-slate-500 italic">
+            <p className="text-[10px] text-painel-suave italic">
               * Para alterar quadra, dias ou horários, encerre este contrato e cadastre um novo.
             </p>
           </div>
 
           {/* ── Footer ── */}
-          <div className="flex justify-end items-center gap-2.5 pt-3 border-t border-slate-800">
+          <div className="flex justify-end items-center gap-2.5 pt-3 border-t border-painel-linha">
             <button
               type="button"
               onClick={onClose}
               disabled={salvando}
-              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+              className="px-4 py-2 rounded-md text-xs font-semibold text-painel-tinta hover:text-painel-tinta hover:bg-painel-elevada transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={salvando}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 rounded-md text-xs font-bold text-white bg-painel-destaque hover:bg-painel-destaque-forte transition-colors disabled:opacity-50"
             >
               {salvando && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               Salvar alterações

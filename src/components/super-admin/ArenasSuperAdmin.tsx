@@ -38,7 +38,7 @@ async function chamar<T>(segredo: string, url: string, init?: RequestInit): Prom
 }
 
 const classeCampo =
-  "w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-emerald-500";
+  "w-full bg-painel-elevada border border-painel-linha rounded-lg px-3 py-2 text-sm text-painel-tinta outline-none focus:border-painel-destaque";
 
 /**
  * Formulário de edição de uma arena (endereço, módulos, status e demonstração).
@@ -94,9 +94,9 @@ function EditarArena({
   }
 
   return (
-    <form onSubmit={salvar} className="mt-3 border-t border-slate-800 pt-3 space-y-3" aria-label={`Editar ${arena.nome}`}>
+    <form onSubmit={salvar} className="mt-3 border-t border-painel-linha pt-3 space-y-3" aria-label={`Editar ${arena.nome}`}>
       <div>
-        <label htmlFor={`sa-slug-${arena.id}`} className="block text-xs font-medium text-slate-400 mb-1">
+        <label htmlFor={`sa-slug-${arena.id}`} className="block text-xs font-medium text-painel-suave mb-1">
           Endereço (subdomínio)
         </label>
         <input
@@ -106,14 +106,14 @@ function EditarArena({
           className={classeCampo}
           required
         />
-        <p className="text-xs text-slate-500 mt-1">Só letras minúsculas, números e hífens. O endereço antigo continua funcionando (redireciona).</p>
+        <p className="text-xs text-painel-suave mt-1">Só letras minúsculas, números e hífens. O endereço antigo continua funcionando (redireciona).</p>
       </div>
 
       <fieldset>
-        <legend className="block text-xs font-medium text-slate-400 mb-1">Módulos contratados</legend>
+        <legend className="block text-xs font-medium text-painel-suave mb-1">Módulos contratados</legend>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
           {MODULOS_OPCIONAIS.map((id) => (
-            <label key={id} className="flex items-center gap-2 text-sm text-slate-300">
+            <label key={id} className="flex items-center gap-2 text-sm text-painel-tinta">
               <input type="checkbox" checked={modulos.includes(id)} onChange={() => alternarModulo(id)} />
               {MODULOS_DISPONIVEIS[id].nome}
             </label>
@@ -122,18 +122,18 @@ function EditarArena({
       </fieldset>
 
       <div className="flex flex-wrap gap-x-6 gap-y-1">
-        <label className="flex items-center gap-2 text-sm text-slate-300">
+        <label className="flex items-center gap-2 text-sm text-painel-tinta">
           <input type="checkbox" checked={ativo} onChange={(e) => setAtivo(e.target.checked)} />
           Arena ativa (site e painel no ar)
         </label>
-        <label className="flex items-center gap-2 text-sm text-slate-300">
+        <label className="flex items-center gap-2 text-sm text-painel-tinta">
           <input type="checkbox" checked={demonstracao} onChange={(e) => setDemonstracao(e.target.checked)} />
           Modo demonstração (pagamento simulado)
         </label>
       </div>
 
       {erro && (
-        <p role="alert" className="text-sm text-red-400">
+        <p role="alert" className="text-sm text-red-700">
           {erro}
         </p>
       )}
@@ -142,11 +142,11 @@ function EditarArena({
         <button
           type="submit"
           disabled={salvando}
-          className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-slate-950 text-sm font-semibold"
+          className="px-4 py-2 rounded-lg bg-painel-destaque hover:bg-painel-destaque-forte disabled:opacity-50 text-white text-sm font-semibold"
         >
           {salvando ? "Salvando..." : "Salvar arena"}
         </button>
-        <button type="button" onClick={aoCancelar} className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 text-sm">
+        <button type="button" onClick={aoCancelar} className="px-4 py-2 rounded-lg bg-painel-elevada text-painel-tinta text-sm">
           Cancelar
         </button>
       </div>
@@ -196,46 +196,46 @@ export function ArenasSuperAdmin({ segredo }: { segredo: string }) {
   }
 
   return (
-    <section className="w-full max-w-3xl bg-slate-900 border border-slate-700/60 rounded-xl p-6 space-y-4" aria-label="Arenas">
+    <section className="w-full max-w-3xl bg-painel-superficie border border-painel-linha rounded-md p-6 space-y-4" aria-label="Arenas">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-base font-bold text-white">Arenas</h2>
+        <h2 className="text-base font-bold text-painel-tinta">Arenas</h2>
         <button
           type="button"
           onClick={carregar}
           disabled={carregando || !segredo}
-          className="px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-sm font-semibold"
+          className="px-3 py-2 rounded-lg bg-painel-linha hover:bg-painel-fundo disabled:opacity-50 text-painel-tinta text-sm font-semibold"
         >
           {carregando ? "Carregando..." : arenas ? "Atualizar lista" : "Carregar arenas"}
         </button>
       </div>
 
       {mensagem && (
-        <p role={mensagem.tipo === "erro" ? "alert" : "status"} className={`text-sm break-all ${mensagem.tipo === "erro" ? "text-red-400" : "text-emerald-400"}`}>
+        <p role={mensagem.tipo === "erro" ? "alert" : "status"} className={`text-sm break-all ${mensagem.tipo === "erro" ? "text-red-700" : "text-painel-destaque"}`}>
           {mensagem.texto}
         </p>
       )}
 
-      {arenas && arenas.length === 0 && <p className="text-sm text-slate-400">Nenhuma arena cadastrada.</p>}
+      {arenas && arenas.length === 0 && <p className="text-sm text-painel-suave">Nenhuma arena cadastrada.</p>}
 
-      <ul className="divide-y divide-slate-800">
+      <ul className="divide-y divide-painel-linha">
         {arenas?.map((arena) => (
           <li key={arena.id} className="py-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-painel-tinta">
                   {arena.nome}{" "}
-                  <span className={`text-xs font-normal ${arena.ativo ? "text-emerald-400" : "text-red-400"}`}>
+                  <span className={`text-xs font-normal ${arena.ativo ? "text-painel-destaque" : "text-red-700"}`}>
                     {arena.ativo ? "ativa" : "desativada"}
                   </span>
                 </p>
-                <p className="text-xs text-slate-400 break-all">
+                <p className="text-xs text-painel-suave break-all">
                   {arena.url}
                   {arena.slugAnterior && <> · antes: {arena.slugAnterior}</>}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-painel-suave">
                   Dono: {arena.emailDono ?? "ainda não ativou"} · Recebimento: {ROTULO_MODO[arena.modoPagamento] ?? arena.modoPagamento}
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-painel-suave">
                   Módulos: {arena.modulos.filter((m) => m !== "agendamento_core").map((m) => MODULOS_DISPONIVEIS[m].nome).join(", ") || "só agendamento"}
                 </p>
               </div>
@@ -243,7 +243,7 @@ export function ArenasSuperAdmin({ segredo }: { segredo: string }) {
                 <button
                   type="button"
                   onClick={() => setEditando(editando === arena.id ? null : arena.id)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold"
+                  className="px-3 py-1.5 rounded-lg bg-painel-elevada border border-painel-linha text-painel-tinta text-xs font-semibold"
                 >
                   Editar
                 </button>
@@ -251,7 +251,7 @@ export function ArenasSuperAdmin({ segredo }: { segredo: string }) {
                   <button
                     type="button"
                     onClick={() => gerarSenhaDono(arena)}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold"
+                    className="px-3 py-1.5 rounded-lg bg-painel-elevada border border-painel-linha text-painel-tinta text-xs font-semibold"
                   >
                     Nova senha do dono
                   </button>

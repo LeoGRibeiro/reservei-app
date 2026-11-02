@@ -40,15 +40,18 @@ Pergunte, não afirme:
 
 ## 3. Visão do balcão, no notebook (5 min)
 
-1. Entre em `/admin`. O **Dashboard** traz as reservas de hoje, os sinais recebidos e a ocupação.
-2. Logo no topo aparece **Pagamentos a confirmar (1)**: um atleta pagou por Pix direto na chave da arena e avisou. Explique que é o modo sem taxa, em que o balcão só confere o extrato. Clique em **Pix recebido**.
-3. Abra a **Agenda**: visão do dia por quadra, com a reserva feita no celular já lá.
-4. Faça uma **reserva manual** de balcão para um cliente que ligou.
-5. **Bloqueie** um horário para manutenção da areia ou para um torneio.
-6. **Escolinhas**: cadastre uma turma ao vivo (ex.: futebol, terça e quinta às 17h). Ela já aparece no portal e reserva os horários fixos sozinha.
-7. **Equipe**: crie um acesso de *operador de balcão* e explique que ele não vê o financeiro.
-8. **Pagamentos**: mostre as duas opções. A chave Pix da arena não tem taxa. A conta Asaas confirma sozinha. Nos dois casos **o dinheiro cai na conta da arena**.
-9. **Financeiro**: sinais recebidos e valores a receber no local.
+O painel novo é neutro e igual para toda arena; o nome da Arena Belém fica sempre no topo.
+
+1. Entre em `/admin`. A tela **Hoje** mostra quem está em quadra agora, os próximos horários com o que falta receber, o total a receber no balcão e (para o dono) o recebido e a ocupação do dia.
+2. Se aparecer **Pix para conferir**: um atleta pagou na chave Pix da arena e avisou. Explique que é o modo sem taxa, em que o balcão só confere o extrato. Clique em **Confirmar Pix**.
+3. Abra a **Agenda** (visão Dia): uma coluna por quadra, com a reserva feita no celular já lá. Clique num horário livre → **Nova reserva** para um cliente que ligou (o preço vem da tabela da quadra; marque "Pagou o sinal · dinheiro").
+4. Clique numa reserva → **detalhe**: **Receber o restante** (dinheiro, Pix ou cartão), **Remarcar** (só mostra horários livres e recalcula o preço) e **Cancelar** dizendo o que acontece com o sinal. Mostre o **Histórico**: quem fez cada coisa e quando.
+5. **Bloqueie** um horário para manutenção ou torneio (clique no horário livre → Bloquear horário).
+6. **Escolinhas**: cadastre uma turma ao vivo (ex.: futebol, terça e quinta às 17h, "Bloquear na agenda"). Ela aparece no site e reserva os horários fixos sozinha.
+7. **Clientes**: todo mundo que já reservou, com ou sem conta, pelo WhatsApp. Mostre o bloqueio de cliente (só nesta arena).
+8. **Equipe**: crie um acesso de *operador de balcão* e explique que ele não vê Financeiro, preços nem configurações (nem digitando o endereço).
+9. **Recebimento**: chave Pix da arena (sem taxa) ou Asaas (confirma sozinho). Nos dois casos **o dinheiro cai na conta da arena**.
+10. **Financeiro**: escolha o mês. Recebido, falta receber, descontos do Clube e devoluções, por quadra e por dia, e a planilha para o contador.
 
 ## 4. Diferenciais frente ao AgendeiQuadras (2 min)
 
@@ -64,6 +67,6 @@ Sem falar mal do concorrente; destaque o que é diferente:
 
 ## Se algo der errado ao vivo
 
-- **Pix não gera:** a arena precisa estar em modo *Demonstração* (tela Pagamentos) e a Vercel com `PAGAMENTO_SIMULADO_HABILITADO=true`.
+- **Pix não gera:** a arena precisa estar em modo *Demonstração* (ligado no `/super-admin` → Arenas → Editar) e a Vercel com `PAGAMENTO_SIMULADO_HABILITADO=true`.
 - **Grade vazia:** o seed não rodou, ou rodou há mais de 2 semanas. Rode `seed-arena-belem.sql` de novo.
-- **Esqueceu a senha do admin:** use `/super-admin` → "Redefinir senha do proprietário".
+- **Esqueceu a senha do admin:** use `/super-admin` → Carregar arenas → **Nova senha do dono**.

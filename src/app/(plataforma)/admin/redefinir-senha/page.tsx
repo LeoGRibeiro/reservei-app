@@ -48,24 +48,24 @@ export default function RedefinirSenhaPage() {
 
   if (estado === "verificando") {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <span className="inline-block w-6 h-6 border-2 border-slate-700 border-t-emerald-400 rounded-full animate-spin" />
+      <div className="painel min-h-screen bg-painel-fundo flex items-center justify-center">
+        <span className="inline-block w-6 h-6 border-2 border-painel-linha border-t-emerald-400 rounded-full animate-spin" />
       </div>
     );
   }
 
   if (estado === "invalido") {
     return (
-      <main className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <main className="painel min-h-screen bg-painel-fundo flex items-center justify-center p-4">
         <div className="max-w-sm text-center space-y-3">
-          <h1 className="text-lg font-black text-white">Link inválido ou expirado</h1>
-          <p className="text-sm text-slate-400">
+          <h1 className="text-lg font-semibold text-painel-tinta">Link inválido ou expirado</h1>
+          <p className="text-sm text-painel-suave">
             Peça um novo link em “Esqueci minha senha” na tela de login. Os links valem por pouco tempo e só podem ser
             usados uma vez.
           </p>
           <button
             onClick={() => router.replace("/admin")}
-            className="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 text-sm font-bold"
+            className="px-4 py-2 rounded-md bg-painel-destaque text-white text-sm font-bold"
           >
             Ir para o login
           </button>

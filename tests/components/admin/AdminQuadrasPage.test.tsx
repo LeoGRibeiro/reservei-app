@@ -13,7 +13,7 @@ describe("AdminQuadrasPage - Painel de Gestão de Quadras e Tarifas", () => {
     render(<AdminQuadrasPage />);
 
     expect(
-      await screen.findByRole("heading", { name: /Gestão de Quadras & Tarifas/i })
+      await screen.findByRole("heading", { name: "Quadras e preços" })
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: /Nova Quadra/i })

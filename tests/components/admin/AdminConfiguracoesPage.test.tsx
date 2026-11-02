@@ -13,7 +13,7 @@ describe("AdminConfiguracoesPage - Painel de Configurações da Arena", () => {
     render(<AdminConfiguracoesPage />);
 
     expect(
-      await screen.findByRole("heading", { name: "Configurações da Arena" })
+      await screen.findByRole("heading", { name: "Configurações" })
     ).toBeInTheDocument();
     expect(
       screen.getByText(/Identificação Comercial/i)

@@ -59,10 +59,10 @@ export interface FormEscolinhaSiteProps {
 }
 
 const CAMPO =
-  "w-full h-10 px-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm outline-none focus:border-emerald-500";
-const ROTULO = "text-xs font-semibold text-slate-300 block mb-1";
-const DICA = "text-[11px] text-slate-400 mt-1";
-const ERRO = "text-[11px] text-red-400 mt-1";
+  "w-full h-10 px-3 rounded-md bg-painel-superficie border border-painel-linha text-painel-tinta text-sm outline-none focus:border-painel-destaque";
+const ROTULO = "text-xs font-semibold text-painel-tinta block mb-1";
+const DICA = "text-[11px] text-painel-suave mt-1";
+const ERRO = "text-[11px] text-red-700 mt-1";
 
 /**
  * @example
@@ -163,18 +163,18 @@ export function FormEscolinhaSite({
       role="dialog"
       aria-modal="true"
       aria-labelledby="titulo-form-escolinha"
-      className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm overflow-y-auto overscroll-contain"
+      className="painel fixed inset-0 z-[100] !bg-stone-900/40 overflow-y-auto overscroll-contain"
     >
       <div className="min-h-full flex items-start sm:items-center justify-center p-4 sm:p-6">
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4">
+        <div className="bg-painel-superficie border border-painel-linha rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4">
           <div>
             <h2
               id="titulo-form-escolinha"
-              className="text-xl font-bold text-white"
+              className="text-xl font-bold text-painel-tinta"
             >
               {editando ? "Editar escolinha" : "Nova escolinha"}
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-painel-suave mt-1">
               Tudo o que você preencher aqui aparece na seção{" "}
               <strong>Escolinhas</strong> do site da arena, logo depois de
               salvar.
@@ -184,7 +184,7 @@ export function FormEscolinhaSite({
           <form onSubmit={salvar} noValidate className="space-y-5">
             {/* Identificação */}
             <fieldset className="space-y-3">
-              <legend className="text-sm font-bold text-emerald-400 mb-1">
+              <legend className="text-sm font-bold text-painel-destaque mb-1">
                 1. Escolinha e professor
               </legend>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -258,14 +258,14 @@ export function FormEscolinhaSite({
                       <img
                         src={form.fotoProfessorUrl}
                         alt="Prévia da foto do professor"
-                        className="w-10 h-12 rounded-lg object-cover border border-slate-700"
+                        className="w-10 h-12 rounded-lg object-cover border border-painel-linha"
                       />
                     )}
-                    <label className="flex items-center gap-1.5 px-3 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold cursor-pointer">
+                    <label className="flex items-center gap-1.5 px-3 h-10 rounded-md bg-painel-elevada hover:bg-painel-fundo border border-painel-linha text-painel-tinta text-xs font-semibold cursor-pointer">
                       {enviandoFoto ? (
-                        <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
+                        <Loader2 className="w-4 h-4 animate-spin text-painel-destaque" />
                       ) : (
-                        <Upload className="w-4 h-4 text-emerald-400" />
+                        <Upload className="w-4 h-4 text-painel-destaque" />
                       )}
                       <span>
                         {enviandoFoto
@@ -286,7 +286,7 @@ export function FormEscolinhaSite({
                     {form.fotoProfessorUrl && (
                       <button
                         type="button"
-                        className="text-xs text-slate-400 hover:text-red-400"
+                        className="text-xs text-painel-suave hover:text-red-700"
                         onClick={() => mudar("fotoProfessorUrl", "")}
                       >
                         Remover
@@ -306,7 +306,7 @@ export function FormEscolinhaSite({
                 <textarea
                   id="esc-descricao"
                   rows={2}
-                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm outline-none focus:border-emerald-500"
+                  className="w-full p-3 rounded-md bg-painel-superficie border border-painel-linha text-painel-tinta text-sm outline-none focus:border-painel-destaque"
                   placeholder="Ex.: Do primeiro saque ao jogo competitivo. Turmas pequenas, com raquete e bolas da arena para quem está começando."
                   value={form.descricao}
                   onChange={(e) => mudar("descricao", e.target.value)}
@@ -320,8 +320,8 @@ export function FormEscolinhaSite({
 
             {/* Turmas */}
             <fieldset className="space-y-3">
-              <legend className="text-sm font-bold text-emerald-400 mb-1">2. Turmas e horários na agenda</legend>
-              <p className="text-[11px] text-slate-400">
+              <legend className="text-sm font-bold text-painel-destaque mb-1">2. Turmas e horários na agenda</legend>
+              <p className="text-[11px] text-painel-suave">
                 Escolha os dias e o horário de cada turma. O site mostra sozinho, ex.: <strong>Ter e Qui</strong> ·{" "}
                 <strong>8h e 9h</strong>. Com <strong>Bloquear na agenda</strong>, a quadra fica reservada para a aula
                 nesses dias e horários, e ninguém consegue reservar por cima.
@@ -332,18 +332,18 @@ export function FormEscolinhaSite({
                     .filter(Boolean)
                     .join(" · ");
                   return (
-                    <div key={i} className="p-3 rounded-2xl border border-slate-700 bg-slate-950/50 space-y-3">
+                    <div key={i} className="p-3 rounded-lg border border-painel-linha bg-painel-superficie space-y-3">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-semibold text-slate-200">
+                        <span className="text-xs font-semibold text-painel-tinta">
                           Turma {i + 1}
-                          {previa && <span className="font-normal text-slate-400"> · No site: {previa}</span>}
+                          {previa && <span className="font-normal text-painel-suave"> · No site: {previa}</span>}
                         </span>
                         <button
                           type="button"
                           aria-label={`Remover turma ${i + 1}`}
                           disabled={form.turmas.length === 1}
                           onClick={() => setForm((f) => ({ ...f, turmas: f.turmas.filter((_, j) => j !== i) }))}
-                          className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 disabled:opacity-30"
+                          className="p-1.5 rounded-lg bg-red-50 hover:bg-red-50 text-red-700 disabled:opacity-30"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -360,7 +360,7 @@ export function FormEscolinhaSite({
                               aria-label={`${dia.longo} na turma ${i + 1}`}
                               onClick={() => alternarDia(i, dia.valor)}
                               className={`px-3 h-8 rounded-lg text-xs font-semibold border ${
-                                marcado ? "bg-emerald-500 border-emerald-500 text-slate-950" : "border-slate-700 text-slate-300 hover:border-slate-500"
+                                marcado ? "bg-painel-destaque border-painel-destaque text-white" : "border-painel-linha text-painel-tinta hover:border-painel-linha-forte"
                               }`}
                             >
                               {dia.curto}
@@ -400,10 +400,10 @@ export function FormEscolinhaSite({
                         />
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        <label className="flex items-center gap-2 text-xs text-slate-200 cursor-pointer">
+                        <label className="flex items-center gap-2 text-xs text-painel-tinta cursor-pointer">
                           <input
                             type="checkbox"
-                            className="accent-emerald-500"
+                            className="accent-[var(--painel-destaque)]"
                             checked={t.bloquearAgenda}
                             onChange={(e) => {
                               mudarTurma(i, "bloquearAgenda", e.target.checked);
@@ -425,7 +425,7 @@ export function FormEscolinhaSite({
                             ))}
                           </select>
                         )}
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-painel-suave">
                           {t.bloquearAgenda
                             ? t.contratoId
                               ? "Já está na agenda. Se mudar dia, horário ou quadra, a agenda é refeita a partir de hoje."
@@ -442,13 +442,13 @@ export function FormEscolinhaSite({
                 <button
                   type="button"
                   onClick={() => setForm((f) => ({ ...f, turmas: [...f.turmas, turmaVazia(quadraPadrao)] }))}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300"
+                  className="flex items-center gap-1.5 text-xs font-semibold text-painel-destaque hover:text-painel-destaque"
                 >
                   <Plus className="w-3.5 h-3.5" /> Adicionar turma
                 </button>
               )}
               {algumaNovaNaAgenda && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-2xl border border-emerald-800/60 bg-emerald-950/20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-emerald-200 bg-emerald-50">
                   <div>
                     <label htmlFor="esc-agenda-inicio" className={ROTULO}>Bloquear a partir de</label>
                     <input
@@ -482,10 +482,10 @@ export function FormEscolinhaSite({
 
             {/* Botão */}
             <fieldset className="space-y-3">
-              <legend className="text-sm font-bold text-emerald-400 mb-1">
+              <legend className="text-sm font-bold text-painel-destaque mb-1">
                 3. Botão &ldquo;Quero uma vaga&rdquo;
               </legend>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-painel-suave">
                 Escolha o que acontece quando o visitante toca no botão do card.
               </p>
               <div
@@ -511,7 +511,7 @@ export function FormEscolinhaSite({
                 ).map(([valor, IconeOpcao, titulo, texto]) => (
                   <label
                     key={valor}
-                    className={`flex gap-2 p-3 rounded-2xl border cursor-pointer ${form.tipoBotao === valor ? "border-emerald-500 bg-emerald-950/30" : "border-slate-700 bg-slate-950/50"}`}
+                    className={`flex gap-2 p-3 rounded-lg border cursor-pointer ${form.tipoBotao === valor ? "border-painel-destaque bg-emerald-50" : "border-painel-linha bg-painel-superficie"}`}
                   >
                     <input
                       type="radio"
@@ -519,14 +519,14 @@ export function FormEscolinhaSite({
                       value={valor}
                       checked={form.tipoBotao === valor}
                       onChange={() => mudar("tipoBotao", valor)}
-                      className="mt-0.5 accent-emerald-500"
+                      className="mt-0.5 accent-[var(--painel-destaque)]"
                     />
                     <span>
-                      <span className="flex items-center gap-1.5 text-sm font-semibold text-white">
-                        <IconeOpcao className="w-4 h-4 text-emerald-400" />
+                      <span className="flex items-center gap-1.5 text-sm font-semibold text-painel-tinta">
+                        <IconeOpcao className="w-4 h-4 text-painel-destaque" />
                         {titulo}
                       </span>
-                      <span className="block text-[11px] text-slate-400 mt-0.5">
+                      <span className="block text-[11px] text-painel-suave mt-0.5">
                         {texto}
                       </span>
                     </span>
@@ -566,7 +566,7 @@ export function FormEscolinhaSite({
                     <textarea
                       id="esc-mensagem"
                       rows={3}
-                      className="w-full p-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm outline-none focus:border-emerald-500"
+                      className="w-full p-3 rounded-md bg-painel-superficie border border-painel-linha text-painel-tinta text-sm outline-none focus:border-painel-destaque"
                       value={mensagem}
                       onChange={(e) => {
                         setMensagemEditada(true);
@@ -587,7 +587,7 @@ export function FormEscolinhaSite({
                       {mensagemEditada && (
                         <button
                           type="button"
-                          className="text-xs font-semibold text-emerald-400 hover:text-emerald-300"
+                          className="text-xs font-semibold text-painel-destaque hover:text-painel-destaque"
                           onClick={() => {
                             setMensagemEditada(false);
                             mudar("mensagemWhatsapp", "");
@@ -597,7 +597,7 @@ export function FormEscolinhaSite({
                         </button>
                       )}
                       <a
-                        className="flex items-center gap-1 text-xs font-semibold text-slate-300 hover:text-white"
+                        className="flex items-center gap-1 text-xs font-semibold text-painel-tinta hover:text-painel-tinta"
                         target="_blank"
                         rel="noopener noreferrer"
                         href={hrefBotaoEscolinha(
@@ -645,7 +645,7 @@ export function FormEscolinhaSite({
 
             {/* Exibição */}
             <fieldset className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <legend className="text-sm font-bold text-emerald-400 mb-1 col-span-full">
+              <legend className="text-sm font-bold text-painel-destaque mb-1 col-span-full">
                 4. No site
               </legend>
               <div>
@@ -665,18 +665,18 @@ export function FormEscolinhaSite({
                   1 aparece primeiro, depois 2, e assim por diante.
                 </p>
               </div>
-              <label className="flex items-start gap-2 p-3 rounded-2xl border border-slate-700 bg-slate-950/50 cursor-pointer self-start">
+              <label className="flex items-start gap-2 p-3 rounded-lg border border-painel-linha bg-painel-superficie cursor-pointer self-start">
                 <input
                   type="checkbox"
                   checked={form.ativa}
                   onChange={(e) => mudar("ativa", e.target.checked)}
-                  className="mt-0.5 accent-emerald-500"
+                  className="mt-0.5 accent-[var(--painel-destaque)]"
                 />
                 <span>
-                  <span className="block text-sm font-semibold text-white">
+                  <span className="block text-sm font-semibold text-painel-tinta">
                     Mostrar no site
                   </span>
-                  <span className="block text-[11px] text-slate-400">
+                  <span className="block text-[11px] text-painel-suave">
                     Desmarque para esconder sem apagar (ex.: férias do
                     professor).
                   </span>
@@ -685,23 +685,23 @@ export function FormEscolinhaSite({
             </fieldset>
 
             {erroGeral && (
-              <p role="alert" className="text-sm text-red-400">
+              <p role="alert" className="text-sm text-red-700">
                 {erroGeral}
               </p>
             )}
 
-            <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-2 pt-4 border-t border-painel-linha">
               <button
                 type="button"
                 onClick={aoCancelar}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white"
+                className="px-4 py-2 rounded-md text-xs font-semibold text-painel-suave hover:text-painel-tinta"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={salvando}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold disabled:opacity-60"
+                className="flex items-center gap-1.5 px-5 py-2 rounded-md bg-painel-destaque hover:bg-painel-destaque-forte text-white text-xs font-bold disabled:opacity-60"
               >
                 {salvando && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 Salvar escolinha

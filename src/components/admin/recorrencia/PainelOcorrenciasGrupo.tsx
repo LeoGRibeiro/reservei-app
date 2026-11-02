@@ -26,10 +26,10 @@ interface Props {
 }
 
 const ESTILO_SITUACAO: Record<SituacaoCobranca, string> = {
-  sem_onus: "bg-slate-700/40 text-slate-300 border-slate-600/50",
-  aguardando_reposicao: "bg-amber-500/10 text-amber-300 border-amber-500/30",
-  isento_por_reposicao: "bg-emerald-500/10 text-emerald-300 border-emerald-500/30",
-  cobranca_devida: "bg-red-500/10 text-red-300 border-red-500/30",
+  sem_onus: "bg-painel-linha text-painel-tinta border-painel-linha-forte",
+  aguardando_reposicao: "bg-amber-50 text-amber-700 border-amber-200",
+  isento_por_reposicao: "bg-painel-destaque-suave text-painel-destaque border-painel-destaque",
+  cobranca_devida: "bg-red-50 text-red-700 border-red-200",
 };
 
 export function PainelOcorrenciasGrupo({
@@ -83,26 +83,26 @@ export function PainelOcorrenciasGrupo({
   }
 
   return (
-    <div className="border-t border-slate-800 pt-4 space-y-3">
+    <div className="border-t border-painel-linha pt-4 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Sessões</p>
+        <p className="text-xs font-semibold text-painel-suave">Sessões</p>
         <button
           onClick={() => setMostrarPassadas((v) => !v)}
-          className="text-xs text-slate-400 hover:text-white transition-colors"
+          className="text-xs text-painel-suave hover:text-painel-tinta transition-colors"
         >
           {mostrarPassadas ? "Ocultar passadas" : "Mostrar passadas"}
         </button>
       </div>
 
-      <p className="text-[11px] text-slate-600">
+      <p className="text-[11px] text-painel-apagada">
         Cancelamento sem ônus exige aviso com {ANTECEDENCIA_MINIMA_DIAS} dias ou mais de antecedência.
       </p>
 
       {visiveis.length === 0 && (
-        <p className="text-sm text-slate-500 py-3 text-center">Nenhuma sessão para exibir.</p>
+        <p className="text-sm text-painel-suave py-3 text-center">Nenhuma sessão para exibir.</p>
       )}
 
-      <ul className="divide-y divide-slate-800 max-h-80 overflow-y-auto pr-1">
+      <ul className="divide-y divide-painel-linha max-h-80 overflow-y-auto pr-1">
         {visiveis.map((o) => {
           const cancelada = o.status === "cancelada";
           const futura = o.data >= hoje;
@@ -112,11 +112,11 @@ export function PainelOcorrenciasGrupo({
             <li key={o.id} className="py-2.5 space-y-2">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className={`text-sm font-medium ${cancelada ? "text-slate-500 line-through" : "text-white"}`}>
+                  <p className={`text-sm font-medium ${cancelada ? "text-painel-suave line-through" : "text-painel-tinta"}`}>
                     {formatarDataExibicao(o.data, { weekday: "short", day: "numeric", month: "short" })}
                   </p>
                   {situacao && o.avisoCancelamentoEm && (
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-painel-suave">
                       Aviso em {formatarDataExibicao(o.avisoCancelamentoEm, { day: "numeric", month: "short" })}
                     </p>
                   )}
@@ -136,7 +136,7 @@ export function PainelOcorrenciasGrupo({
                     <button
                       id={`cancelar-sessao-${o.id}`}
                       onClick={() => abrirCancelamento(o.id)}
-                      className="text-xs font-medium text-red-400 hover:text-red-300 px-2.5 py-1 rounded-lg hover:bg-red-500/10 transition-colors"
+                      className="text-xs font-medium text-red-700 hover:text-red-700 px-2.5 py-1 rounded-lg hover:bg-red-50 transition-colors"
                     >
                       Registrar cancelamento
                     </button>
@@ -145,7 +145,7 @@ export function PainelOcorrenciasGrupo({
                   {cancelada && futura && o.avisoCancelamentoEm && (
                     <button
                       onClick={() => reativar(o.id)}
-                      className="text-xs font-medium text-emerald-400 hover:text-emerald-300 px-2.5 py-1 rounded-lg hover:bg-emerald-500/10 transition-colors"
+                      className="text-xs font-medium text-painel-destaque hover:text-painel-destaque px-2.5 py-1 rounded-lg hover:bg-painel-destaque-suave transition-colors"
                     >
                       Reativar
                     </button>
@@ -154,9 +154,9 @@ export function PainelOcorrenciasGrupo({
               </div>
 
               {emCancelamento === o.id && (
-                <div className="flex flex-wrap items-end gap-3 bg-slate-800/60 border border-slate-700/50 rounded-xl p-3">
+                <div className="flex flex-wrap items-end gap-3 bg-painel-elevada border border-painel-linha rounded-md p-3">
                   <div>
-                    <label htmlFor={`aviso-${o.id}`} className="block text-[11px] text-slate-400 mb-1">
+                    <label htmlFor={`aviso-${o.id}`} className="block text-[11px] text-painel-suave mb-1">
                       Data em que o grupo avisou
                     </label>
                     <input
@@ -165,18 +165,18 @@ export function PainelOcorrenciasGrupo({
                       max={hoje}
                       value={dataAviso}
                       onChange={(e) => setDataAviso(e.target.value)}
-                      className="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white"
+                      className="bg-painel-superficie border border-painel-linha rounded-lg px-2.5 py-1.5 text-xs text-painel-tinta"
                     />
                   </div>
                   <button
                     onClick={() => confirmarCancelamento(o.id)}
-                    className="px-3 py-2 rounded-lg text-xs font-bold bg-red-500 text-white hover:bg-red-400 transition-colors"
+                    className="px-3 py-2 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-400 transition-colors"
                   >
                     Confirmar
                   </button>
                   <button
                     onClick={() => setEmCancelamento(null)}
-                    className="px-3 py-2 rounded-lg text-xs text-slate-400 hover:text-white transition-colors"
+                    className="px-3 py-2 rounded-lg text-xs text-painel-suave hover:text-painel-tinta transition-colors"
                   >
                     Voltar
                   </button>

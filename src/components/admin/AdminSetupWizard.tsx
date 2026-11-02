@@ -88,18 +88,18 @@ export function AdminSetupWizard({ arenaSlug, onSetupConcluido, token, tokenVali
   }
 
   const classeCampo =
-    "w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500";
-  const classeRotulo = "block text-sm font-medium text-slate-300 mb-1";
+    "w-full bg-painel-elevada border border-painel-linha rounded-lg px-3 py-2.5 text-sm text-painel-tinta outline-none focus:border-painel-destaque";
+  const classeRotulo = "block text-sm font-medium text-painel-tinta mb-1";
 
   if (!token || !tokenValido) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-slate-900 border border-slate-700/60 rounded-xl p-6 space-y-3 text-center">
+      <div className="painel min-h-screen bg-painel-fundo flex items-center justify-center p-4">
+        <div className="w-full max-w-sm bg-painel-superficie border border-painel-linha rounded-md p-6 space-y-3 text-center">
           <div aria-hidden="true" className="text-3xl">
             🔒
           </div>
-          <h1 className="text-lg font-bold text-white">Acesso Restrito · {nomeArena}</h1>
-          <p className="text-slate-400 text-sm">
+          <h1 className="text-lg font-bold text-painel-tinta">Acesso Restrito · {nomeArena}</h1>
+          <p className="text-painel-suave text-sm">
             Para realizar a configuração inicial desta arena, utilize o link de convite exclusivo
             enviado pela equipe {NOME_PRODUTO}.
           </p>
@@ -109,16 +109,16 @@ export function AdminSetupWizard({ arenaSlug, onSetupConcluido, token, tokenVali
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+    <div className="painel min-h-screen bg-painel-fundo flex items-center justify-center p-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm bg-slate-900 border border-slate-700/60 rounded-xl p-6 space-y-4"
+        className="w-full max-w-sm bg-painel-superficie border border-painel-linha rounded-md p-6 space-y-4"
       >
         <div>
-          <h1 className="text-lg font-bold text-white">
+          <h1 className="text-lg font-bold text-painel-tinta">
             Configuração Inicial do Administrador · {nomeArena}
           </h1>
-          <p className="text-slate-400 text-sm mt-2">
+          <p className="text-painel-suave text-sm mt-2">
             Esta arena ainda não possui uma conta de proprietário cadastrada. Defina as
             credenciais do primeiro administrador para iniciar.
           </p>
@@ -186,7 +186,7 @@ export function AdminSetupWizard({ arenaSlug, onSetupConcluido, token, tokenVali
         </div>
 
         {erro && (
-          <p role="alert" className="text-red-400 text-sm">
+          <p role="alert" className="text-red-700 text-sm">
             {erro}
           </p>
         )}
@@ -195,7 +195,7 @@ export function AdminSetupWizard({ arenaSlug, onSetupConcluido, token, tokenVali
           id="setup-submit-btn"
           type="submit"
           disabled={carregando}
-          className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-semibold rounded-lg py-2.5 text-sm flex items-center justify-center gap-2"
+          className="w-full bg-painel-destaque hover:bg-painel-destaque-forte disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg py-2.5 text-sm flex items-center justify-center gap-2"
         >
           {carregando ? (
             <>

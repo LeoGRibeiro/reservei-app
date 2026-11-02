@@ -16,6 +16,7 @@ import { FormularioContrato } from "./recorrencia/FormularioContrato";
 import { CartaoContrato } from "./recorrencia/CartaoContrato";
 import { PainelOcorrenciasGrupo } from "./recorrencia/PainelOcorrenciasGrupo";
 import { ModalEditarContrato } from "./recorrencia/ModalEditarContrato";
+import { Botao, CabecalhoPagina } from "@/components/admin/ui";
 
 export function AdminGruposPage() {
   const {
@@ -66,29 +67,18 @@ export function AdminGruposPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-sky-400" />
-            Grupos
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Horários cativos para grupos de amigos, sem pagamento adiantado. Cancelamentos com menos de 1
-            semana só são abonados se o horário for reposto.
-          </p>
-        </div>
-        {!mostrarForm && (
-          <button
-            id="grupos-novo"
-            onClick={() => setMostrarForm(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-slate-950 bg-emerald-500 hover:bg-emerald-400 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Novo grupo
-          </button>
-        )}
-      </div>
+    <div className="space-y-6">
+      <CabecalhoPagina
+        titulo="Grupos"
+        descricao="Horários fixos de grupos de amigos, sem pagamento adiantado. Cancelamento com menos de 1 semana só é abonado se o horário for reposto."
+        acoes={
+          !mostrarForm && (
+            <Botao id="grupos-novo" icone={Plus} onClick={() => setMostrarForm(true)}>
+              Novo grupo
+            </Botao>
+          )
+        }
+      />
 
       {mostrarForm && (
         <FormularioContrato
@@ -105,10 +95,10 @@ export function AdminGruposPage() {
       )}
 
       {grupos.length === 0 && !mostrarForm && (
-        <div className="bg-slate-900 border border-slate-700/50 rounded-2xl p-10 text-center">
-          <Users className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400 font-medium">Nenhum grupo cadastrado</p>
-          <p className="text-slate-600 text-sm mt-1">
+        <div className="bg-painel-superficie border border-painel-linha rounded-lg p-10 text-center">
+          <Users className="w-10 h-10 text-painel-apagada mx-auto mb-3" />
+          <p className="text-painel-suave font-medium">Nenhum grupo cadastrado</p>
+          <p className="text-painel-apagada text-sm mt-1">
             Cadastre um grupo para reservar um horário fixo com prioridade.
           </p>
         </div>
@@ -130,18 +120,18 @@ export function AdminGruposPage() {
           return (
             <CartaoContrato key={contrato.id} contrato={contrato} sessoesFuturas={sessoesFuturas}>
               {cobrancas.length > 0 && (
-                <p className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl px-3.5 py-2.5">
+                <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-3.5 py-2.5">
                   {cobrancas.length} sessão(ões) cancelada(s) fora do prazo sem reposição ·{" "}
                   <strong>{formatarMoeda(totalDevido)}</strong> a cobrar
                 </p>
               )}
 
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-painel-linha pt-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     id={`sessoes-${contrato.id}`}
                     onClick={() => alternarExpandido(contrato.id)}
-                    className="text-xs font-medium text-emerald-400 hover:text-emerald-300 px-3 py-1.5 rounded-lg hover:bg-emerald-500/10 transition-colors"
+                    className="text-xs font-medium text-painel-destaque hover:text-painel-destaque px-3 py-1.5 rounded-lg hover:bg-painel-destaque-suave transition-colors"
                   >
                     {aberto ? "Ocultar sessões" : "Gerenciar sessões e cancelamentos"}
                   </button>
@@ -149,9 +139,9 @@ export function AdminGruposPage() {
                   <button
                     id={`editar-${contrato.id}`}
                     onClick={() => setContratoEmEdicao(contrato)}
-                    className="flex items-center gap-1.5 text-xs font-medium text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors"
+                    className="flex items-center gap-1.5 text-xs font-medium text-painel-tinta hover:text-painel-tinta px-3 py-1.5 rounded-lg hover:bg-painel-elevada transition-colors"
                   >
-                    <Pencil className="w-3.5 h-3.5 text-sky-400" />
+                    <Pencil className="w-3.5 h-3.5 text-sky-700" />
                     Editar informações
                   </button>
                 </div>
@@ -160,7 +150,7 @@ export function AdminGruposPage() {
                   <button
                     id={`encerrar-${contrato.id}`}
                     onClick={() => handleEncerrar(contrato.id, contrato.nome)}
-                    className="text-xs font-medium text-red-400 hover:text-red-300 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors"
+                    className="text-xs font-medium text-red-700 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
                   >
                     Encerrar contrato
                   </button>

@@ -48,7 +48,7 @@ export function useInstitucionalService() {
   }, []);
 
   useEffect(() => {
-    void recarregar();
+    void Promise.resolve().then(recarregar);
   }, [recarregar]);
 
   // Lista pública de fotos filtradas por categoria (apenas ativas)

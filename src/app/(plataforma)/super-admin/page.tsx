@@ -98,16 +98,16 @@ export default function SuperAdminPage() {
   }
 
   const classeCampo =
-    "w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white outline-none focus:border-emerald-500";
-  const classeRotulo = "block text-sm font-medium text-slate-300 mb-1";
+    "w-full bg-painel-elevada border border-painel-linha rounded-lg px-3 py-2.5 text-sm text-painel-tinta outline-none focus:border-painel-destaque";
+  const classeRotulo = "block text-sm font-medium text-painel-tinta mb-1";
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-6 p-4">
+    <div className="painel min-h-screen bg-painel-fundo flex flex-col items-center justify-center gap-6 p-4">
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-md bg-slate-900 border border-slate-700/60 rounded-xl p-6 space-y-4"
+        className="w-full max-w-md bg-painel-superficie border border-painel-linha rounded-md p-6 space-y-4"
       >
-        <h1 className="text-lg font-bold text-white">Super Admin · Nova Arena</h1>
+        <h1 className="text-lg font-bold text-painel-tinta">Super Admin · Nova Arena</h1>
 
         <div>
           <label htmlFor="sa-segredo" className={classeRotulo}>
@@ -152,7 +152,7 @@ export default function SuperAdminPage() {
             className={classeCampo}
             required
           />
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-painel-suave mt-1">
             URL: {slug || "slug"}.{DOMINIO_RAIZ_PADRAO}
           </p>
         </div>
@@ -205,10 +205,10 @@ export default function SuperAdminPage() {
 
         <fieldset>
           <legend className={classeRotulo}>Módulos Contratados</legend>
-          <p className="text-xs text-slate-500 mb-2">Agendamento (core) está sempre incluído.</p>
+          <p className="text-xs text-painel-suave mb-2">Agendamento (core) está sempre incluído.</p>
           <div className="space-y-1.5">
             {MODULOS_OPCIONAIS.map((id) => (
-              <label key={id} className="flex items-center gap-2 text-sm text-slate-300">
+              <label key={id} className="flex items-center gap-2 text-sm text-painel-tinta">
                 <input
                   type="checkbox"
                   checked={modulos.includes(id)}
@@ -238,15 +238,15 @@ export default function SuperAdminPage() {
         {resultado && (
           <p
             role={resultado.tipo === "erro" ? "alert" : "status"}
-            className={resultado.tipo === "erro" ? "text-red-400 text-sm" : "text-emerald-400 text-sm"}
+            className={resultado.tipo === "erro" ? "text-red-700 text-sm" : "text-painel-destaque text-sm"}
           >
             {resultado.mensagem}
           </p>
         )}
 
         {urlConvite && (
-          <div className="border border-emerald-500/40 rounded-lg p-3 space-y-2">
-            <p className="text-xs text-slate-400">Link de ativação do dono:</p>
+          <div className="border border-painel-destaque rounded-lg p-3 space-y-2">
+            <p className="text-xs text-painel-suave">Link de ativação do dono:</p>
             <input
               readOnly
               aria-label="Link de ativação do dono"
@@ -257,7 +257,7 @@ export default function SuperAdminPage() {
             <button
               type="button"
               onClick={copiarLink}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg py-2.5 text-sm"
+              className="w-full bg-painel-linha hover:bg-painel-fundo text-painel-tinta font-semibold rounded-lg py-2.5 text-sm"
             >
               {copiado ? "Link copiado!" : "Copiar Link de Ativação do Dono"}
             </button>
@@ -267,7 +267,7 @@ export default function SuperAdminPage() {
         <button
           type="submit"
           disabled={carregando}
-          className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-semibold rounded-lg py-2.5 text-sm"
+          className="w-full bg-painel-destaque hover:bg-painel-destaque-forte disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg py-2.5 text-sm"
         >
           {carregando ? "Criando..." : "Criar Arena"}
         </button>

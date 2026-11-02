@@ -9,7 +9,7 @@
 import { NOME_PRODUTO } from "@/lib/marca";
 import { solicitarRecuperacaoSenha } from "@/lib/supabase/adminAuthService";
 import { useState } from "react";
-import { Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { useArena } from "@/hooks/useArena";
 import type { ResultadoLogin } from "@/hooks/useAdminAuth";
 
@@ -73,41 +73,25 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
     }
   }
 
-  const classeCampo = `w-full bg-slate-800 border rounded-xl pl-10 pr-4 py-3 text-sm text-white placeholder-slate-500 outline-none transition-all
+  const classeCampo = `w-full bg-painel-elevada border rounded-md pl-10 pr-4 py-3 text-sm text-painel-tinta placeholder:text-painel-apagada outline-none transition-all
     ${
       erro
-        ? "border-red-500/70 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
-        : "border-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+        ? "border-red-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+        : "border-painel-linha focus:border-painel-destaque focus:ring-2 focus:ring-painel-foco/20"
     }`;
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      {/* Background grid decorativo */}
-      <div
-        className="fixed inset-0 pointer-events-none opacity-[0.03]"
-        style={{
-          backgroundImage:
-            "linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
-
-      {/* Glow central */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-emerald-500/5 blur-3xl pointer-events-none" />
-
+    <div className="painel min-h-screen bg-painel-fundo flex items-center justify-center p-4">
       <div
         className={`relative w-full max-w-sm transition-all duration-300 ${shake ? "animate-shake" : ""}`}
       >
         {/* Card */}
-        <div className="bg-slate-900 border border-slate-700/60 rounded-2xl shadow-2xl shadow-black/50 overflow-hidden">
+        <div className="bg-painel-superficie border border-painel-linha rounded-lg overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 px-8 pt-10 pb-8 text-center border-b border-slate-700/40">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 mb-5">
-              <Shield className="w-8 h-8 text-emerald-400" />
-            </div>
-            <h1 className="text-2xl font-bold text-white mb-1">Área Admin</h1>
-            <p id="admin-login-arena" className="text-slate-400 text-sm">
-              {nomeArena} · Gestão Interna
+          <div className="bg-painel-superficie px-8 pt-8 pb-6 text-center border-b border-painel-linha">
+            <h1 className="text-xl font-semibold text-painel-tinta mb-1">Entrar no painel</h1>
+            <p id="admin-login-arena" className="text-painel-suave text-sm">
+              {nomeArena}
             </p>
           </div>
 
@@ -116,12 +100,12 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
             <div className="space-y-2">
               <label
                 htmlFor="admin-email"
-                className="block text-sm font-medium text-slate-300"
+                className="block text-sm font-medium text-painel-tinta"
               >
-                E-mail corporativo
+                E-mail
               </label>
               <div className="relative group">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-painel-suave group-focus-within:text-painel-destaque transition-colors" />
                 <input
                   id="admin-email"
                   type="email"
@@ -141,12 +125,12 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
             <div className="space-y-2">
               <label
                 htmlFor="admin-senha"
-                className="block text-sm font-medium text-slate-300"
+                className="block text-sm font-medium text-painel-tinta"
               >
                 Senha
               </label>
               <div className="relative group">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-painel-suave group-focus-within:text-painel-destaque transition-colors" />
                 <input
                   id="admin-senha"
                   type={mostrarSenha ? "text" : "password"}
@@ -164,7 +148,7 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
                   type="button"
                   aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
                   onClick={() => setMostrarSenha((v) => !v)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-painel-suave hover:text-painel-tinta transition-colors"
                 >
                   {mostrarSenha ? (
                     <EyeOff className="w-4 h-4" />
@@ -176,7 +160,7 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
               {erro && (
                 <p
                   role="alert"
-                  className="text-red-400 text-xs flex items-center gap-1.5 animate-fade-in"
+                  className="text-red-700 text-xs flex items-center gap-1.5"
                 >
                   <span className="inline-block w-1 h-1 rounded-full bg-red-400" />
                   {erro}
@@ -188,7 +172,7 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
               id="admin-login-btn"
               type="submit"
               disabled={carregando || !email || !senha}
-              className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-slate-950 font-semibold rounded-xl py-3 text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+              className="w-full bg-painel-destaque hover:bg-painel-destaque-forte disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-md py-3 text-sm transition-all duration-200 flex items-center justify-center gap-2"
             >
               {carregando ? (
                 <>
@@ -202,7 +186,7 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
 
             <div className="text-center">
               {linkEnviado ? (
-                <p role="status" className="text-xs text-emerald-400">
+                <p role="status" className="text-xs text-painel-destaque">
                   Se este e-mail tiver acesso, enviamos um link para criar uma nova senha. Confira também o spam.
                   Não chegou? Peça ao proprietário uma nova senha na tela Equipe.
                 </p>
@@ -212,7 +196,7 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
                   onClick={handleRecuperar}
                   disabled={recuperando || !email}
                   title={!email ? "Digite seu e-mail acima" : undefined}
-                  className="text-xs text-slate-400 hover:text-emerald-400 disabled:opacity-50 transition-colors"
+                  className="text-xs text-painel-suave hover:text-painel-destaque disabled:opacity-50 transition-colors"
                 >
                   {recuperando ? "Enviando link..." : "Esqueci minha senha"}
                 </button>
@@ -221,7 +205,7 @@ export function AdminLogin({ onLogin, arenaSlug }: Props) {
           </form>
         </div>
 
-        <p className="text-center text-slate-600 text-xs mt-6">
+        <p className="text-center text-painel-apagada text-xs mt-6">
           {NOME_PRODUTO} · Painel Administrativo
         </p>
       </div>

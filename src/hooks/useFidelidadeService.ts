@@ -94,7 +94,7 @@ export function useFidelidadeService() {
   }, [usuarioId, telefoneDigitos]);
 
   useEffect(() => {
-    void recarregarDados();
+    void Promise.resolve().then(recarregarDados);
   }, [recarregarDados]);
 
   // ── Progresso Computado Reativamente ───────────────────────────────────────

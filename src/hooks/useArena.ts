@@ -126,7 +126,8 @@ export function useArena(slugOrIdParam?: string): UseArenaRetorno {
   }, [slugOrIdParam]);
 
   useEffect(() => {
-    carregarDados();
+    // Dispara num callback (não no corpo do efeito): evita renderizações em cascata
+    void Promise.resolve().then(carregarDados);
   }, [carregarDados]);
 
   return {
