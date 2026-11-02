@@ -84,7 +84,9 @@ export function SecaoReservar(props: SecaoReservarProps) {
             {!muralNaLateral && mural}
             {tambem.length > 0 && (
               <nav className="tambem" aria-label="Também na arena">
-                <p className="tambem-h">Também na arena</p>
+                <p className="tambem-h">
+                  Também na arena, mais abaixo <span aria-hidden="true">↓</span>
+                </p>
                 <ul>
                   {tambem.map((s) => (
                     <li key={s.id}>

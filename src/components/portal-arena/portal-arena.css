@@ -1094,10 +1094,11 @@ body:has(.pa) { margin: 0; background: #ffffff; }
   .pa .q-passados { display: block; margin: 2px 0 10px; font-size: 13px; color: var(--muted); }
   .pa .tambem { display: block; margin-top: 22px; padding: 18px; border-radius: 16px; background: var(--pa-marca); color: #fff; }
   .pa .tambem-h { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--on-navy); }
-  .pa .tambem ul { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .pa .tambem ul { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .pa .tambem-h span { color: var(--pa-destaque); font-size: 15px; }
   .pa .tambem a {
-    display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 16px; border-radius: 999px;
-    background: rgba(255, 255, 255, 0.12); color: #fff; font-weight: 600; font-size: 15px; text-decoration: none;
+    display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12); color: #fff; font-weight: 600; font-size: 14px; text-decoration: none;
   }
   .pa .tambem a:active { background: rgba(255, 255, 255, 0.22); }
 }
