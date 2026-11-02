@@ -127,11 +127,13 @@ export function DialogoCheckout(props: DialogoCheckoutProps) {
     }
   }
 
-  // Foco: primeiro campo ao abrir (visitante) ou o título de cada etapa
+  // Foco: primeiro campo ao abrir (visitante) ou o título de cada etapa. Em tela de toque o foco vai
+  // para o título: focar o campo abriria o teclado sozinho e empurraria o resumo para fora da tela.
   useEffect(() => {
     if (!aberto) return;
     const quadro = requestAnimationFrame(() => {
-      const campo = etapa === "dados" ? document.getElementById("f-nome") : null;
+      const toque = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+      const campo = etapa === "dados" && !toque ? document.getElementById("f-nome") : null;
       (campo ?? document.getElementById("ck-titulo"))?.focus();
     });
     return () => cancelAnimationFrame(quadro);
@@ -425,25 +427,25 @@ export function DialogoCheckout(props: DialogoCheckoutProps) {
             <p className="pix-receb">
               Recebedor: <b>{arena.recebedor}</b>. Confira esse nome no app do banco antes de pagar.
             </p>
-            {arena.modoPagamento === "simulado" ? (
-              <>
-                <p className="pix-demo">Ambiente de demonstração: nenhum valor é cobrado.</p>
+            {arena.modoPagamento === "simulado" && <p className="pix-demo">Ambiente de demonstração: nenhum valor é cobrado.</p>}
+            {arena.modoPagamento === "manual" && pix.informado && (
+              <p className="pix-demo">A arena vai conferir o Pix e confirmar. Esta tela atualiza sozinha.</p>
+            )}
+            {/* No celular, as ações ficam presas no rodapé da janela (sempre visíveis, sem rolar) */}
+            <div className="ck-fixo">
+              {arena.modoPagamento === "simulado" ? (
                 <button type="button" className="btn-amarelo ck-acao" onClick={props.aoSimular}>
                   Simular pagamento
                 </button>
-              </>
-            ) : arena.modoPagamento === "manual" ? (
-              pix.informado ? (
-                <p className="pix-demo">A arena vai conferir o Pix e confirmar. Esta tela atualiza sozinha.</p>
-              ) : (
+              ) : arena.modoPagamento === "manual" && !pix.informado ? (
                 <button type="button" className="btn-amarelo ck-acao" onClick={props.aoInformarPagamento}>
                   Já fiz o Pix
                 </button>
-              )
-            ) : null}
-            <button type="button" className="link ck-voltar" onClick={props.aoVoltar}>
-              Voltar e editar os dados
-            </button>
+              ) : null}
+              <button type="button" className="link ck-voltar" onClick={props.aoVoltar}>
+                Voltar e editar os dados
+              </button>
+            </div>
           </>
         )}
       </div>

@@ -257,4 +257,31 @@ describe("DialogoCheckout (Seus dados)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Gerar Pix/ }));
     expect(props.aoEnviar).toHaveBeenCalledWith({ nome: "Ana de Souza", whatsapp: "(91) 98888-7777", esporte: "Vôlei" });
   });
+
+  const comPonteiro = (toque: boolean) =>
+    vi.stubGlobal("matchMedia", (q: string) => ({ matches: toque && q.includes("coarse"), media: q, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
+
+  it("no celular (toque) não abre o teclado sozinho: o foco vai para o título", async () => {
+    comPonteiro(true);
+    render(<DialogoCheckout {...props} />);
+    await vi.waitFor(() => expect(document.activeElement?.id).toBe("ck-titulo"));
+    expect(screen.getByLabelText("Nome completo")).not.toHaveFocus();
+    vi.unstubAllGlobals();
+  });
+
+  it("no computador o foco vai direto para o nome", async () => {
+    comPonteiro(false);
+    render(<DialogoCheckout {...props} />);
+    await vi.waitFor(() => expect(screen.getByLabelText("Nome completo")).toHaveFocus());
+    vi.unstubAllGlobals();
+  });
+
+  it("na etapa do Pix, as ações ficam no rodapé fixo (Simular pagamento e Voltar)", () => {
+    const pix = { carregando: false, cobranca: { copiaECola: "000201", qrCode: "" }, expiraEm: new Date(Date.now() + 600_000).toISOString(), expirado: false, informado: false };
+    const { container } = render(<DialogoCheckout {...props} etapa="pix" pix={pix as never} />);
+    const fixo = container.ownerDocument.querySelector(".ck-fixo");
+    expect(fixo).not.toBeNull();
+    expect(fixo).toHaveTextContent("Simular pagamento");
+    expect(fixo).toHaveTextContent("Voltar e editar os dados");
+  });
 });
