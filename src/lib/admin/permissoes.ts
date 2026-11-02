@@ -1,7 +1,7 @@
 /**
  * @file permissoes.ts
  * @description Matriz de acesso do painel administrativo por papel (RBAC). Fonte única usada pela
- * sidebar, pelo `AdminShell` e pelas rotas de API. Ver SPEC/2026-10-22-mvp-go-live.md §4.
+ * navegação do painel (`lib/admin/navegacao`) e pelas rotas de API. Ver SPEC/2026-10-22-mvp-go-live.md §4.
  *
  * O banco aplica a mesma hierarquia nas escritas sensíveis (RLS de `arenas`, `quadras` e
  * `quadras_precos`); esta matriz decide o que cada papel enxerga.

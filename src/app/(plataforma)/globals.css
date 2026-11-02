@@ -102,3 +102,53 @@ body {
 .animate-shake {
   animation: shake 0.45s ease-in-out;
 }
+/* ── Painel administrativo: tema claro neutro, igual para todas as arenas ─────────────────────
+ * Escopo próprio (.painel) para não alterar a página comercial, o login e o super admin.
+ * SPEC/2026-11-02-admin-revisao.md §3. */
+.painel {
+  --painel-fundo: #f5f5f4;
+  --painel-superficie: #ffffff;
+  --painel-elevada: #fafaf9;
+  --painel-linha: #e7e5e4;
+  --painel-linha-forte: #d6d3d1;
+  --painel-tinta: #1c1917;
+  --painel-suave: #57534e;
+  --painel-apagada: #a8a29e;
+  --painel-destaque: #047857;
+  --painel-destaque-forte: #065f46;
+  --painel-destaque-suave: #ecfdf5;
+  --painel-foco: #059669;
+  --background: var(--painel-fundo);
+  --foreground: var(--painel-tinta);
+  --border: var(--painel-linha);
+  color-scheme: light;
+  background-color: var(--painel-fundo);
+  color: var(--painel-tinta);
+  font-family: var(--font-sans);
+}
+
+@theme inline {
+  --color-painel-fundo: var(--painel-fundo);
+  --color-painel-superficie: var(--painel-superficie);
+  --color-painel-elevada: var(--painel-elevada);
+  --color-painel-linha: var(--painel-linha);
+  --color-painel-linha-forte: var(--painel-linha-forte);
+  --color-painel-tinta: var(--painel-tinta);
+  --color-painel-suave: var(--painel-suave);
+  --color-painel-apagada: var(--painel-apagada);
+  --color-painel-destaque: var(--painel-destaque);
+  --color-painel-destaque-forte: var(--painel-destaque-forte);
+  --color-painel-destaque-suave: var(--painel-destaque-suave);
+  --color-painel-foco: var(--painel-foco);
+}
+
+.painel ::-webkit-scrollbar-track {
+  background: var(--painel-fundo);
+}
+.painel ::-webkit-scrollbar-thumb {
+  background: var(--painel-linha-forte);
+  border-color: var(--painel-fundo);
+}
+.painel ::-webkit-scrollbar-thumb:hover {
+  background: var(--painel-apagada);
+}

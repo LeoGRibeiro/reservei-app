@@ -317,7 +317,7 @@ export function AdminReservaDetalhes({ reservaId }: { reservaId: string }) {
           existe ou foi removido.
         </p>
         <button
-          onClick={() => router.push("/admin/dashboard")}
+          onClick={() => router.push("/admin")}
           className="mt-2 px-5 py-2.5 bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-xl text-sm transition-colors"
         >
           Voltar ao Dashboard

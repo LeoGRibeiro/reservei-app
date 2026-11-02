@@ -77,7 +77,7 @@ export default function RedefinirSenhaPage() {
   return (
     <AdminTrocaSenhaObrigatoria
       descricao="Defina a nova senha de acesso ao painel."
-      onConcluido={() => router.replace("/admin/dashboard")}
+      onConcluido={() => router.replace("/admin")}
       onSair={async () => {
         await sairAdministrador();
         router.replace("/admin");

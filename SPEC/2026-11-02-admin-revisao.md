@@ -1,7 +1,7 @@
 # SPEC — Revisão completa do painel administrativo
 
 - **Data:** 02/11/2026
-- **Status:** em execução. Plano A concluído em 02/11/2026
+- **Status:** em execução. Planos A e B (rotas, layout e kit) concluídos em 02/11/2026
 - **Origem:** revisão das 12 telas no navegador (desktop e celular) e do código em `src/components/admin`, `src/hooks`, `src/lib/supabase` e `schema.sql`
 - **Objetivo:** o painel tem que funcionar sem surpresas para o dono e o balcão, mostrar números corretos e ter aparência sóbria e igual para todas as arenas (só o nome da arena muda)
 

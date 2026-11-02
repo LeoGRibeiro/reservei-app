@@ -5,6 +5,7 @@
 
 "use client";
 
+import { hrefReserva } from "@/lib/admin/navegacao";
 import { useQuadrasCatalogo, useHorariosCatalogo, descreverQuadra } from "@/store/useCatalogoArenaStore";
 import { useMemo } from "react";
 import {
@@ -318,7 +319,7 @@ function SecaoReservasAvulsas({ reservas }: { reservas: Reserva[] }) {
               return (
                 <a
                   key={r.id}
-                  href={`/admin/reserva/${r.id}`}
+                  href={hrefReserva(r.id)}
                   className="w-full text-left px-5 py-3.5 flex flex-col sm:grid sm:grid-cols-[1fr_auto_auto_auto] gap-3 sm:gap-4 sm:items-center hover:bg-slate-800/60 active:bg-slate-800 transition-colors duration-150 cursor-pointer group"
                 >
                   <div>
@@ -442,7 +443,7 @@ function SecaoAulasEscolinhas({ reservas }: { reservas: Reserva[] }) {
               return (
                 <a
                   key={r.id}
-                  href={`/admin/reserva/${r.id}`}
+                  href={hrefReserva(r.id)}
                   className="w-full text-left px-5 py-3.5 flex flex-col sm:grid sm:grid-cols-[1fr_auto_auto_auto] gap-3 sm:gap-4 sm:items-center hover:bg-slate-800/60 active:bg-slate-800 transition-colors duration-150 cursor-pointer group"
                 >
                   <div>
@@ -536,7 +537,7 @@ function SecaoGruposMensalistas({ reservas }: { reservas: Reserva[] }) {
               return (
                 <a
                   key={r.id}
-                  href={`/admin/reserva/${r.id}`}
+                  href={hrefReserva(r.id)}
                   className="w-full text-left px-5 py-3.5 flex flex-col sm:grid sm:grid-cols-[1fr_auto_auto_auto] gap-3 sm:gap-4 sm:items-center hover:bg-slate-800/60 active:bg-slate-800 transition-colors duration-150 cursor-pointer group"
                 >
                   <div>

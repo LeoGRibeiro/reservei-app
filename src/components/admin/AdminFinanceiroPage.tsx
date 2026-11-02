@@ -1,5 +1,6 @@
 "use client";
 
+import { hrefReserva } from "@/lib/admin/navegacao";
 import { useMemo, useState } from "react";
 import {
   CircleDollarSign,
@@ -684,7 +685,7 @@ export function AdminFinanceiroPage() {
                       {/* Ação */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <a
-                          href={`/admin/reserva/${r.id}`}
+                          href={hrefReserva(r.id)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors"
                         >
                           Detalhes

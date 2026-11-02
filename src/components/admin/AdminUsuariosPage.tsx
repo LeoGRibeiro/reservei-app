@@ -13,6 +13,7 @@
 
 "use client";
 
+import { hrefReserva } from "@/lib/admin/navegacao";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Users,
@@ -781,7 +782,7 @@ export function AdminUsuariosPage({ arenaSlug = "", podeRedefinirSenha = false }
                             </div>
 
                             <a
-                              href={`/admin/reserva/${r.id}`}
+                              href={hrefReserva(r.id)}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium flex items-center gap-1 transition-colors"
